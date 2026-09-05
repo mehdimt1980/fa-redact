@@ -5,8 +5,8 @@
 
 `fa-redact` is an early-stage Python toolkit for privacy-preserving processing of Persian/Iranian text. The project is being designed to detect, pseudonymize, and redact personal identifiers, with healthcare and AI/LLM workflows as a primary use case.
 
-> **Status: Early Development (Phase 4 - National ID Validation & Detection)**  
-> This package is currently in pre-alpha development. It provides position-preserving Persian text normalization, immutable `Detection` models, and strict Iranian National ID checksum validation and detection.
+> **Status: Early Development (Phase 5 - Mobile Number Validation & Detection)**  
+> This package is currently in pre-alpha development. It provides position-preserving Persian text normalization, immutable `Detection` models, strict Iranian National ID validation/detection, and Iranian Mobile Number validation/detection based on the official 2026 CRA numbering plan.
 
 ---
 
@@ -93,7 +93,46 @@ for d in detections:
     assert normalized[d.start:d.end] == d.normalized_value
 ```
 
-*(Note: Redaction, pseudonymization, and additional entity detectors such as phone numbers, medical record numbers, and names are under active development.)*
+### 5. Iranian Mobile Number Validation
+Validate Iranian mobile numbers against official 2026 Communications Regulatory Authority (CRA) mobile NDC prefixes:
+
+```python
+from fa_redact import is_valid_mobile_number
+
+# Domestic, +98 international, and 0098 international formats
+is_valid_mobile_number("09123456789")     # True (domestic)
+is_valid_mobile_number("۰۹۱۲۳۴۵۶۷۸۹")     # True (Persian digits)
+is_valid_mobile_number("+989123456789")   # True (+98 format)
+is_valid_mobile_number("00989351234567")  # True (0098 format)
+is_valid_mobile_number("09412345678")     # False (fixed non-geographical)
+is_valid_mobile_number("09061234567")     # False (unlisted prefix)
+```
+
+> **Note on Numbering Plan**: Prefix classification is based on the bundled 2026 CRA National Numbering Plan snapshot. Numbering plans may change over time. Prefix validation confirms structural allocation only and does not verify subscriber ownership, active SIM status, or carrier identity.
+
+### 6. Iranian Mobile Number Detection
+Find prefix-valid Iranian mobile numbers across domestic and international representations:
+
+```python
+from fa_redact import IranianMobileNumberDetector, normalize_text
+
+text = "شماره همراه بیمار: ۰۹۱۲۳۴۵۶۷۸۹ و شماره پشتیبان: +989351234567"
+normalized = normalize_text(text)
+
+detector = IranianMobileNumberDetector()
+detections = detector.detect(text, normalized)
+
+for d in detections:
+    print(d.type)              # "IR_MOBILE"
+    print(d.value)             # "۰۹۱۲۳۴۵۶۷۸۹" or "+989351234567"
+    print(d.normalized_value)  # "09123456789" or "+989351234567"
+
+    # Offsets map identically to original and normalized text:
+    assert text[d.start:d.end] == d.value
+    assert normalized[d.start:d.end] == d.normalized_value
+```
+
+*(Note: Redaction, pseudonymization, and additional entity detectors such as medical record numbers, postal codes, and names are under active development.)*
 
 ---
 
