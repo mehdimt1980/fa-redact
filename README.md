@@ -51,7 +51,7 @@
 In healthcare, enterprise, and AI workflows, sending raw Persian clinical notes or customer communications to external Large Language Models (LLMs) or third-party APIs poses significant privacy risks. `fa-redact` addresses these challenges by providing:
 
 1. **Position-Preserving Normalization**: Maps Persian and Arabic digits and letters 1-to-1 to canonical representations without altering string length or offset positions.
-2. **Strict Algorithmic Validation**: Implements checksum and prefix validation for Iranian identifiers (National IDs and mobile numbers) rather than relying on loose regular expressions.
+2. **Algorithmic Validation**: Implements checksum rules and prefix checks for Iranian identifiers (National IDs and mobile numbers) rather than relying on loose regular expressions.
 3. **Safe Placeholder Redaction**: Deterministically substitutes detected spans with typed placeholders.
 4. **Stateful Pseudonymization & Local Restoration**: Generates stable aliases across conversational turns and restores original values locally inside your trusted boundary.
 
@@ -61,7 +61,7 @@ In healthcare, enterprise, and AI workflows, sending raw Persian clinical notes 
 
 - **Handling Persian Text Peculiarities**: Persian text frequently mixes Persian digits (`۰-۹`), Arabic-Indic digits (`٠-٩`), and ASCII digits (`0-9`), alongside letter variants like Arabic Yeh (`ي`) and Kaf (`ك`). Simple regex patterns fail on mixed-script variations, while naive string replacements drift character offsets.
 - **Offset Integrity**: `fa-redact` ensures `len(normalized) == len(original)`, guaranteeing that slice offsets `text[start:end]` map directly back to the original source text.
-- **Privacy-First AI Integrations**: Mask patient or customer identifiers before sending prompts to external LLMs, then restore LLM outputs locally without ever exposing raw PII outside your trusted perimeter.
+- **Privacy-First AI Integrations**: Mask supported direct identifiers before sending prompts to external LLMs, then restore LLM outputs locally without exposing raw PII outside your trusted perimeter.
 - **Zero Runtime Dependencies**: Written entirely in pure Python (3.10+) with full typing (`py.typed`).
 
 ---
@@ -97,13 +97,15 @@ text = "بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱ و شماره ۰۹۱۲�
 detections = detect(text)
 
 for d in detections:
-    print(f"Type: {d.type} | Value: {d.value} | Normalized: {d.normalized_value} | Span: [{d.start}:{d.end}]")
-    assert text[d.start:d.end] == d.value
+    print(
+        f"Type: {d.type} | Value: {d.value} | Normalized: {d.normalized_value} | Span: [{d.start}:{d.end}]"
+    )
+    assert text[d.start : d.end] == d.value
 ```
 
 #### 2. Redact PII (Stateless)
 
-Sanitize sensitive text into deterministic, typed placeholders. Repeated identifiers within the same call receive the same placeholder:
+Sanitize text by replacing detected spans with deterministic, typed placeholders. Repeated identical identifiers within the same call receive the same placeholder:
 
 ```python
 from fa_redact import redact
@@ -125,11 +127,11 @@ session = PseudonymizationSession()
 
 # 1. Pseudonymize prompt locally inside your trusted boundary:
 prompt = "کد ملی بیمار ۱۲۳۴۵۶۷۸۹۱ و شماره تماس ۰۹۱۲۳۴۵۶۷۸۹ است."
-safe_prompt = session.pseudonymize(prompt)
-print(safe_prompt)
+pseudonymized_prompt = session.pseudonymize(prompt)
+print(pseudonymized_prompt)
 # Output: "کد ملی بیمار [IR_NATIONAL_ID_1] و شماره تماس [IR_MOBILE_1] است."
 
-# 2. Send ONLY safe_prompt to external LLM. Simulated LLM response:
+# 2. Send ONLY pseudonymized_prompt to external LLM. Simulated LLM response:
 llm_response = "جهت هماهنگی با بیمار با [IR_MOBILE_1] تماس حاصل فرمایید."
 
 # 3. Restore placeholders locally:
@@ -168,12 +170,12 @@ normalize_text("كد ملي: ۰۰۱٢٣٤٥٦٧٨")
 
 Identified spans are represented by the immutable `Detection` dataclass:
 
-- `type`: Identifier category (e.g. `IR_NATIONAL_ID`, `IR_MOBILE`).
+- `type`: Identifier category (e.g., `IR_NATIONAL_ID`, `IR_MOBILE`).
 - `value`: Exact substring as written in the original input text.
 - `normalized_value`: Canonical normalized form of the span.
 - `start` / `end`: Zero-indexed Python string slice boundaries (`text[start:end] == value`).
 
-The pipeline validates detector outputs, verifies that detections do not overlap, and fails loudly with `ValueError` if overlapping spans are encountered.
+The detection pipeline aggregates detector results and sorts them deterministically by `(start, end, type)`. It intentionally preserves overlaps and duplicate detections. Overlap rejection is applied only when producing replacement text via `redact()` or `PseudonymizationSession.pseudonymize()`, where overlapping or nested spans will raise a `ValueError`.
 
 #### 3. Iranian National ID Validation & Detection
 
@@ -189,36 +191,38 @@ is_valid_national_id("1234567890")  # False (invalid check digit)
 is_valid_national_id("1111111111")  # False (repeated digits rejected)
 ```
 
-- **Modulo-11 Checksum**: Applies the official modulo-11 checksum formula.
+- **Modulo-11 Checksum**: Applies the implemented modulo-11 checksum rule for Iranian National IDs.
 - **Repeated-Digit Rejection**: Rejects pseudo-values like `0000000000` or `1111111111`.
-- **Exact Length**: Requires exactly 10 digits; does not strip spaces or auto-pad.
-- **Verification Notice**: Validation confirms mathematical structure only. It does not query government registries or confirm whether an ID has been officially issued.
+- **Exact Length & Formatting**: Requires exactly 10 digits in compact format; does not strip spaces, remove hyphens, or auto-pad.
+- **Verification Notice**: Validation confirms mathematical format only without querying official registries. Checksum validity does not establish whether an identifier has been officially issued to an individual.
 
 #### 4. Iranian Mobile Number Validation & Detection
 
-Validates and detects Iranian mobile numbers using the official Communications Regulatory Authority (CRA) numbering-plan snapshot:
+Validates and detects Iranian mobile numbers using the bundled 2026 CRA/ITU mobile-service NDC allocation snapshot:
 
 ```python
 from fa_redact import IranianMobileNumberDetector, is_valid_mobile_number
 
-# Supported domestic and international formats
-is_valid_mobile_number("09123456789")     # True (domestic)
-is_valid_mobile_number("۰۹۱۲۳۴۵۶۷۸۹")     # True (Persian digits)
-is_valid_mobile_number("+989123456789")   # True (+98 format)
+# Supported compact domestic and international formats
+is_valid_mobile_number("09123456789")  # True (domestic)
+is_valid_mobile_number("۰۹۱۲۳۴۵۶۷۸۹")  # True (Persian digits)
+is_valid_mobile_number("+989123456789")  # True (+98 format)
 is_valid_mobile_number("00989351234567")  # True (0098 format)
-is_valid_mobile_number("09412345678")     # False (fixed non-geographical)
+is_valid_mobile_number("09412345678")  # False (fixed non-geographical)
 ```
 
-- **Prefix-Aware Allocation**: Validates National Destination Codes (NDC) allocated to mobile operators (MCI, MTN Irancell, RighTel, Shatel Mobile, etc.).
+- **Prefix-Aware Allocation**: Validates against prefixes allocated for mobile services in the bundled National Numbering Plan snapshot.
 - **Exclusion of Non-Mobile Prefixes**: Non-mobile prefixes such as `094` (fixed non-geographic) and `09950` (Public Trunk) are rejected.
-- **Verification Notice**: Prefix validation confirms structural numbering-plan compliance only; it does not verify active SIM status, subscriber identity, or carrier ownership.
+- **Strict Formatting**: Only compact forms (`09xxxxxxxxx`, `+989xxxxxxxxx`, `00989xxxxxxxxx`) are accepted. The validator does not strip spaces, remove hyphens, or auto-format.
+- **Verification Notice**: Prefix validation confirms structural numbering-plan compliance only; it does not verify active SIM status, subscriber identity, carrier ownership, or number portability status.
 
 #### 5. Redaction Semantics
 
-- **Exact Span Substitution**: Slices are replaced from right to left to avoid offset recalculation errors.
-- **Typed Placeholders**: Placeholders follow the format `[<TYPE>_<INDEX>]` (e.g. `[IR_NATIONAL_ID_1]`, `[IR_MOBILE_1]`).
+- **Exact Span Reconstruction**: `redact()` rebuilds the output from the original Detection spans, preserving untouched source slices exactly and replacing only detected spans. It does not perform global value-based `str.replace()`.
+- **Typed Placeholders**: Placeholders follow the format `[<TYPE>_<INDEX>]` (e.g., `[IR_NATIONAL_ID_1]`, `[IR_MOBILE_1]`).
 - **Deterministic Numbering**: Identifiers receive sequential numbering based on their order of first appearance.
 - **Collision Avoidance**: If an input already contains a literal string matching the placeholder syntax, newly generated placeholders increment past the colliding index.
+- **Fail-Loud on Overlap**: If overlapping or duplicate spans are passed to `redact()`, it raises a `ValueError`.
 
 #### 6. Stateful Pseudonymization Sessions
 
@@ -226,44 +230,57 @@ is_valid_mobile_number("09412345678")     # False (fixed non-geographical)
 
 - **Local Sensitive Mapping**: `session.mapping` contains `{placeholder: original_raw_value}`. Keep this mapping strictly inside your trusted boundary.
 - **Cross-Call Identity**: Entities are tracked by `(type, normalized_value)`. For example, `۰۹۱۲۳۴۵۶۷۸۹` in turn 1 and `09123456789` in turn 2 both resolve to `[IR_MOBILE_1]`.
-- **First-Observed Representative Restoration**: Placeholders are restored using the first-observed raw representation.
+- **Domestic vs. International Limitation**: `09123456789` and `+989123456789` have different normalized strings and are not canonicalized into the same identity in v0.1.0.
+- **First-Observed Representative Restoration**: Placeholders are restored using the first-observed raw representation. Restoration is semantic placeholder restoration and is not guaranteed to reconstruct the exact original surface representation of every occurrence byte-for-byte.
 - **Non-Cascading Restoration**: `restore()` performs an escaped single-pass replacement, preventing recursive expansion if restored values contain placeholder syntax.
 - **Atomic Updates**: If a call fails during processing, the session state, mappings, and counters remain unmodified.
 - **Historical Literal Token Reservation**: Literal placeholder-like tokens observed in prior calls remain reserved so they are never assigned to real PII in later calls.
-- **Unknown Placeholders**: Unmapped placeholders (e.g. `[IR_MOBILE_99]`) are left untouched without error.
+- **Unknown Placeholders**: Unmapped placeholders (e.g., `[IR_MOBILE_99]`) are left untouched without error.
 
 ---
 
 ### Custom Detectors
 
-`fa-redact` uses Python's structural typing (protocols). Any class implementing a `detect(self, text: str) -> Sequence[Detection]` method can be passed to `detect()`, `redact()`, or `session.pseudonymize()`:
+`fa-redact` uses Python's structural typing (protocols). Any class implementing the two-argument `detect(self, original_text: str, normalized_text: str) -> Sequence[Detection]` method can be passed to `detect()`, `redact()`, or `session.pseudonymize()`:
 
 ```python
 import re
-from typing import Sequence
+from collections.abc import Sequence
+
 from fa_redact import Detection, detect
 
+
 class MedicalRecordNumberDetector:
-    """Example custom detector for institutional Medical Record Numbers (MRN)."""
-    
-    def detect(self, text: str) -> Sequence[Detection]:
-        detections = []
-        for match in re.finditer(r"\bMRN-\d{6}\b", text):
+    """Example custom detector for synthetic institutional MRNs."""
+
+    def detect(
+        self,
+        original_text: str,
+        normalized_text: str,
+    ) -> Sequence[Detection]:
+        detections: list[Detection] = []
+
+        for match in re.finditer(r"\bMRN-\d{6}\b", normalized_text):
             detections.append(
-                Detection(
+                Detection.from_texts(
                     type="MRN",
+                    original_text=original_text,
+                    normalized_text=normalized_text,
                     start=match.start(),
                     end=match.end(),
-                    value=match.group(0),
-                    normalized_value=match.group(0),
                 )
             )
+
         return detections
 
-# Use standard detectors along with custom detectors:
-text = "پرونده بیمار با MRN-123456 و شماره ۰۹۱۲۳۴۵۶۷۸۹ بررسی شد."
+
+# Note: Passing an explicit detector list replaces the default detector set for that call.
+text = "پرونده با MRN-123456 ثبت شد."
 detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 ```
+
+> [!NOTE]
+> Passing `detectors=[...]` explicitly **replaces** the default detector list for that call. If you wish to use built-in detectors alongside custom ones, pass all desired detectors explicitly.
 
 ---
 
@@ -272,11 +289,11 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 ```text
 Local Hospital / Trusted Boundary
   │
-  ├── 1. Raw clinical text with sensitive PII
+  ├── 1. Raw clinical text with sensitive identifiers
   │      ↓
   ├── 2. session.pseudonymize(raw_text)
   │      ↓
-  ├── 3. [IR_NATIONAL_ID_1], [IR_MOBILE_1] (Safe Prompt)
+  ├── 3. Pseudonymized prompt (supported identifiers replaced)
   │
   ▼  (Transmit ONLY sanitized text to External AI / Cloud)
 External LLM API (e.g., Clinical Summary / Diagnostics)
@@ -289,6 +306,9 @@ Local Hospital / Trusted Boundary
          ↓
       5. Final clinical report with restored original identifiers
 ```
+
+> [!WARNING]
+> **This is not complete clinical de-identification.** `fa-redact` v0.1.0 detects only Iranian National IDs and mobile numbers. It does not detect personal names, free-text addresses, dates, or other protected health categories by default.
 
 ---
 
@@ -392,7 +412,8 @@ This project is licensed under the [MIT License](LICENSE).
   - [۲. مدل داده و پایپ‌لاین تشخیص](#۲-مدل-داده-و-پایپ‌لاین-تشخیص)
   - [۳. اعتبارسنجی و تشخیص کد ملی ایران](#۳-اعتبارسنجی-و-تشخیص-کد-ملی-ایران)
   - [۴. اعتبارسنجی و تشخیص شماره موبایل ایران](#۴-اعتبارسنجی-و-تشخیص-شماره-موبایل-ایران)
-  - [۵. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۵-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
+  - [۵. بازسازی دقیق بر اساس span در پنهان‌سازی](#۵-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
+  - [۶. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۶-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
 - [جدول پوشش و محدودیت‌ها در نسخه v0.1.0](#جدول-پوشش-و-محدودیت‌ها-در-نسخه-v010)
@@ -407,7 +428,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 در سیستم‌های درمانی، سازمانی و کاربردهای نوین هوش مصنوعی، ارسال متن‌های حاوی اطلاعات شناسایی‌کنندهٔ شخصی (Personally Identifiable Information یا به اختصار PII) به مدل‌های زبانی بزرگ (LLM) یا سرویس‌های ابری خارجی می‌تواند حریم خصوصی بیماران و کاربران را به خطر بیندازد. 
 
-کتابخانهٔ `fa-redact` با ارائهٔ ابزارهای سبک و کارآمد، متن را پیش از خروج از محیط امن شما پردازش کرده و شناسه‌های حساس را با نشان‌گذارهای جایگزین (Placeholders) امن تعویض می‌کند. پس از دریافت پاسخ از هوش مصنوعی، می‌توان نشان‌گذارها را در محیط محلی و امن خود به مقادیر اصلی بازگرداند (Restoration).
+کتابخانهٔ `fa-redact` با ارائهٔ ابزارهای سبک و کارآمد، متن را پیش از خروج از محیط امن شما پردازش کرده و شناسه‌های حساس پشتیبانی‌شده را با نشان‌گذارهای جایگزین (Placeholders) تعویض می‌کند. پس از دریافت پاسخ از هوش مصنوعی، می‌توان نشان‌گذارها را در محیط محلی و امن خود به مقادیر اصلی بازگرداند (Restoration).
 
 ---
 
@@ -417,7 +438,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 1. **تنوع ارقام و حروف**: در متون فارسی، شماره‌ها ممکن است با ارقام فارسی (`۰-۹`)، ارقام عربی (`٠-٩`) یا ارقام لاتین (`0-9`) نوشته شده باشند. همچنین تفاوت حروف مانند «ي» و «ك» عربی با «ی» و «ک» فارسی مانع عملکرد صحیح الگوهای ساده می‌شود.
 2. **حفظ موقعیت کاراکترها (Offsets)**: روش‌های مرسوم نرم‌سازی متن اغلب طول رشته را تغییر می‌دهند (مثلاً با حذف فاصله‌ها یا اعراب)؛ این کار باعث جابه‌جایی ایندکس‌های کاراکتری شده و جایگزینی دقیق در متن اصلی را غیرممکن می‌سازد. `fa-redact` تضمین می‌کند که طول رشته قبل و بعد از نرم‌سازی یکسان باشد (`len(normalized) == len(original)`).
-3. **اعتبارسنجی دقیق الگوریتمی**: به‌جای استفاده از رجکس‌های حدسی و شکننده، شناسه‌های ملی و شماره‌های موبایل با الگوریتم‌های رسمی کنترلی (مانند چکسام Modulo-11 و پیش‌شماره‌های رگولاتوری ایران) بررسی می‌شوند.
+3. **اعتبارسنجی الگوریتمی**: به‌جای استفاده از رجکس‌های حدسی، شناسه‌های ملی و شماره‌های موبایل با قواعد کنترلی و پیش‌شماره‌های رگولاتوری ایران بررسی می‌شوند.
 4. **حفظ یکپارچگی ارجاعات در هوش مصنوعی**: در مکالمات چندمرحله‌ای با LLMها، یک موجودیت مشخص همواره به یک نام‌مستعار یکسان نگاشت می‌شود تا ساختار معنایی متن برای مدل حفظ شود.
 5. **بدون وابستگی و کاملاً تایپ‌شده**: بدون نیاز به بسته‌های جانبی سنگین، کاملاً با پایتون خالص (+3.10) پیاده‌سازی شده و از تایپینگ کامل (`py.typed`) پشتیبانی می‌کند.
 
@@ -458,9 +479,9 @@ for item in detections:
     print(f"مقدار در متن اصلی: {item.value}")
     print(f"مقدار نرمال‌شده: {item.normalized_value}")
     print(f"موقعیت کاراکتری: [{item.start}:{item.end}]")
-    
+
     # اطمینان از تطابق دقیق موقعیت با متن اصلی:
-    assert text[item.start:item.end] == item.value
+    assert text[item.start : item.end] == item.value
 ```
 
 فیلدهای شیء `Detection`:
@@ -497,11 +518,11 @@ session = PseudonymizationSession()
 
 # ۱. پنهان‌سازی متن حساس پیش از ارسال به سرویس خارجی:
 prompt = "کد ملی بیمار ۱۲۳۴۵۶۷۸۹۱ و شماره تماس ۰۹۱۲۳۴۵۶۷۸۹ است."
-safe_prompt = session.pseudonymize(prompt)
-print(safe_prompt)
+pseudonymized_prompt = session.pseudonymize(prompt)
+print(pseudonymized_prompt)
 # خروجی: "کد ملی بیمار [IR_NATIONAL_ID_1] و شماره تماس [IR_MOBILE_1] است."
 
-# ۲. ارسال فقط متن امن (safe_prompt) به مدل زبانی. پاسخ فرضی مدل:
+# ۲. ارسال فقط متن نام‌مستعارسازی‌شده (pseudonymized_prompt) به مدل زبانی. پاسخ فرضی مدل:
 llm_response = "جهت هماهنگی با بیمار با [IR_MOBILE_1] تماس حاصل فرمایید."
 
 # ۳. بازگردانی مقادیر واقعی به صورت محلی در محیط امن شما:
@@ -541,11 +562,13 @@ normalize_text("كد ملي: ۰۰۱٢٣٤٥٦٧٨")
 
 #### ۲. مدل داده و پایپ‌لاین تشخیص
 
-تابع `detect()` وظیفهٔ اجرای تشخیص‌دهنده‌ها، تجمیع نتایج و بررسی عدم همپوشانی (Overlap) را بر عهده دارد. در صورتی که دو تشخیص‌دهنده برای یک بازهٔ متنی مشترک گزارش تداخل ثبت کنند، سیستم با خطای `ValueError` متوقف می‌شود (Fail-loud) تا از جایگزینی‌های اشتباه و مخدوش شدن داده‌های محرمانه جلوگیری شود.
+تابع `detect()` نتایج تشخیص‌دهنده‌ها را جمع‌آوری و بر اساس `(start, end, type)` مرتب می‌کند. این لایه عمداً همپوشانی یا تشخیص‌های تکراری را حذف یا رد نمی‌کند.
+
+کنترل همپوشانی زمانی اعمال می‌شود که قرار است متن واقعاً تغییر کند؛ یعنی در `redact()` و `PseudonymizationSession.pseudonymize()`. در این دو API، وجود spanهای همپوشان، تودرتو یا تکراری باعث `ValueError` می‌شود تا از جایگزینی‌های اشتباه و مخدوش شدن داده‌های محرمانه جلوگیری شود.
 
 #### ۳. اعتبارسنجی و تشخیص کد ملی ایران
 
-تشخیص و اعتبارسنجی کد ملی ۱۰ رقمی با الگوریتم رسمی باقیماندهٔ تقسیم بر ۱۱ (Modulo-11):
+تشخیص و اعتبارسنجی کد ملی ۱۰ رقمی با قاعدهٔ کنترل Modulo-11 پیاده‌سازی‌شده برای کد ملی ایران:
 
 ```python
 from fa_redact import IranianNationalIDDetector, is_valid_national_id
@@ -557,36 +580,43 @@ is_valid_national_id("1234567890")  # False (رقم کنترلی نامعتبر)
 is_valid_national_id("1111111111")  # False (رد ارقام تکراری جعلی)
 ```
 
-- **بررسی چکسام**: اعمال فرمول کنترلی استاندارد ثبت احوال.
+- **بررسی چکسام**: اعمال قاعدهٔ کنترلی Modulo-11 کد ملی ایران.
 - **رد کدهای تکراری جعلی**: کدهایی مانند `0000000000` یا `1111111111` که فرمول چکسام را پاس می‌کنند اما نامعتبرند، رد می‌شوند.
-- **طول دقیق**: ورودی باید دقیقاً ۱۰ رقم باشد؛ صفرهای ابتدایی حذف یا به‌طور خودکار اضافه نمی‌شوند.
-- **سلب مسئولیت استعلام**: این اعتبارسنجی صرفاً ساختار ریاضی را تایید می‌کند و استعلامی از سامانهٔ ثبت احوال انجام نمی‌دهد.
+- **طول و قالب دقیق**: ورودی باید دقیقاً ۱۰ رقم در قالب فشرده باشد؛ فاصله‌ها یا خط تیره حذف نمی‌شوند و صفرهای ابتدایی به‌طور خودکار اضافه نمی‌شوند.
+- **سلب مسئولیت استعلام**: این اعتبارسنجی صرفاً ساختار ریاضی را تایید می‌کند و استعلامی از سامانه‌های ثبت احوال یا احراز هویت انجام نمی‌دهد.
 
 #### ۴. اعتبارسنجی و تشخیص شماره موبایل ایران
 
-تشخیص شماره‌های همراه بر اساس سند رسمی شماره‌گذاری سازمان تنظیم مقررات و ارتباطات رادیویی ایران (CRA / ITU 2026):
+اعتبارسنجی بر اساس snapshot شماره‌گذاری ۲۰۲۶ CRA/ITU و پیش‌شماره‌هایی انجام می‌شود که در آن برای خدمات موبایل تخصیص یافته‌اند:
 
 ```python
 from fa_redact import IranianMobileNumberDetector, is_valid_mobile_number
 
-is_valid_mobile_number("09123456789")     # True (قالب داخلی)
-is_valid_mobile_number("۰۹۱۲۳۴۵۶۷۸۹")     # True (ارقام فارسی)
-is_valid_mobile_number("+989123456789")   # True (قالب بین‌المللی با +98)
+# قالب‌های فشردهٔ داخلی و بین‌المللی پشتیبانی‌شده
+is_valid_mobile_number("09123456789")  # True (قالب داخلی)
+is_valid_mobile_number("۰۹۱۲۳۴۵۶۷۸۹")  # True (ارقام فارسی)
+is_valid_mobile_number("+989123456789")  # True (قالب بین‌المللی با +98)
 is_valid_mobile_number("00989351234567")  # True (قالب بین‌المللی با 0098)
-is_valid_mobile_number("09412345678")     # False (شماره ثابت غیرجغرافیایی)
+is_valid_mobile_number("09412345678")  # False (شماره ثابت غیرجغرافیایی)
 ```
 
-- **تفکیک پیش‌شماره‌های همراه**: تنها شماره‌های اپراتورهای سیار (همراه اول، ایرانسل، رایتل، شاتل موبایل و...) معتبر شناخته می‌شوند.
+- **تفکیک پیش‌شماره‌های خدمات سیار**: بررسی پیش‌شماره‌ها بر اساس snapshot طرح شماره‌گذاری کشوری.
 - **رد پیش‌شماره‌های غیرموبایل**: پیش‌شماره‌هایی نظیر `094` (ثابت غیرجغرافیایی) یا `09950` (ترانک عمومی) به عنوان موبایل پذیرفته نمی‌شوند.
-- **سلب مسئولیت مالکیت**: اعتبارسنجی ساختاری است و فعال بودن سیم‌کارت یا هویت مالک آن را بررسی نمی‌کند.
+- **قالب فشرده**: فقط قالب‌های فشرده (`09xxxxxxxxx`، `+989xxxxxxxxx`، `00989xxxxxxxxx`) پذیرفته می‌شوند و حذف فاصله، پرانتز یا خط تیره انجام نمی‌شود.
+- **سلب مسئولیت مالکیت**: اعتبارسنجی ساختاری است و وضعیت فعال بودن سیم‌کارت، هویت مشترک، اپراتور فعلی یا ترابردپذیری را بررسی نمی‌کند.
 
-#### ۵. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی
+#### ۵. بازسازی دقیق بر اساس span در پنهان‌سازی
+
+خروجی بر اساس بازه‌های دقیق `Detection` از متن اصلی ساخته می‌شود؛ فقط همان spanهای تشخیص‌داده‌شده جایگزین می‌شوند و بخش‌های دیگر متن بدون تغییر کپی می‌شوند. پیاده‌سازی از `str.replace()` سراسری بر اساس مقدار استفاده نمی‌کند.
+
+#### ۶. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی
 
 کلاس `PseudonymizationSession` رفتارهای امنیتی زیر را تضمین می‌کند:
 
 - **ایزوله‌سازی نشست‌ها (Mapping Isolation)**: هر نشست دارای حافظه و نگاشت مستقل است.
 - **یکپارچگی هویت در چند مرحله (Cross-Call Identity)**: هویت یک موجودیت بر اساس `(type, normalized_value)` ردیابی می‌شود. بنابراین `۰۹۱۲۳۴۵۶۷۸۹` در نوبت اول و `09123456789` در نوبت دوم هر دو به `[IR_MOBILE_1]` متصل می‌شوند.
-- **بازگردانی به اولین نمایش دیده‌شده (First-Observed Representative)**: در زمان `restore()`، نشان‌گذار به همان فرمت نویسه‌ای که در اولین مشاهده ثبت شده بود بازگردانده می‌شود.
+- **محدودیت تفاوت فرمت داخلی و بین‌المللی**: مقادیر `09123456789` و `+989123456789` دارای رشته‌های نرمال‌شدهٔ متفاوتی هستند و در نسخهٔ v0.1.0 به یک هویت یکسان تبدیل نمی‌شوند.
+- **بازگردانی به اولین نمایش دیده‌شده (First-Observed Representative)**: تابع `restore()` یک بازگردانی معنایی بر اساس placeholder انجام می‌دهد و تضمین نمی‌کند که شکل نویسه‌ای دقیق تک‌تک occurrenceهای متن اولیه به‌صورت byte-for-byte بازسازی شود.
 - **بازگردانی غیرآبشاری (Non-Cascading Restore)**: بازگردانی در یک مرحله و با فرار کاراکترهای خاص انجام می‌شود تا اگر مقدار بازگردانده‌شده شبیه به نشان‌گذار باشد، بازگردانی بازگشتی و ناخواسته رخ ندهد.
 - **به‌روزرسانی اتمیک (Atomic Updates)**: اگر در حین پردازش خطایی رخ دهد، وضعیت نشست و شمارنده‌ها دست‌نخورده باقی می‌مانند.
 - **محافظت در برابر تداخل تاریخی با نشان‌گذارهای متنی**: اگر در متون قبلی عبارتی مانند `[IR_MOBILE_2]` به عنوان متن عادی وجود داشته باشد، سیستم آن شماره را رزرو کرده و برای شناسه‌های واقعی جدید اختصاص نمی‌دهد.
@@ -596,34 +626,49 @@ is_valid_mobile_number("09412345678")     # False (شماره ثابت غیرج�
 
 ### تشخیص‌دهنده‌های سفارشی (Custom Detectors)
 
-معماری `fa-redact` مبتنی بر پروتکل‌های ساختاری پایتون (Duck Typing) است. شما می‌توانید بدون نیاز به ارث‌بری، کلاس‌هایی با متد `detect(self, text: str) -> Sequence[Detection]` بسازید و آن‌ها را به توابع کتابخانه منتقل کنید:
+معماری `fa-redact` مبتنی بر پروتکل‌های ساختاری پایتون (Duck Typing) است. شما می‌توانید کلاسی با متد دوآرگومانی پیاده‌سازی کنید:
 
 ```python
 import re
-from typing import Sequence
+from collections.abc import Sequence
+
 from fa_redact import Detection, detect
+
 
 class MedicalRecordNumberDetector:
     """نمونه تشخیص‌دهنده سفارشی برای شماره پرونده پزشکی بیمارستانی (MRN)."""
-    
-    def detect(self, text: str) -> Sequence[Detection]:
-        detections = []
-        for match in re.finditer(r"\bMRN-\d{6}\b", text):
+
+    def detect(
+        self,
+        original_text: str,
+        normalized_text: str,
+    ) -> Sequence[Detection]:
+        detections: list[Detection] = []
+
+        for match in re.finditer(r"\bMRN-\d{6}\b", normalized_text):
             detections.append(
-                Detection(
+                Detection.from_texts(
                     type="MRN",
+                    original_text=original_text,
+                    normalized_text=normalized_text,
                     start=match.start(),
                     end=match.end(),
-                    value=match.group(0),
-                    normalized_value=match.group(0),
                 )
             )
+
         return detections
 
-# استفاده همزمان از تشخیص‌دهنده سفارشی:
-text = "پرونده بیمار با MRN-123456 و شماره ۰۹۱۲۳۴۵۶۷۸۹ بررسی شد."
+
+# توجه: پاس دادن فهرست اختصاصی تشخیص‌دهنده‌ها، مجموعهٔ پیش‌فرض را برای آن فراخوانی جایگزین می‌کند.
+text = "پرونده با MRN-123456 ثبت شد."
 detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 ```
+
+در این پروتکل:
+- `original_text`: متن اصلی و دست‌نخورده است.
+- `normalized_text`: نسخهٔ نرمال‌شده با طول دقیقاً برابر است.
+- تشخیص‌دهنده باید spanها را طوری برگرداند که offsetها در هر دو رشته یکسان باشند (استفاده از `Detection.from_texts()` این موضوع را تضمین می‌کند).
+- پاس دادن `detectors=[...]` مجموعهٔ تشخیص‌دهنده‌های پیش‌فرض را برای آن فراخوانی جایگزین می‌کند و به‌طور خودکار به آن‌ها افزوده نمی‌شود.
 
 ---
 
@@ -636,9 +681,9 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
   │      ↓
   ├── ۲. session.pseudonymize(raw_text)
   │      ↓
-  ├── ۳. متن پالایش‌شده با نشان‌گذارهای [IR_NATIONAL_ID_1] و [IR_MOBILE_1]
+  ├── ۳. پرامپت نام‌مستعارسازی‌شده (فقط شناسه‌های پشتیبانی‌شده جایگزین شده‌اند)
   │
-  ▼  (ارسال صرفاً متن امن به هوش مصنوعی خارج از سازمان)
+  ▼  (ارسال صرفاً متن پالایش‌شده به هوش مصنوعی خارج از سازمان)
 سرویس مدل زبانی بزرگ (LLM API)
   ▲
   │  (دریافت پاسخ شامل نشان‌گذارها)
@@ -650,7 +695,8 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
       ۵. گزارش نهایی با شناسه‌های واقعی و بازگردانی‌شده
 ```
 
-> **یادآوری مهم**: این معماری از نشت شناسه‌های مستقیم پیش‌بینی‌شده جلوگیری می‌کند، اما به خودی خود به معنای ناشناس‌سازی کامل پرونده بالینی نیست؛ زیرا ممکن است داده‌های متنی دیگری (مانند نام، آدرس یا تاریخ‌ها) در متن وجود داشته باشند که هنوز توسط این نسخه پشتیبانی نمی‌شوند.
+> [!WARNING]
+> **این فرایند به معنی ناشناس‌سازی یا de-identification کامل متن بالینی نیست.** `fa-redact` در نسخهٔ v0.1.0 صرفاً کد ملی و شماره موبایل ایران را پوشش می‌دهد و داده‌هایی نظیر نام اشخاص، آدرس‌ها، تاریخ‌ها یا سایر رده‌های سلامت حفاظت‌شده را به‌طور پیش‌فرض تشخیص نمی‌دهد.
 
 ---
 
@@ -658,7 +704,7 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 
 | نوع شناسه هویتی | وضعیت در v0.1.0 | توضیحات |
 | :--- | :---: | :--- |
-| **کد ملی ایران** | ✅ پشتیبانی می‌شود | اعتبارسنجی دقیق ۱۰ رقمی با الگوریتم Modulo-11 |
+| **کد ملی ایران** | ✅ پشتیبانی می‌شود | اعتبارسنجی دقیق ۱۰ رقمی با قاعدهٔ چکسام Modulo-11 |
 | **شماره تلفن همراه ایران** | ✅ پشتیبانی می‌شود | اعتبارسنجی پیش‌شماره‌های مصوب رگولاتوری ایران (CRA 2026) |
 | **نام اشخاص** | ❌ هنوز پشتیبانی نمی‌شود | نیازمند مدل‌های پردازش زبان طبیعی و بازشناسی موجودیت‌های نام‌دار (NER) |
 | **آدرس پستی و موقعیت مکانی** | ❌ هنوز پشتیبانی نمی‌شود | موجودیت‌های غیرساختاریافته |
