@@ -15,7 +15,9 @@ def test_package_all_export() -> None:
     expected_exports = {
         "__version__",
         "Detection",
+        "IranianMobileNumberDetector",
         "IranianNationalIDDetector",
+        "is_valid_mobile_number",
         "is_valid_national_id",
         "normalize_digits",
         "normalize_letters",
@@ -28,8 +30,20 @@ def test_package_all_export() -> None:
 
 def test_subpackage_imports() -> None:
     """Verify direct imports from validators and detectors subpackages."""
-    from fa_redact.detectors import IranianNationalIDDetector as SubDetector
-    from fa_redact.validators import is_valid_national_id as sub_validator
+    from fa_redact.detectors import (
+        IranianMobileNumberDetector as SubMobileDetector,
+    )
+    from fa_redact.detectors import (
+        IranianNationalIDDetector as SubNidDetector,
+    )
+    from fa_redact.validators import (
+        is_valid_mobile_number as sub_mobile_val,
+    )
+    from fa_redact.validators import (
+        is_valid_national_id as sub_nid_val,
+    )
 
-    assert callable(sub_validator)
-    assert SubDetector is not None
+    assert callable(sub_mobile_val)
+    assert callable(sub_nid_val)
+    assert SubMobileDetector is not None
+    assert SubNidDetector is not None
