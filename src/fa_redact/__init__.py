@@ -5,6 +5,7 @@ This package is currently in early development.
 
 from fa_redact.detectors import (
     EmailDetector,
+    IranianIBANDetector,
     IranianMobileNumberDetector,
     IranianNationalIDDetector,
 )
@@ -20,6 +21,7 @@ from fa_redact.pseudonymization import PseudonymizationSession
 from fa_redact.redaction import redact
 from fa_redact.validators import (
     is_valid_email,
+    is_valid_iranian_iban,
     is_valid_mobile_number,
     is_valid_national_id,
 )
@@ -30,11 +32,13 @@ __all__: list[str] = [
     "Detection",
     "Detector",
     "EmailDetector",
+    "IranianIBANDetector",
     "IranianMobileNumberDetector",
     "IranianNationalIDDetector",
     "PseudonymizationSession",
     "detect",
     "is_valid_email",
+    "is_valid_iranian_iban",
     "is_valid_mobile_number",
     "is_valid_national_id",
     "normalize_digits",

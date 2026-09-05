@@ -301,3 +301,48 @@ def test_detect_non_string_input_raises_type_error() -> None:
 
     with pytest.raises(TypeError, match="text must be a str"):
         detect(["invalid"])  # type: ignore[arg-type]
+
+
+def test_detect_iranian_iban_default() -> None:
+    """Verify default pipeline detects Iranian IBAN in ASCII and Persian digits."""
+    text_ascii = "شماره شبا: IR641234567890123456789012"
+    results_ascii = detect(text_ascii)
+    assert len(results_ascii) == 1
+    assert results_ascii[0].type == "IR_IBAN"
+    assert results_ascii[0].value == "IR641234567890123456789012"
+    assert results_ascii[0].normalized_value == "IR641234567890123456789012"
+
+    text_persian = "شماره شبا: IR۶۴۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۶۷۸۹۰۱۲"
+    results_persian = detect(text_persian)
+    assert len(results_persian) == 1
+    assert results_persian[0].type == "IR_IBAN"
+    assert results_persian[0].value == "IR۶۴۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۶۷۸۹۰۱۲"
+    assert results_persian[0].normalized_value == "IR641234567890123456789012"
+
+
+def test_detect_all_three_default_entities() -> None:
+    """Verify default pipeline detects National ID, Mobile, and IBAN together."""
+    text = "کد ملی: ۱۲۳۴۵۶۷۸۹۱، موبایل: ۰۹۱۲۳۴۵۶۷۸۹، شبا: IR641234567890123456789012"
+    results = detect(text)
+    assert len(results) == 3
+    assert results[0].type == "IR_NATIONAL_ID"
+    assert results[1].type == "IR_MOBILE"
+    assert results[2].type == "IR_IBAN"
+
+
+def test_detect_no_accidental_overlap_inside_iban() -> None:
+    """Verify 24-digit IBAN does not trigger National ID or Mobile detections."""
+    text = "IR641234567890123456789012"
+    results = detect(text)
+    assert len(results) == 1
+    assert results[0].type == "IR_IBAN"
+    assert results[0].value == text
+
+
+def test_email_remains_absent_from_defaults() -> None:
+    """Verify EmailDetector remains opt-in and is not run by default in detect()."""
+    text = "ایمیل: user@example.com و شبا: IR641234567890123456789012"
+    results = detect(text)
+    # Only IBAN should be detected by default
+    assert len(results) == 1
+    assert results[0].type == "IR_IBAN"

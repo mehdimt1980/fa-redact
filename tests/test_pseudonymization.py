@@ -576,3 +576,35 @@ def test_restore_ignores_reserved_literals() -> None:
 
     restored = session.restore("پاسخ: [IR_MOBILE_1] / [IR_MOBILE_2]")
     assert restored == "پاسخ: 09123456789 / [IR_MOBILE_2]"
+
+
+def test_pseudonymize_iban_cross_script_identity_and_first_observed_restoration() -> (
+    None
+):
+    """Verify cross-script IBAN identity reuse and first-observed raw restoration."""
+    session = PseudonymizationSession()
+
+    # First turn: Persian digits representation
+    turn1 = session.pseudonymize("شبا ۱: IR۶۴۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۶۷۸۹۰۱۲")
+    assert turn1 == "شبا ۱: [IR_IBAN_1]"
+    assert session.mapping == {"[IR_IBAN_1]": "IR۶۴۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۶۷۸۹۰۱۲"}
+
+    # Second turn: ASCII digits representation for the same IBAN
+    turn2 = session.pseudonymize("شبا مجدد: IR641234567890123456789012")
+    assert turn2 == "شبا مجدد: [IR_IBAN_1]"
+
+    # Restoration recovers the first-observed Persian representation
+    restored = session.restore("حساب [IR_IBAN_1] تایید گردید.")
+    assert restored == "حساب IR۶۴۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۶۷۸۹۰۱۲ تایید گردید."
+
+
+def test_pseudonymize_multiple_distinct_ibans() -> None:
+    """Verify multiple distinct IBANs receive independent sequential placeholders."""
+    session = PseudonymizationSession()
+    text = "شبا اول: IR641234567890123456789012 و شبا دوم: IR220000000000000000000001"
+    result = session.pseudonymize(text)
+    assert result == "شبا اول: [IR_IBAN_1] و شبا دوم: [IR_IBAN_2]"
+    assert session.mapping == {
+        "[IR_IBAN_1]": "IR641234567890123456789012",
+        "[IR_IBAN_2]": "IR220000000000000000000001",
+    }

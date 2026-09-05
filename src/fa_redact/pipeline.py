@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from fa_redact.detectors.iranian_iban import IranianIBANDetector
 from fa_redact.detectors.mobile import IranianMobileNumberDetector
 from fa_redact.detectors.national_id import IranianNationalIDDetector
 from fa_redact.models import Detection
@@ -13,6 +14,7 @@ from fa_redact.protocols import Detector
 _DEFAULT_DETECTORS: tuple[Detector, ...] = (
     IranianNationalIDDetector(),
     IranianMobileNumberDetector(),
+    IranianIBANDetector(),
 )
 
 
@@ -30,9 +32,10 @@ def detect(
     Args:
         text: Input string to scan for PII.
         detectors: Sequence of Detector instances to execute. If None (default),
-            uses all built-in detectors (IranianNationalIDDetector,
-            IranianMobileNumberDetector). If an explicit empty sequence (e.g. `[]`),
-            no detectors are executed and an empty list is returned.
+            uses all built-in default detectors (IranianNationalIDDetector,
+            IranianMobileNumberDetector, IranianIBANDetector). If an explicit empty
+            sequence (e.g. `[]`), no detectors are executed and an empty list is
+            returned.
 
     Returns:
         List of Detection instances sorted by `(start, end, type)`.

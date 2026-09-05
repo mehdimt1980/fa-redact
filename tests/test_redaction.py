@@ -427,3 +427,25 @@ def test_redact_referential_consistency_limitation() -> None:
     result = redact(text)
     # Domestic normalizes to "09123456789", international normalizes to "+989123456789"
     assert result == "شماره داخلی: [IR_MOBILE_1]، شماره بین‌الملل: [IR_MOBILE_2]"
+
+
+def test_redact_single_iban() -> None:
+    """Verify default redact() replaces Iranian IBAN with [IR_IBAN_1]."""
+    text = "شماره شبا: IR641234567890123456789012"
+    assert redact(text) == "شماره شبا: [IR_IBAN_1]"
+
+
+def test_redact_multiple_distinct_ibans() -> None:
+    """Verify multiple distinct IBANs receive sequential placeholder indices."""
+    text = "شبا اصلی: IR641234567890123456789012، شبا فرعی: IR220000000000000000000001"
+    expected = "شبا اصلی: [IR_IBAN_1]، شبا فرعی: [IR_IBAN_2]"
+    assert redact(text) == expected
+
+
+def test_redact_repeated_same_iban_referential_consistency() -> None:
+    """Verify repeated ASCII and Persian digit representations share [IR_IBAN_1]."""
+    text = (
+        "شبا لاتین: IR641234567890123456789012، شبا فارسی: IR۶۴۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۶۷۸۹۰۱۲"
+    )
+    expected = "شبا لاتین: [IR_IBAN_1]، شبا فارسی: [IR_IBAN_1]"
+    assert redact(text) == expected
