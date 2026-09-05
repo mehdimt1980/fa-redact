@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2026-09-05
 
 ### Added
+- Safe placeholder-based redaction function `redact(text, *, detectors=...)` replacing detected PII spans with deterministic typed placeholders (Phase 7).
+- Referential consistency in `redact()` mapping matching `(type, normalized_value)` pairs to identical placeholders within a single call (Phase 7).
+- Original placeholder collision avoidance skipping pre-existing literal placeholder substrings (Phase 7).
+- Explicit overlap and duplicate rejection raising privacy-conscious `ValueError` without leaking PII values or surrounding text (Phase 7).
+- Public export of `redact` from root `fa_redact` package namespace (Phase 7).
 - High-level detection pipeline function `detect(text, *, detectors=...)` orchestrating position-preserving text normalization and entity detector execution (Phase 6).
 - Public export of `detect` and `Detector` protocol at the root `fa_redact` package namespace (Phase 6).
 - Deterministic multi-detector result sorting by source-text character offset and entity type `(start, end, type)` (Phase 6).
