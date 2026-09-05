@@ -249,12 +249,19 @@ detections = detect(text, detectors=[EmailDetector()])
 safe_text = redact(text, detectors=[EmailDetector()])
 # Output: "مکاتبه با دکتر احمدی: [EMAIL_1] و تماس 09123456789"
 
-session = PseudonymizationSession(detectors=[EmailDetector()])
-anon = session.pseudonymize("تماس با info@clinic.ir یا dr.ahmadi@hospital.ir انجام شد.")
+session = PseudonymizationSession()
+pseudonymized = session.pseudonymize(
+    "تماس با info@clinic.ir یا dr.ahmadi@hospital.ir انجام شد.",
+    detectors=[EmailDetector()],
+)
 # Output: "تماس با [EMAIL_1] یا [EMAIL_2] انجام شد."
+
+restored = session.restore("پیام به [EMAIL_1] ارسال شد.")
+# Output: "پیام به info@clinic.ir ارسال شد."
 ```
 
 - **Opt-in Architecture**: `EmailDetector` is intentionally **opt-in** in Phase 12 and is not included in the default detector set. Numeric-looking email local parts (such as `09123456789@example.com` or `1234567891@example.com`) can produce overlapping spans with mobile number or National ID detectors; while `detect()` permits overlaps, downstream redaction and pseudonymization fail-loud on overlaps until general conflict resolution is implemented.
+- **Per-Call Detector Configuration**: `PseudonymizationSession` stores pseudonym mappings and counters, not a persistent detector configuration. The detector set is selected independently for each `pseudonymize()` call.
 - **Conservative ASCII Specification**: Validates dot-atom local parts (`1-64` chars) and DNS-style domain names (`1-253` total domain chars, `1-63` chars per label, `2-63` chars for TLD, total address `<= 254` characters).
 - **Unsupported Complex/Obsolete Forms**: Quoted local parts (`"john doe"@example.com`), IP domain literals (`user@[192.168.1.1]`), comments, folding whitespace, single-label domains (`user@localhost`), and internationalized/Unicode email addresses (EAI / RFC 6530+) are rejected.
 - **Privacy & Verification Disclaimer**: `is_valid_email` performs purely local, offline syntactic validation. It performs no DNS queries, MX record lookups, mailbox verification, or network requests, and logs no PII. Syntactic validity does not verify that a mailbox exists or is deliverable.
@@ -681,12 +688,19 @@ detections = detect(text, detectors=[EmailDetector()])
 safe_text = redact(text, detectors=[EmailDetector()])
 # خروجی: "مکاتبه با دکتر احمدی: [EMAIL_1] و تماس 09123456789"
 
-session = PseudonymizationSession(detectors=[EmailDetector()])
-anon = session.pseudonymize("تماس با info@clinic.ir یا dr.ahmadi@hospital.ir انجام شد.")
+session = PseudonymizationSession()
+pseudonymized = session.pseudonymize(
+    "تماس با info@clinic.ir یا dr.ahmadi@hospital.ir انجام شد.",
+    detectors=[EmailDetector()],
+)
 # خروجی: "تماس با [EMAIL_1] یا [EMAIL_2] انجام شد."
+
+restored = session.restore("پیام به [EMAIL_1] ارسال شد.")
+# خروجی: "پیام به info@clinic.ir ارسال شد."
 ```
 
 - **معماری اختیاری (Opt-in)**: کلاس `EmailDetector` در فاز ۱۲ به صورت اختیاری ارائه شده و در مجموعهٔ پیش‌فرض قرار ندارد. ایمیل‌هایی با بخش محلی عددی (مانند `09123456789@example.com`) ممکن است با تشخیص‌دهنده‌های موبایل یا کد ملی همپوشانی ایجاد کنند. از آنجا که `redact()` و `pseudonymize()` در صورت وجود همپوشانی خطا می‌دهند، فعال‌سازی ایمیل تا زمان پیاده‌سازی مکانیزم حل تعارض به صورت صریح و اختیاری خواهد بود.
+- **پیکربندی تشخیص‌دهنده‌ها در هر فراخوانی (Per-Call Detectors)**: کلاس `PseudonymizationSession` وضعیت نگاشت و شمارنده‌های نام‌مستعارسازی را نگه می‌دارد، اما مجموعهٔ تشخیص‌دهنده‌ها را در خود ذخیره نمی‌کند. تشخیص‌دهنده‌ها در سازندهٔ `PseudonymizationSession` تنظیم نمی‌شوند و برای هر فراخوانی `pseudonymize()` باید در صورت نیاز آرگومان `detectors=[...]` به‌صورت صریح ارسال شود.
 - **قالب استاندارد اسکی (Conservative ASCII)**: اعتبارسنجی بخش محلی dot-atom (حداکثر ۶۴ کاراکتر)، نام دامنهٔ ساختاریافته مطابق DNS (حداکثر ۲۵۳ کاراکتر دامنه، ۱ تا ۶۳ کاراکتر برای هر برچسب، حداقل ۲ کاراکتر برای TLD و حداکثر ۲۵۴ کاراکتر برای کل آدرس).
 - **قالب‌های پشتیبانی‌نشده**: ساختارهای پیچیده یا منسوخ مانند رشته‌های کوتیشن‌دار (`"john doe"@example.com`)، دامنه‌های لیترال IP (`user@[192.168.1.1]`)، کامنت‌ها، فاصله‌های شکسته‌شده (folding whitespace)، دامنه‌های تک‌بخشی (`user@localhost`) و ایمیل‌های بین‌المللی غیر اسکی (EAI / RFC 6530+) پذیرفته نمی‌شوند.
 - **سلب مسئولیت و حریم خصوصی**: تابع `is_valid_email` صرفاً ساختار نگارشی را به صورت محلی و آفلاین بررسی می‌کند. این تابع هیچ‌گونه درخواست شبکه، استعلام DNS یا بررسی وجود صندوق پستی (Mailbox) انجام نمی‌دهد و هیچ داده‌ای را لاگ نمی‌کند. صحت ساختاری به منزلهٔ وجود واقعی آدرس ایمیل نیست.
