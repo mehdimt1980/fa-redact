@@ -13,14 +13,18 @@ from fa_redact.normalization import (
     normalize_letters,
     normalize_text,
 )
+from fa_redact.pipeline import detect
+from fa_redact.protocols import Detector
 from fa_redact.validators import is_valid_mobile_number, is_valid_national_id
 
 __version__: str = "0.1.0"
 __all__: list[str] = [
     "__version__",
     "Detection",
+    "Detector",
     "IranianMobileNumberDetector",
     "IranianNationalIDDetector",
+    "detect",
     "is_valid_mobile_number",
     "is_valid_national_id",
     "normalize_digits",

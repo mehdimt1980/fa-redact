@@ -15,8 +15,10 @@ def test_package_all_export() -> None:
     expected_exports = {
         "__version__",
         "Detection",
+        "Detector",
         "IranianMobileNumberDetector",
         "IranianNationalIDDetector",
+        "detect",
         "is_valid_mobile_number",
         "is_valid_national_id",
         "normalize_digits",
@@ -26,6 +28,15 @@ def test_package_all_export() -> None:
     assert expected_exports.issubset(set(fa_redact.__all__))
     for name in expected_exports:
         assert hasattr(fa_redact, name)
+
+
+def test_pipeline_and_protocols_imports() -> None:
+    """Verify direct imports from pipeline and protocols submodules."""
+    from fa_redact.pipeline import detect as sub_detect
+    from fa_redact.protocols import Detector as SubDetector
+
+    assert callable(sub_detect)
+    assert SubDetector is not None
 
 
 def test_subpackage_imports() -> None:

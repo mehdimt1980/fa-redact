@@ -5,14 +5,39 @@
 
 `fa-redact` is an early-stage Python toolkit for privacy-preserving processing of Persian/Iranian text. The project is being designed to detect, pseudonymize, and redact personal identifiers, with healthcare and AI/LLM workflows as a primary use case.
 
-> **Status: Early Development (Phase 5 - Mobile Number Validation & Detection)**  
-> This package is currently in pre-alpha development. It provides position-preserving Persian text normalization, immutable `Detection` models, strict Iranian National ID validation/detection, and Iranian Mobile Number validation/detection based on the official 2026 CRA numbering plan.
+> **Status: Early Development (Phase 6 - Detection Pipeline & Public detect() API)**  
+> This package is currently in pre-alpha development. It provides position-preserving Persian text normalization, immutable `Detection` models, Iranian National ID and Mobile Number validation/detection, and a unified `detect()` orchestration pipeline.
 
 ---
 
 ## Current Functionality
 
-### 1. Position-Preserving Text Normalization
+### 1. High-Level Detection Pipeline
+The top-level `detect()` function automatically normalizes input text and runs entity detectors, returning `Detection` objects in deterministic source-text order:
+
+```python
+from fa_redact import detect
+
+text = "بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱ و شماره تماس ۰۹۱۲۳۴۵۶۷۸۹ مراجعه نمود."
+detections = detect(text)
+
+for d in detections:
+    print(f"{d.type}: {d.value} -> {d.normalized_value}")
+
+    # Offsets map identically to the source text:
+    assert text[d.start:d.end] == d.value
+```
+
+You can also pass a custom sequence of detectors (or custom implementations adhering to the `Detector` protocol):
+
+```python
+from fa_redact import detect, IranianNationalIDDetector
+
+# Run only specific detectors:
+detections = detect(text, detectors=[IranianNationalIDDetector()])
+```
+
+### 2. Position-Preserving Text Normalization
 `fa-redact` provides pure, deterministic normalization functions that map individual Unicode code points 1-to-1 (`len(normalized) == len(original)`), guaranteeing that character offsets remain identical to the original input text:
 
 ```python
@@ -31,7 +56,7 @@ normalize_text("كد ملي: ۰۰۱٢٣٤٥٦٧٨")
 # Returns: "کد ملی: 0012345678"
 ```
 
-### 2. Detection Data Model
+### 3. Detection Data Model
 The immutable `Detection` dataclass represents identified spans while preserving both the original text and its normalized form:
 
 ```python
@@ -56,7 +81,7 @@ print(detection.value)  # "۰۰۱۲۳۴۵۶۷۹" (raw from original)
 print(detection.normalized_value)  # "0012345679" (normalized representation)
 ```
 
-### 3. Iranian National ID Validation
+### 4. Iranian National ID Validation
 Validate the modulo-11 checksum of Iranian National IDs (Code Melli / `کد ملی`) across ASCII, Persian, and Arabic-Indic digits:
 
 ```python
@@ -71,7 +96,7 @@ is_valid_national_id("1111111111")  # False (repeated digits rejected)
 
 > **Note on Verification Scope**: Checksum validation verifies mathematical structure only without querying official registries. These example values are algorithmic test vectors not sourced from personal or patient records. Checksum validity does not establish whether an identifier has actually been issued or belongs to a real individual.
 
-### 4. Iranian National ID Detection
+### 5. Iranian National ID Detection
 Find checksum-valid Iranian National IDs in Persian and mixed-language text:
 
 ```python
@@ -93,7 +118,7 @@ for d in detections:
     assert normalized[d.start:d.end] == d.normalized_value
 ```
 
-### 5. Iranian Mobile Number Validation
+### 6. Iranian Mobile Number Validation
 Validate Iranian mobile numbers against official 2026 Communications Regulatory Authority (CRA) mobile NDC prefixes:
 
 ```python
@@ -108,9 +133,9 @@ is_valid_mobile_number("09412345678")     # False (fixed non-geographical)
 is_valid_mobile_number("09061234567")     # False (unlisted prefix)
 ```
 
-> **Note on Numbering Plan**: Prefix classification is based on the bundled 2026 CRA National Numbering Plan snapshot. Numbering plans may change over time. Prefix validation confirms structural allocation only and does not verify subscriber ownership, active SIM status, or carrier identity.
+> **Note on Numbering Plan**: Prefix classification is derived from the Communications Regulatory Authority (CRA) of Iran National Numbering Plan (communication dated 22 April 2026, published via ITU Operational Bulletin No. 1340). Numbering plans may evolve over time. Prefix validation confirms structural allocation only and does not verify subscriber ownership, active SIM status, or carrier identity.
 
-### 6. Iranian Mobile Number Detection
+### 7. Iranian Mobile Number Detection
 Find prefix-valid Iranian mobile numbers across domestic and international representations:
 
 ```python
