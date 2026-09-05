@@ -22,10 +22,10 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -44,10 +44,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
           cache: pip
@@ -82,14 +82,19 @@ jobs:
         run: |
           mkdir -p /tmp/wheel_smoke
           cd /tmp/wheel_smoke
+
           python -m venv smoke_venv
-          ./smoke_venv/bin/pip install --upgrade pip
-          ./smoke_venv/bin/pip install $GITHUB_WORKSPACE/dist/*.whl
-          ./smoke_venv/bin/python -c '
+          ./smoke_venv/bin/python -m pip install --upgrade pip
+          ./smoke_venv/bin/python -m pip install "$GITHUB_WORKSPACE"/dist/*.whl
+
+          ./smoke_venv/bin/python - <<'PY'
           import fa_redact
+
           print(f"Imported fa_redact from: {fa_redact.__file__}")
-          assert "/tmp/wheel_smoke/smoke_venv" in fa_redact.__file__, "Not imported from installed wheel environment!"
+
+          assert "site-packages" in fa_redact.__file__
           assert fa_redact.__version__ == "0.1.0"
+
           assert callable(fa_redact.detect)
           assert callable(fa_redact.redact)
           assert callable(fa_redact.is_valid_national_id)
@@ -98,5 +103,6 @@ jobs:
 
           result = fa_redact.redact("کد ملی: ۱۲۳۴۵۶۷۸۹۱")
           assert "[IR_NATIONAL_ID_1]" in result
-          print("Wheel smoke test passed successfully!")
-          '
+
+          print("Wheel smoke test passed.")
+          PY

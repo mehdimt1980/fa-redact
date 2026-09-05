@@ -152,11 +152,11 @@ Validate and detect Iranian mobile numbers against official Communications Regul
 from fa_redact import IranianMobileNumberDetector, is_valid_mobile_number
 
 # Domestic, +98 international, and 0098 international formats
-is_valid_mobile_number("09123456789")     # True (domestic)
-is_valid_mobile_number("۰۹۱۲۳۴۵۶۷۸۹")     # True (Persian digits)
-is_valid_mobile_number("+989123456789")   # True (+98 format)
+is_valid_mobile_number("09123456789")  # True (domestic)
+is_valid_mobile_number("۰۹۱۲۳۴۵۶۷۸۹")  # True (Persian digits)
+is_valid_mobile_number("+989123456789")  # True (+98 format)
 is_valid_mobile_number("00989351234567")  # True (0098 format)
-is_valid_mobile_number("09412345678")     # False (fixed non-geographical)
+is_valid_mobile_number("09412345678")  # False (fixed non-geographical)
 ```
 
 > **Numbering Plan Notice**: Prefix classification is based on the official Communications Regulatory Authority (CRA) National Numbering Plan (published via ITU Operational Bulletin No. 1340). Prefix validation confirms structural allocation only and does not verify subscriber ownership, active SIM status, or carrier identity.
