@@ -202,6 +202,8 @@ python -m build
 python -m twine check dist/*
 ```
 
+For release procedures and PyPI publishing setup, see [RELEASING.md](RELEASING.md).
+
 ---
 
 ## License
