@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2026-09-05
 
+### Fixed
+- Prevent cross-call placeholder collisions in `PseudonymizationSession` by reserving placeholder-shaped literal tokens observed across current and historical inputs, preventing subsequent aliases from colliding with prior literal text while maintaining atomic state updates (Phase 8.1).
+
 ### Added
+- `PseudonymizationSession` stateful class with `pseudonymize()`, `restore()`, and `mapping` snapshot property (Phase 8).
+- Stable cross-call entity mapping and per-type counter persistence across multiple messages in a session (Phase 8).
+- First-observed raw representation retention as semantic restoration target (Phase 8).
+- Single-pass non-cascading regex restoration preventing recursive placeholder evaluation (Phase 8).
+- Atomic session state updates ensuring partial failures leave session state completely untouched (Phase 8).
+- Session isolation guaranteeing separate `PseudonymizationSession` instances maintain distinct states (Phase 8).
+- Public export of `PseudonymizationSession` from root `fa_redact` package namespace (Phase 8).
 - Safe placeholder-based redaction function `redact(text, *, detectors=...)` replacing detected PII spans with deterministic typed placeholders (Phase 7).
 - Referential consistency in `redact()` mapping matching `(type, normalized_value)` pairs to identical placeholders within a single call (Phase 7).
 - Original placeholder collision avoidance skipping pre-existing literal placeholder substrings (Phase 7).

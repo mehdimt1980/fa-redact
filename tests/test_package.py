@@ -18,6 +18,7 @@ def test_package_all_export() -> None:
         "Detector",
         "IranianMobileNumberDetector",
         "IranianNationalIDDetector",
+        "PseudonymizationSession",
         "detect",
         "is_valid_mobile_number",
         "is_valid_national_id",
@@ -32,13 +33,17 @@ def test_package_all_export() -> None:
 
 
 def test_pipeline_and_protocols_imports() -> None:
-    """Verify direct imports from pipeline, protocols, and redaction submodules."""
+    """Verify direct imports from core submodules."""
     from fa_redact.pipeline import detect as sub_detect
     from fa_redact.protocols import Detector as SubDetector
+    from fa_redact.pseudonymization import (
+        PseudonymizationSession as SubSession,
+    )
     from fa_redact.redaction import redact as sub_redact
 
     assert callable(sub_detect)
     assert callable(sub_redact)
+    assert SubSession is not None
     assert SubDetector is not None
 
 
