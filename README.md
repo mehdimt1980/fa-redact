@@ -5,8 +5,8 @@
 
 `fa-redact` is an early-stage Python toolkit for privacy-preserving processing of Persian/Iranian text. The project is being designed to detect, pseudonymize, and redact personal identifiers, with healthcare and AI/LLM workflows as a primary use case.
 
-> **Status: Early Development (Phase 3 - Data Models & Protocol Foundation)**  
-> This package is currently in pre-alpha development. It does not yet include active PII detection, redaction, or pseudonymization capabilities. The current release provides position-preserving Persian text normalization and the core `Detection` data model and `Detector` protocol.
+> **Status: Early Development (Phase 4 - National ID Validation & Detection)**  
+> This package is currently in pre-alpha development. It provides position-preserving Persian text normalization, immutable `Detection` models, and strict Iranian National ID checksum validation and detection.
 
 ---
 
@@ -31,17 +31,16 @@ normalize_text("كد ملي: ۰۰۱٢٣٤٥٦٧٨")
 # Returns: "کد ملی: 0012345678"
 ```
 
-### 2. Detection Data Model & Protocols
+### 2. Detection Data Model
 The immutable `Detection` dataclass represents identified spans while preserving both the original text and its normalized form:
 
 ```python
 from fa_redact import Detection, normalize_text
 
-text = "کد ملی بیمار ۰۰۱۲۳۴۵۶۷۸ است."
+text = "کد ملی بیمار ۰۰۱۲۳۴۵۶۷۹ است."
 normalized = normalize_text(text)
 
-# Example illustrative Detection instance
-raw_id = "۰۰۱۲۳۴۵۶۷۸"
+raw_id = "۰۰۱۲۳۴۵۶۷۹"
 start = text.index(raw_id)
 end = start + len(raw_id)
 
@@ -53,11 +52,43 @@ detection = Detection.from_texts(
     end=end,
 )
 
-print(detection.value)  # "۰۰۱۲۳۴۵۶۷۸" (raw from original)
-print(detection.normalized_value)  # "0012345678" (normalized representation)
+print(detection.value)  # "۰۰۱۲۳۴۵۶۷۹" (raw from original)
+print(detection.normalized_value)  # "0012345679" (normalized representation)
 ```
 
-*(Note: Built-in PII and healthcare detector implementations will be introduced in subsequent phases.)*
+### 3. Iranian National ID Validation
+Validate the modulo-11 checksum of Iranian National IDs (Code Melli / `کد ملی`) across ASCII, Persian, and Arabic-Indic digits:
+
+```python
+from fa_redact import is_valid_national_id
+
+# Synthetic checksum-valid examples
+is_valid_national_id("1234567891")  # True
+is_valid_national_id("۱۲۳۴۵۶۷۸۹۱")  # True (Persian digits)
+is_valid_national_id("1234567890")  # False (invalid check digit)
+is_valid_national_id("1111111111")  # False (repeated digits rejected)
+```
+
+> **Note on Verification**: Checksum validity confirms mathematical structure only. It does not prove that an identifier has actually been issued by authorities or belongs to a real person.
+
+### 4. Iranian National ID Detection
+Find checksum-valid Iranian National IDs in Persian and mixed-language text:
+
+```python
+from fa_redact import IranianNationalIDDetector, normalize_text
+
+text = "بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱ جهت بستری مراجعه کرد."
+normalized = normalize_text(text)
+
+detector = IranianNationalIDDetector()
+detections = detector.detect(text, normalized)
+
+for d in detections:
+    print(f"Found {d.type} at [{d.start}:{d.end}]: {d.value} -> {d.normalized_value}")
+# Found IR_NATIONAL_ID at [17:27]: ۱۲۳۴۵۶۷۸۹۱ -> 1234567891
+```
+
+*(Note: Redaction, pseudonymization, and additional entity detectors such as phone numbers, medical record numbers, and names are under active development.)*
 
 ---
 
