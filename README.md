@@ -40,6 +40,7 @@ print(restored_response)
 - **Local Sensitive Mapping**: The session maintains a mapping snapshot (`session.mapping`) that holds the original PII. Keep `session.mapping` strictly within your local trusted environment; never send it to external AI services.
 - **First-Observed Representative Restoration**: For each unique identity `(type, normalized_value)`, the session records the *first observed raw string* as its restoration value. Restoration is semantic to this representative value (formatting-exact roundtrip is not guaranteed across disparate surface encodings).
 - **Non-Cascading Single-Pass Restoration**: `restore()` performs an escaped single-pass substitution. Restored values that happen to contain placeholder-like text are not recursively evaluated.
+- **Cross-Call Collision Safety**: Generated placeholders avoid colliding with literal placeholder-shaped tokens observed in current or previous inputs within the session.
 - **Unknown Placeholders**: Any unmapped or unrecognized placeholder (e.g. `[IR_MOBILE_999]`) is left unchanged without error.
 
 > [!WARNING]

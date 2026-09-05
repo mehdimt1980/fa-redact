@@ -8,6 +8,8 @@ from collections.abc import Sequence
 from fa_redact.pipeline import detect
 from fa_redact.protocols import Detector
 
+_PLACEHOLDER_PATTERN = re.compile(r"\[[^\[\]\r\n]+_[1-9][0-9]*\]")
+
 
 class PseudonymizationSession:
     """Stateful pseudonymization session for Iranian PII.
@@ -21,6 +23,7 @@ class PseudonymizationSession:
         self._identity_to_placeholder: dict[tuple[str, str], str] = {}
         self._placeholder_to_value: dict[str, str] = {}
         self._counters_by_type: dict[str, int] = {}
+        self._reserved_placeholders: set[str] = set()
 
     @property
     def mapping(self) -> dict[str, str]:
@@ -61,22 +64,30 @@ class PseudonymizationSession:
         if not isinstance(text, str):
             raise TypeError(f"text must be a str, got {type(text).__name__}")
 
+        # Extract placeholder-shaped literal tokens from input
+        literal_tokens = set(_PLACEHOLDER_PATTERN.findall(text))
+
         # Check for conflicts with existing mapped placeholders in this session
-        for existing_ph in self._placeholder_to_value:
-            if existing_ph in text:
-                raise ValueError(
-                    "Input contains a placeholder already assigned by this "
-                    f"session: {existing_ph}"
-                )
+        assigned_keys = set(self._placeholder_to_value.keys())
+        conflicts = sorted(literal_tokens & assigned_keys)
+        if conflicts:
+            raise ValueError(
+                "Input contains a placeholder already assigned by this "
+                f"session: {conflicts[0]}"
+            )
 
         # Work on isolated copies to guarantee atomic updates
+        temp_reserved_placeholders = self._reserved_placeholders.copy()
+        temp_reserved_placeholders.update(literal_tokens)
         temp_identity_to_placeholder = self._identity_to_placeholder.copy()
         temp_placeholder_to_value = self._placeholder_to_value.copy()
         temp_counters_by_type = self._counters_by_type.copy()
-        assigned_placeholders = set(self._placeholder_to_value.keys())
+        assigned_placeholders = assigned_keys.copy()
 
         detections = detect(text, detectors=detectors)
         if not detections:
+            # Commit reserved literals even when no PII is detected
+            self._reserved_placeholders = temp_reserved_placeholders
             return text
 
         # Validate that detections do not overlap, nest, or duplicate
@@ -100,7 +111,11 @@ class PseudonymizationSession:
                 while True:
                     counter += 1
                     candidate = f"[{d.type}_{counter}]"
-                    if candidate not in text and candidate not in assigned_placeholders:
+                    if (
+                        candidate not in text
+                        and candidate not in assigned_placeholders
+                        and candidate not in temp_reserved_placeholders
+                    ):
                         placeholder = candidate
                         break
                 temp_counters_by_type[d.type] = counter
@@ -118,6 +133,7 @@ class PseudonymizationSession:
         result = "".join(pieces)
 
         # Commit state atomically
+        self._reserved_placeholders = temp_reserved_placeholders
         self._identity_to_placeholder = temp_identity_to_placeholder
         self._placeholder_to_value = temp_placeholder_to_value
         self._counters_by_type = temp_counters_by_type

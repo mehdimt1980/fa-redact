@@ -431,3 +431,148 @@ def test_healthcare_llm_flow_synthetic() -> None:
     assert "لطفاً دستور دارویی به شماره ۰۹۱۲۳۴۵۶۷۸۹ پیامک شود." in restored_output
     assert "[IR_NATIONAL_ID_1]" not in restored_output
     assert "[IR_MOBILE_1]" not in restored_output
+
+
+def test_cross_call_reserved_placeholder_collision_and_restore() -> None:
+    """Verify literal placeholder from earlier call is not reused in later call."""
+    session = PseudonymizationSession()
+    old_output = session.pseudonymize("یادداشت: [IR_MOBILE_2]، تماس: 09123456789")
+    assert old_output == "یادداشت: [IR_MOBILE_2]، تماس: [IR_MOBILE_1]"
+
+    new_output = session.pseudonymize("تماس جدید: 09351234567")
+    assert new_output == "تماس جدید: [IR_MOBILE_3]"
+
+    restored = session.restore(old_output)
+    assert restored == "یادداشت: [IR_MOBILE_2]، تماس: 09123456789"
+
+
+def test_no_pii_call_reserves_literal_placeholder() -> None:
+    """Verify call without PII reserves literal placeholder for subsequent calls."""
+    session = PseudonymizationSession()
+    res1 = session.pseudonymize("این متن شامل [IR_MOBILE_1] است.")
+    assert res1 == "این متن شامل [IR_MOBILE_1] است."
+    assert session.mapping == {}
+
+    res2 = session.pseudonymize("تماس: 09123456789")
+    assert res2 == "تماس: [IR_MOBILE_2]"
+    assert session.mapping == {"[IR_MOBILE_2]": "09123456789"}
+
+
+def test_empty_detectors_call_reserves_literal_placeholder() -> None:
+    """Verify detectors=[] reserves literal placeholders."""
+    session = PseudonymizationSession()
+    res1 = session.pseudonymize("متن [IR_MOBILE_1]", detectors=[])
+    assert res1 == "متن [IR_MOBILE_1]"
+    assert session.mapping == {}
+
+    res2 = session.pseudonymize("تماس: 09123456789")
+    assert res2 == "تماس: [IR_MOBILE_2]"
+
+
+def test_multiple_historical_reserved_placeholders() -> None:
+    """Verify multiple historical reserved placeholders are skipped."""
+    session = PseudonymizationSession()
+    session.pseudonymize("متن با [IR_MOBILE_1] و [IR_MOBILE_2] و [IR_MOBILE_4]")
+    # New mobile 1 -> [IR_MOBILE_3]
+    res1 = session.pseudonymize("شماره ۱: 09123456789")
+    assert res1 == "شماره ۱: [IR_MOBILE_3]"
+    # New mobile 2 -> [IR_MOBILE_5]
+    res2 = session.pseudonymize("شماره ۲: 09351234567")
+    assert res2 == "شماره ۲: [IR_MOBILE_5]"
+
+
+def test_reserved_placeholders_are_session_local() -> None:
+    """Verify reserved placeholders are isolated per session."""
+    session_a = PseudonymizationSession()
+    session_b = PseudonymizationSession()
+
+    session_a.pseudonymize("متن با [IR_MOBILE_1]")
+    res_a = session_a.pseudonymize("تماس: 09123456789")
+    assert res_a == "تماس: [IR_MOBILE_2]"
+
+    # session_b did not see [IR_MOBILE_1], so it assigns [IR_MOBILE_1]
+    res_b = session_b.pseudonymize("تماس: 09123456789")
+    assert res_b == "تماس: [IR_MOBILE_1]"
+
+
+def test_reserved_placeholders_not_in_public_mapping() -> None:
+    """Verify session.mapping contains only assigned placeholders."""
+    session = PseudonymizationSession()
+    session.pseudonymize("یادداشت: [IR_MOBILE_2]، تماس: 09123456789")
+    assert session.mapping == {"[IR_MOBILE_1]": "09123456789"}
+    assert "[IR_MOBILE_2]" not in session.mapping
+
+
+def test_failed_detector_call_does_not_reserve_literal() -> None:
+    """Verify failing call does not commit newly observed reserved literals."""
+
+    class FailingDetector:
+        def detect(
+            self, original_text: str, normalized_text: str
+        ) -> Sequence[Detection]:
+            raise RuntimeError("boom")
+
+    session = PseudonymizationSession()
+    with pytest.raises(RuntimeError):
+        session.pseudonymize("متن با [IR_MOBILE_1]", detectors=[FailingDetector()])
+
+    # Later call can still use [IR_MOBILE_1]
+    res = session.pseudonymize("تماس: 09123456789")
+    assert res == "تماس: [IR_MOBILE_1]"
+
+
+def test_overlap_failure_does_not_reserve_literal() -> None:
+    """Verify overlap failure does not commit reserved literals."""
+
+    class OverlapDetector:
+        def detect(
+            self, original_text: str, normalized_text: str
+        ) -> Sequence[Detection]:
+            return [
+                Detection.from_texts(
+                    type="SPAN_A",
+                    original_text=original_text,
+                    normalized_text=normalized_text,
+                    start=0,
+                    end=4,
+                ),
+                Detection.from_texts(
+                    type="SPAN_B",
+                    original_text=original_text,
+                    normalized_text=normalized_text,
+                    start=2,
+                    end=6,
+                ),
+            ]
+
+    session = PseudonymizationSession()
+    with pytest.raises(ValueError, match=r"Overlapping detections at spans"):
+        session.pseudonymize("0123456789 [IR_MOBILE_1]", detectors=[OverlapDetector()])
+
+    res = session.pseudonymize("تماس: 09123456789")
+    assert res == "تماس: [IR_MOBILE_1]"
+
+
+def test_existing_assigned_placeholder_conflict_leaves_state_unchanged() -> None:
+    """Verify assigned placeholder conflict error does not corrupt session state."""
+    session = PseudonymizationSession()
+    session.pseudonymize("تماس: 09123456789")  # maps [IR_MOBILE_1]
+    assert session.mapping == {"[IR_MOBILE_1]": "09123456789"}
+
+    with pytest.raises(
+        ValueError, match=r"Input contains a placeholder already assigned"
+    ):
+        session.pseudonymize("پیام با [IR_MOBILE_1] و [IR_MOBILE_5]")
+
+    # State unchanged: [IR_MOBILE_5] was not reserved because the call failed
+    res = session.pseudonymize("تماس ۲: 09351234567")
+    assert res == "تماس ۲: [IR_MOBILE_2]"
+
+
+def test_restore_ignores_reserved_literals() -> None:
+    """Verify restore replaces assigned placeholders but leaves reserved literals."""
+    session = PseudonymizationSession()
+    session.pseudonymize("متن [IR_MOBILE_2] و شماره: 09123456789")
+
+    restored = session.restore("پاسخ: [IR_MOBILE_1] / [IR_MOBILE_2]")
+    assert restored == "پاسخ: 09123456789 / [IR_MOBILE_2]"
