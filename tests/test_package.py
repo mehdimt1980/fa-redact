@@ -1,4 +1,4 @@
-"""Minimal package tests for fa-redact foundation (Phase 1)."""
+"""Minimal package tests for fa-redact foundation."""
 
 import fa_redact
 
@@ -16,10 +16,12 @@ def test_package_all_export() -> None:
         "__version__",
         "Detection",
         "Detector",
+        "EmailDetector",
         "IranianMobileNumberDetector",
         "IranianNationalIDDetector",
         "PseudonymizationSession",
         "detect",
+        "is_valid_email",
         "is_valid_mobile_number",
         "is_valid_national_id",
         "normalize_digits",
@@ -50,10 +52,16 @@ def test_pipeline_and_protocols_imports() -> None:
 def test_subpackage_imports() -> None:
     """Verify direct imports from validators and detectors subpackages."""
     from fa_redact.detectors import (
+        EmailDetector as SubEmailDetector,
+    )
+    from fa_redact.detectors import (
         IranianMobileNumberDetector as SubMobileDetector,
     )
     from fa_redact.detectors import (
         IranianNationalIDDetector as SubNidDetector,
+    )
+    from fa_redact.validators import (
+        is_valid_email as sub_email_val,
     )
     from fa_redact.validators import (
         is_valid_mobile_number as sub_mobile_val,
@@ -62,7 +70,9 @@ def test_subpackage_imports() -> None:
         is_valid_national_id as sub_nid_val,
     )
 
+    assert callable(sub_email_val)
     assert callable(sub_mobile_val)
     assert callable(sub_nid_val)
+    assert SubEmailDetector is not None
     assert SubMobileDetector is not None
     assert SubNidDetector is not None
