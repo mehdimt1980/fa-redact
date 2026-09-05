@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Iranian IBAN (Sheba) validator (`is_valid_iranian_iban`) supporting compact electronic format (`IR` + 24 digits = 26 characters) with streaming MOD-97 checksum validation (Phase 13).
+- `IranianIBANDetector` scanning position-preserving normalized text for Iranian IBAN candidates and producing `IR_IBAN` detections with Persian and Arabic-Indic digit support (Phase 13).
+- Inclusion of `IranianIBANDetector` in the default detector set across `detect()`, `redact()`, and `PseudonymizationSession` (Phase 13).
+- Typed `[IR_IBAN_<INDEX>]` placeholder generation during redaction and pseudonymization with cross-script entity identity normalization (Phase 13).
+- Public root exports `IranianIBANDetector` and `is_valid_iranian_iban` from the `fa_redact` package namespace (Phase 13).
 - Conservative ASCII Internet Email address validator (`is_valid_email`) supporting dot-atom local parts and DNS-style domain names up to 254 characters (Phase 12).
 - `EmailDetector` scanning original source text for ASCII email candidates and producing `EMAIL` detections (Phase 12).
 - Opt-in email detection support in `detect()`, `redact()`, and `PseudonymizationSession.pseudonymize()` via explicit `detectors=[EmailDetector()]` usage (Phase 12).
@@ -15,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public root exports `EmailDetector` and `is_valid_email` from the `fa_redact` package namespace (Phase 12).
 
 ### Changed
-- Note: `EmailDetector` is strictly opt-in in Phase 12 and is not yet included in the default detector set to prevent unhandled overlaps with numeric-local-part email addresses prior to general conflict resolution (Phase 12).
+- `_DEFAULT_DETECTORS` pipeline set updated to include `IranianIBANDetector` alongside `IranianNationalIDDetector` and `IranianMobileNumberDetector` (Phase 13).
+- Note: `EmailDetector` remains strictly opt-in in Phase 12/13 and is not included in the default detector set to prevent unhandled overlaps with numeric-local-part email addresses prior to general conflict resolution (Phase 12).
 
 ## [0.1.0] - 2026-09-05
 

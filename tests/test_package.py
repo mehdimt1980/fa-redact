@@ -17,11 +17,13 @@ def test_package_all_export() -> None:
         "Detection",
         "Detector",
         "EmailDetector",
+        "IranianIBANDetector",
         "IranianMobileNumberDetector",
         "IranianNationalIDDetector",
         "PseudonymizationSession",
         "detect",
         "is_valid_email",
+        "is_valid_iranian_iban",
         "is_valid_mobile_number",
         "is_valid_national_id",
         "normalize_digits",
@@ -55,6 +57,9 @@ def test_subpackage_imports() -> None:
         EmailDetector as SubEmailDetector,
     )
     from fa_redact.detectors import (
+        IranianIBANDetector as SubIbanDetector,
+    )
+    from fa_redact.detectors import (
         IranianMobileNumberDetector as SubMobileDetector,
     )
     from fa_redact.detectors import (
@@ -64,6 +69,9 @@ def test_subpackage_imports() -> None:
         is_valid_email as sub_email_val,
     )
     from fa_redact.validators import (
+        is_valid_iranian_iban as sub_iban_val,
+    )
+    from fa_redact.validators import (
         is_valid_mobile_number as sub_mobile_val,
     )
     from fa_redact.validators import (
@@ -71,8 +79,10 @@ def test_subpackage_imports() -> None:
     )
 
     assert callable(sub_email_val)
+    assert callable(sub_iban_val)
     assert callable(sub_mobile_val)
     assert callable(sub_nid_val)
     assert SubEmailDetector is not None
+    assert SubIbanDetector is not None
     assert SubMobileDetector is not None
     assert SubNidDetector is not None

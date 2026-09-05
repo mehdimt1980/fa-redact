@@ -33,9 +33,10 @@
   - [2. Detection Model & Pipeline](#2-detection-model--pipeline)
   - [3. Iranian National ID Validation & Detection](#3-iranian-national-id-validation--detection)
   - [4. Iranian Mobile Number Validation & Detection](#4-iranian-mobile-number-validation--detection)
-  - [5. Conservative ASCII Email Validation & Detection (Opt-in / Unreleased)](#5-conservative-ascii-email-validation--detection-opt-in--unreleased)
-  - [6. Redaction Semantics](#6-redaction-semantics)
-  - [7. Stateful Pseudonymization Sessions](#7-stateful-pseudonymization-sessions)
+  - [5. Iranian IBAN / Sheba Validation & Detection (Unreleased)](#5-iranian-iban--sheba-validation--detection-unreleased)
+  - [6. Conservative ASCII Email Validation & Detection (Opt-in / Unreleased)](#6-conservative-ascii-email-validation--detection-opt-in--unreleased)
+  - [7. Redaction Semantics](#7-redaction-semantics)
+  - [8. Stateful Pseudonymization Sessions](#8-stateful-pseudonymization-sessions)
 - [Custom Detectors](#custom-detectors)
 - [Healthcare & AI/LLM Usage Pattern](#healthcare--aillm-usage-pattern)
 - [Current Coverage & Limitations](#current-coverage--limitations)
@@ -217,7 +218,53 @@ is_valid_mobile_number("09412345678")  # False (fixed non-geographical)
 - **Strict Formatting**: Only compact forms (`09xxxxxxxxx`, `+989xxxxxxxxx`, `00989xxxxxxxxx`) are accepted. The validator does not strip spaces, remove hyphens, or auto-format.
 - **Verification Notice**: Prefix validation confirms structural numbering-plan compliance only; it does not verify active SIM status, subscriber identity, carrier ownership, or number portability status.
 
-#### 5. Conservative ASCII Email Validation & Detection (Opt-in / Unreleased)
+#### 5. Iranian IBAN / Sheba Validation & Detection (Unreleased)
+
+> [!NOTE]
+> **Unreleased / Development Version (Phase 13)**: Iranian IBAN / Sheba validation and detection are introduced in the unreleased development cycle and are not part of published PyPI release `0.1.0`.
+
+`fa-redact` provides an offline, deterministic Iranian International Bank Account Number (IBAN / شماره شبا) validator (`is_valid_iranian_iban`) and detector (`IranianIBANDetector`):
+
+```python
+from fa_redact import (
+    IranianIBANDetector,
+    PseudonymizationSession,
+    detect,
+    is_valid_iranian_iban,
+    redact,
+)
+
+# 1. Standalone Validation (Exact 26 chars: uppercase 'IR' + 24 digits, MOD-97)
+is_valid_iranian_iban("IR641234567890123456789012")  # True
+is_valid_iranian_iban("IR۶۴۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۶۷۸۹۰۱۲")  # True (Persian digits)
+is_valid_iranian_iban("ir641234567890123456789012")  # False (lowercase 'ir' rejected)
+is_valid_iranian_iban("IR 64 1234 5678 9012 3456 7890 12")  # False (spaces rejected)
+is_valid_iranian_iban("IR001234567890123456789012")  # False (invalid checksum)
+
+# 2. Default Detection (Included in default detector set)
+text = "شماره شبا واریز: IR641234567890123456789012 و تماس ۰۹۱۲۳۴۵۶۷۸۹"
+detections = detect(text)
+# Returns: [Detection(type='IR_IBAN', value='IR641234567890123456789012', ...), Detection(type='IR_MOBILE', ...)]
+
+# 3. Default Redaction & Pseudonymization
+safe_text = redact(text)
+# Output: "شماره شبا واریز: [IR_IBAN_1] و تماس [IR_MOBILE_1]"
+
+session = PseudonymizationSession()
+pseudonymized = session.pseudonymize("واریز به شبا IR641234567890123456789012")
+# Output: "واریز به شبا [IR_IBAN_1]"
+
+restored = session.restore("تایید واریز به [IR_IBAN_1]")
+# Output: "تایید واریز به IR641234567890123456789012"
+```
+
+- **MOD-97-10 Checksum Algorithm**: Validates the standard ISO 7064 MOD 97-10 checksum by rearranging to `BBAN (24 digits) + 1827 (IR) + CheckDigits (2 digits)` and verifying `remainder == 1`.
+- **Default Detector Inclusion**: Unlike `EmailDetector`, `IranianIBANDetector` is included in `_DEFAULT_DETECTORS` because its structured boundary (`IR` followed by 24 digits) has no syntactic collision with National IDs or mobile numbers.
+- **Position-Preserving & Digit Normalization**: Supports Persian (`۰-۹`) and Arabic-Indic (`٠-٩`) digits within the 24-digit BBAN, preserving the raw surface script in `Detection.value` and mapping to canonical ASCII in `Detection.normalized_value`.
+- **Electronic Compact Format Only**: Only compact format without spaces, hyphens, or formatting separators is accepted. Lowercase prefix (`ir`) is strictly rejected.
+- **Privacy & Financial Disclaimer**: `is_valid_iranian_iban` performs purely local, offline mathematical checksum validation. It does not perform bank API lookups, bank branch routing, or account status verification, and does not verify whether an account exists or is active.
+
+#### 6. Conservative ASCII Email Validation & Detection (Opt-in / Unreleased)
 
 > [!NOTE]
 > **Unreleased / Development Version (Phase 12)**: Email validation and detection are introduced in the unreleased development cycle and are not part of published PyPI release `0.1.0`.
@@ -266,15 +313,15 @@ restored = session.restore("پیام به [EMAIL_1] ارسال شد.")
 - **Unsupported Complex/Obsolete Forms**: Quoted local parts (`"john doe"@example.com`), IP domain literals (`user@[192.168.1.1]`), comments, folding whitespace, single-label domains (`user@localhost`), and internationalized/Unicode email addresses (EAI / RFC 6530+) are rejected.
 - **Privacy & Verification Disclaimer**: `is_valid_email` performs purely local, offline syntactic validation. It performs no DNS queries, MX record lookups, mailbox verification, or network requests, and logs no PII. Syntactic validity does not verify that a mailbox exists or is deliverable.
 
-#### 6. Redaction Semantics
+#### 7. Redaction Semantics
 
 - **Exact Span Reconstruction**: `redact()` rebuilds the output from the original Detection spans, preserving untouched source slices exactly and replacing only detected spans. It does not perform global value-based `str.replace()`.
-- **Typed Placeholders**: Placeholders follow the format `[<TYPE>_<INDEX>]` (e.g., `[IR_NATIONAL_ID_1]`, `[IR_MOBILE_1]`, `[EMAIL_1]`).
+- **Typed Placeholders**: Placeholders follow the format `[<TYPE>_<INDEX>]` (e.g., `[IR_NATIONAL_ID_1]`, `[IR_MOBILE_1]`, `[IR_IBAN_1]`, `[EMAIL_1]`).
 - **Deterministic Numbering**: Identifiers receive sequential numbering based on their order of first appearance.
 - **Collision Avoidance**: If an input already contains a literal string matching the placeholder syntax, newly generated placeholders increment past the colliding index.
 - **Fail-Loud on Overlap**: If overlapping or duplicate spans are passed to `redact()`, it raises a `ValueError`.
 
-#### 7. Stateful Pseudonymization Sessions
+#### 8. Stateful Pseudonymization Sessions
 
 `PseudonymizationSession` manages persistent mappings across multi-turn AI interactions:
 
@@ -368,13 +415,13 @@ Local Hospital / Trusted Boundary
 | :--- | :---: | :---: | :--- |
 | **Iranian National ID (`کد ملی`)** | ✅ Supported | ✅ Default | Strict 10-digit modulo-11 checksum validation |
 | **Iranian Mobile Number** | ✅ Supported | ✅ Default | Prefix-aware validation against 2026 CRA numbering plan |
+| **Iranian IBAN / Sheba (`شبا`)** | ❌ Not Supported | 🧪 Supported (Default) | Strict 26-char MOD-97 checksum validation (`IR` + 24 digits) |
 | **Email Addresses** | ❌ Not Supported | 🧪 Supported (Opt-in) | Conservative ASCII email validation and detection (`detectors=[EmailDetector()]`) |
 | **Personal Names** | ❌ Not Supported | ❌ Not Supported | Planned for future versions (requires NER/contextual models) |
 | **Postal Addresses** | ❌ Not Supported | ❌ Not Supported | Unstructured spatial entities |
 | **Medical Record Numbers (MRN)** | ❌ Not Supported | ❌ Not Supported | Institution-specific (use custom detectors) |
 | **Health Insurance Numbers** | ❌ Not Supported | ❌ Not Supported | Institution-specific |
 | **Bank Card Numbers (PAN)** | ❌ Not Supported | ❌ Not Supported | Planned for future release |
-| **IBAN / Sheba (`شبا`)** | ❌ Not Supported | ❌ Not Supported | Planned for future release |
 | **Dates of Birth** | ❌ Not Supported | ❌ Not Supported | Planned for future release |
 
 ---
@@ -462,9 +509,10 @@ This project is licensed under the [MIT License](LICENSE).
   - [۲. مدل داده و پایپ‌لاین تشخیص](#۲-مدل-داده-و-پایپ‌لاین-تشخیص)
   - [۳. اعتبارسنجی و تشخیص کد ملی ایران](#۳-اعتبارسنجی-و-تشخیص-کد-ملی-ایران)
   - [۴. اعتبارسنجی و تشخیص شماره موبایل ایران](#۴-اعتبارسنجی-و-تشخیص-شماره-موبایل-ایران)
-  - [۵. اعتبارسنجی و تشخیص آدرس ایمیل اسکی (اختیاری / در حال توسعه)](#۵-اعتبارسنجی-و-تشخیص-آدرس-ایمیل-اسکی-اختیاری--در-حال-توسعه)
-  - [۶. بازسازی دقیق بر اساس span در پنهان‌سازی](#۶-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
-  - [۷. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۷-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
+  - [۵. اعتبارسنجی و تشخیص شماره شبا / IBAN ایران (در حال توسعه)](#۵-اعتبارسنجی-و-تشخیص-شماره-شبا--iban-ایران-در-حال-توسعه)
+  - [۶. اعتبارسنجی و تشخیص آدرس ایمیل اسکی (اختیاری / در حال توسعه)](#۶-اعتبارسنجی-و-تشخیص-آدرس-ایمیل-اسکی-اختیاری--در-حال-توسعه)
+  - [۷. بازسازی دقیق بر اساس span در پنهان‌سازی](#۷-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
+  - [۸. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۸-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
 - [جدول پوشش و محدودیت‌ها در نسخه v0.1.0](#جدول-پوشش-و-محدودیت‌ها-در-نسخه-v010)
@@ -656,7 +704,53 @@ is_valid_mobile_number("09412345678")  # False (شماره ثابت غیرجغر
 - **قالب فشرده**: فقط قالب‌های فشرده (`09xxxxxxxxx`، `+989xxxxxxxxx`، `00989xxxxxxxxx`) پذیرفته می‌شوند و حذف فاصله، پرانتز یا خط تیره انجام نمی‌شود.
 - **سلب مسئولیت مالکیت**: اعتبارسنجی ساختاری است و وضعیت فعال بودن سیم‌کارت، هویت مشترک، اپراتور فعلی یا ترابردپذیری را بررسی نمی‌کند.
 
-#### ۵. اعتبارسنجی و تشخیص آدرس ایمیل اسکی (اختیاری / در حال توسعه)
+#### ۵. اعتبارسنجی و تشخیص شماره شبا / IBAN ایران (در حال توسعه)
+
+> [!NOTE]
+> **نسخهٔ در حال توسعه (Phase 13)**: اعتبارسنجی و تشخیص شماره شبا در چرخهٔ توسعهٔ منتشرنشده اضافه شده و در نسخهٔ فعلی منتشرشده در PyPI (`0.1.0`) وجود ندارد.
+
+کتابخانهٔ `fa-redact` تابع اعتبارسنجی مستقل `is_valid_iranian_iban` و تشخیص‌دهندهٔ `IranianIBANDetector` را برای شماره شبا / شناسه حساب بانکی ایران (IBAN) به صورت کاملاً آفلاین، قطعی و بدون وابستگی خارجی ارائه می‌دهد:
+
+```python
+from fa_redact import (
+    IranianIBANDetector,
+    PseudonymizationSession,
+    detect,
+    is_valid_iranian_iban,
+    redact,
+)
+
+# ۱. اعتبارسنجی مستقل (دقیقاً ۲۶ کاراکتر: IR بزرگ + ۲۴ رقم با الگوریتم MOD-97):
+is_valid_iranian_iban("IR641234567890123456789012")  # True (معتبر)
+is_valid_iranian_iban("IR۶۴۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۶۷۸۹۰۱۲")  # True (پشتیبانی از ارقام فارسی)
+is_valid_iranian_iban("ir641234567890123456789012")  # False (رد حروف کوچک ir)
+is_valid_iranian_iban("IR 64 1234 5678 9012 3456 7890 12")  # False (رد فاصله)
+is_valid_iranian_iban("IR001234567890123456789012")  # False (چکسام نامعتبر)
+
+# ۲. تشخیص پیش‌فرض (قرارگیری در مجموعهٔ تشخیص‌دهنده‌های پیش‌فرض):
+text = "شماره شبا واریز: IR641234567890123456789012 و تماس ۰۹۱۲۳۴۵۶۷۸۹"
+detections = detect(text)
+# خروجی: [Detection(type='IR_IBAN', ...), Detection(type='IR_MOBILE', ...)]
+
+# ۳. پنهان‌سازی و نام‌مستعارسازی پیش‌فرض:
+safe_text = redact(text)
+# خروجی: "شماره شبا واریز: [IR_IBAN_1] و تماس [IR_MOBILE_1]"
+
+session = PseudonymizationSession()
+pseudonymized = session.pseudonymize("واریز به شبا IR641234567890123456789012")
+# خروجی: "واریز به شبا [IR_IBAN_1]"
+
+restored = session.restore("تایید واریز به [IR_IBAN_1]")
+# خروجی: "تایید واریز به IR641234567890123456789012"
+```
+
+- **الگوریتم چکسام MOD-97-10**: اعتبارسنجی استاندارد بین‌المللی ISO 7064 MOD 97-10 از طریق بازآرایی رشته به فرمت `BBAN (۲۴ رقم) + 1827 (IR) + ارقام کنترلی (۲ رقم)` و بررسی شرط `باقیمانده == 1`.
+- **حضور در پایپ‌لاین پیش‌فرض**: برخلاف `EmailDetector`، تشخیص‌دهندهٔ `IranianIBANDetector` در مجموعهٔ پیش‌فرض (`_DEFAULT_DETECTORS`) قرار دارد؛ زیرا ساختار مشخص آن (`IR` به همراه ۲۴ رقم) هیچ‌گونه تداخل یا ابهام سینتکسی با کدهای ملی یا شماره‌های موبایل ایجاد نمی‌کند.
+- **حفظ موقعیت کاراکتری و پشتیبانی از ارقام متنوع**: امکان استفاده از ارقام فارسی (`۰-۹`) و عربی (`٠-٩`) در ۲۴ رقم شبا وجود دارد؛ نگاشت در `Detection.value` بر اساس متن ورودی حفظ شده و مقدار یکپارچه در `Detection.normalized_value` قرار می‌گیرد.
+- **قالب فشردهٔ الکترونیکی**: صرفاً فرمت الکترونیکی فشرده بدون فاصله، خط تیره یا جداکننده پذیرفته می‌شود. پیشوند `ir` با حروف کوچک نیز پذیرفته نمی‌شود.
+- **سلب مسئولیت بانکی و حریم خصوصی**: تابع `is_valid_iranian_iban` صرفاً صحت ساختار ریاضی چکسام را به صورت محلی و آفلاین بررسی می‌کند. این تابع هیچ‌گونه استعلام بانکی، بررسی صحت شماره حساب، اتصال به شبکهٔ شتاب یا پایا انجام نمی‌دهد و فعال بودن حساب بانکی را تایید نمی‌کند.
+
+#### ۶. اعتبارسنجی و تشخیص آدرس ایمیل اسکی (اختیاری / در حال توسعه)
 
 > [!NOTE]
 > **نسخهٔ در حال توسعه (Phase 12)**: اعتبارسنجی و تشخیص آدرس ایمیل در چرخهٔ توسعهٔ منتشرنشده اضافه شده و در نسخهٔ فعلی منتشرشده در PyPI (`0.1.0`) وجود ندارد.
@@ -705,11 +799,11 @@ restored = session.restore("پیام به [EMAIL_1] ارسال شد.")
 - **قالب‌های پشتیبانی‌نشده**: ساختارهای پیچیده یا منسوخ مانند رشته‌های کوتیشن‌دار (`"john doe"@example.com`)، دامنه‌های لیترال IP (`user@[192.168.1.1]`)، کامنت‌ها، فاصله‌های شکسته‌شده (folding whitespace)، دامنه‌های تک‌بخشی (`user@localhost`) و ایمیل‌های بین‌المللی غیر اسکی (EAI / RFC 6530+) پذیرفته نمی‌شوند.
 - **سلب مسئولیت و حریم خصوصی**: تابع `is_valid_email` صرفاً ساختار نگارشی را به صورت محلی و آفلاین بررسی می‌کند. این تابع هیچ‌گونه درخواست شبکه، استعلام DNS یا بررسی وجود صندوق پستی (Mailbox) انجام نمی‌دهد و هیچ داده‌ای را لاگ نمی‌کند. صحت ساختاری به منزلهٔ وجود واقعی آدرس ایمیل نیست.
 
-#### ۶. بازسازی دقیق بر اساس span در پنهان‌سازی
+#### ۷. بازسازی دقیق بر اساس span در پنهان‌سازی
 
 خروجی بر اساس بازه‌های دقیق `Detection` از متن اصلی ساخته می‌شود؛ فقط همان spanهای تشخیص‌داده‌شده جایگزین می‌شوند و بخش‌های دیگر متن بدون تغییر کپی می‌شوند. پیاده‌سازی از `str.replace()` سراسری بر اساس مقدار استفاده نمی‌کند.
 
-#### ۷. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی
+#### ۸. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی
 
 کلاس `PseudonymizationSession` رفتارهای امنیتی زیر را تضمین می‌کند:
 
@@ -806,13 +900,13 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 | :--- | :---: | :---: | :--- |
 | **کد ملی ایران** | ✅ پشتیبانی می‌شود | ✅ پیش‌فرض | اعتبارسنجی دقیق ۱۰ رقمی با قاعدهٔ چکسام Modulo-11 |
 | **شماره تلفن همراه ایران** | ✅ پشتیبانی می‌شود | ✅ پیش‌فرض | اعتبارسنجی پیش‌شماره‌های مصوب رگولاتوری ایران (CRA 2026) |
+| **شماره شبا (IBAN)** | ❌ پشتیبانی نمی‌شود | 🧪 پشتیبانی می‌شود (پیش‌فرض) | اعتبارسنجی دقیق ۲۶ کاراکتری با قاعدهٔ چکسام MOD-97 (`IR` + ۲۴ رقم) |
 | **آدرس ایمیل** | ❌ پشتیبانی نمی‌شود | 🧪 پشتیبانی می‌شود (اختیاری) | اعتبارسنجی و تشخیص ایمیل‌های اسکی محافظه‌کارانه (`detectors=[EmailDetector()]`) |
 | **نام اشخاص** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | نیازمند مدل‌های پردازش زبان طبیعی و بازشناسی موجودیت‌های نام‌دار (NER) |
 | **آدرس پستی و موقعیت مکانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | موجودیت‌های غیرساختاریافته |
 | **شماره پرونده پزشکی (MRN)** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی (قابل تعریف با Custom Detector) |
 | **شماره بیمه درمانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی |
 | **شماره کارت بانکی (PAN)** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | برنامه‌ریزی‌شده برای نسخه‌های آتی |
-| **شماره شبا (IBAN)** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | برنامه‌ریزی‌شده برای نسخه‌های آتی |
 | **تاریخ تولد و زمان‌ها** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | برنامه‌ریزی‌شده برای نسخه‌های آتی |
 
 ---
