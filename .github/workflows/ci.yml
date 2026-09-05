@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Upgrade pip and install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run pytest
+        run: |
+          python -m pytest
+
+  quality:
+    name: Quality & Packaging (Python 3.13)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Upgrade pip and install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Check code formatting (Ruff)
+        run: |
+          ruff format --check .
+
+      - name: Lint codebase (Ruff)
+        run: |
+          ruff check .
+
+      - name: Static type checking (mypy)
+        run: |
+          mypy src
+          mypy tests
+
+      - name: Build distribution packages
+        run: |
+          python -m build
+
+      - name: Validate distribution metadata (twine)
+        run: |
+          python -m twine check dist/*
+
+      - name: Wheel smoke test in isolated environment
+        run: |
+          mkdir -p /tmp/wheel_smoke
+          cd /tmp/wheel_smoke
+          python -m venv smoke_venv
+          ./smoke_venv/bin/pip install --upgrade pip
+          ./smoke_venv/bin/pip install $GITHUB_WORKSPACE/dist/*.whl
+          ./smoke_venv/bin/python -c '
+          import fa_redact
+          print(f"Imported fa_redact from: {fa_redact.__file__}")
+          assert "/tmp/wheel_smoke/smoke_venv" in fa_redact.__file__, "Not imported from installed wheel environment!"
+          assert fa_redact.__version__ == "0.1.0"
+          assert callable(fa_redact.detect)
+          assert callable(fa_redact.redact)
+          assert callable(fa_redact.is_valid_national_id)
+          assert callable(fa_redact.is_valid_mobile_number)
+          assert fa_redact.PseudonymizationSession is not None
+
+          result = fa_redact.redact("کد ملی: ۱۲۳۴۵۶۷۸۹۱")
+          assert "[IR_NATIONAL_ID_1]" in result
+          print("Wheel smoke test passed successfully!")
+          '
