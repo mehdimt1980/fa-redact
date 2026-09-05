@@ -5,14 +5,47 @@
 
 `fa-redact` is an early-stage Python toolkit for privacy-preserving processing of Persian/Iranian text. The project is being designed to detect, pseudonymize, and redact personal identifiers, with healthcare and AI/LLM workflows as a primary use case.
 
-> **Status: Early Development (Phase 6 - Detection Pipeline & Public detect() API)**  
-> This package is currently in pre-alpha development. It provides position-preserving Persian text normalization, immutable `Detection` models, Iranian National ID and Mobile Number validation/detection, and a unified `detect()` orchestration pipeline.
+> **Status: Early Development (Phase 7 - Safe Placeholder-Based Redaction)**  
+> This package is currently in pre-alpha development. It provides position-preserving Persian text normalization, immutable `Detection` models, Iranian National ID and Mobile Number validation/detection, high-level `detect()` orchestration, and safe placeholder-based `redact()` functionality.
 
 ---
 
 ## Current Functionality
 
-### 1. High-Level Detection Pipeline
+### 1. Safe Placeholder-Based Redaction
+The top-level `redact()` function replaces detected sensitive spans with typed, referentially-consistent placeholders suitable for AI/LLM ingestion:
+
+```python
+from fa_redact import redact
+
+text = """
+کد ملی: ۱۲۳۴۵۶۷۸۹۱
+تماس: ۰۹۱۲۳۴۵۶۷۸۹
+تماس مجدد: 09123456789
+"""
+
+safe_text = redact(text)
+print(safe_text)
+# Output:
+# کد ملی: [IR_NATIONAL_ID_1]
+# تماس: [IR_MOBILE_1]
+# تماس مجدد: [IR_MOBILE_1]
+```
+
+#### Referential Consistency
+Repeated occurrences of the same identifier (matching entity type and normalized value) within a single `redact()` call are automatically assigned the same placeholder:
+
+```text
+same entity type + same normalized value  ──►  same placeholder (e.g. [IR_MOBILE_1])
+```
+
+- **Per-Call Deterministic Numbering**: Placeholder indices (`[TYPE_1]`, `[TYPE_2]`) are deterministic within a single function invocation based on source occurrence order. They are not globally persistent identifiers.
+- **Collision Avoidance**: If input text already contains literal placeholders (e.g. `[IR_MOBILE_1]`), the generator detects and skips conflicting indices.
+
+> [!WARNING]
+> **Scope Limitation**: `fa-redact` currently redacts only the PII types supported by its enabled detectors. In Phase 7, the default detector set covers Iranian National IDs and Iranian mobile numbers only. It does not yet provide complete clinical-text de-identification. Unrecognized categories (names, medical record numbers, addresses, emails, dates) are not yet automatically detected.
+
+### 2. High-Level Detection Pipeline
 The top-level `detect()` function automatically normalizes input text and runs entity detectors, returning `Detection` objects in deterministic source-text order:
 
 ```python
@@ -37,7 +70,7 @@ from fa_redact import detect, IranianNationalIDDetector
 detections = detect(text, detectors=[IranianNationalIDDetector()])
 ```
 
-### 2. Position-Preserving Text Normalization
+### 3. Position-Preserving Text Normalization
 `fa-redact` provides pure, deterministic normalization functions that map individual Unicode code points 1-to-1 (`len(normalized) == len(original)`), guaranteeing that character offsets remain identical to the original input text:
 
 ```python
@@ -56,7 +89,7 @@ normalize_text("كد ملي: ۰۰۱٢٣٤٥٦٧٨")
 # Returns: "کد ملی: 0012345678"
 ```
 
-### 3. Detection Data Model
+### 4. Detection Data Model
 The immutable `Detection` dataclass represents identified spans while preserving both the original text and its normalized form:
 
 ```python
@@ -81,7 +114,7 @@ print(detection.value)  # "۰۰۱۲۳۴۵۶۷۹" (raw from original)
 print(detection.normalized_value)  # "0012345679" (normalized representation)
 ```
 
-### 4. Iranian National ID Validation
+### 5. Iranian National ID Validation
 Validate the modulo-11 checksum of Iranian National IDs (Code Melli / `کد ملی`) across ASCII, Persian, and Arabic-Indic digits:
 
 ```python
@@ -96,7 +129,7 @@ is_valid_national_id("1111111111")  # False (repeated digits rejected)
 
 > **Note on Verification Scope**: Checksum validation verifies mathematical structure only without querying official registries. These example values are algorithmic test vectors not sourced from personal or patient records. Checksum validity does not establish whether an identifier has actually been issued or belongs to a real individual.
 
-### 5. Iranian National ID Detection
+### 6. Iranian National ID Detection
 Find checksum-valid Iranian National IDs in Persian and mixed-language text:
 
 ```python
@@ -118,7 +151,7 @@ for d in detections:
     assert normalized[d.start:d.end] == d.normalized_value
 ```
 
-### 6. Iranian Mobile Number Validation
+### 7. Iranian Mobile Number Validation
 Validate Iranian mobile numbers against official 2026 Communications Regulatory Authority (CRA) mobile NDC prefixes:
 
 ```python
@@ -135,7 +168,7 @@ is_valid_mobile_number("09061234567")     # False (unlisted prefix)
 
 > **Note on Numbering Plan**: Prefix classification is derived from the Communications Regulatory Authority (CRA) of Iran National Numbering Plan (communication dated 22 April 2026, published via ITU Operational Bulletin No. 1340). Numbering plans may evolve over time. Prefix validation confirms structural allocation only and does not verify subscriber ownership, active SIM status, or carrier identity.
 
-### 7. Iranian Mobile Number Detection
+### 8. Iranian Mobile Number Detection
 Find prefix-valid Iranian mobile numbers across domestic and international representations:
 
 ```python

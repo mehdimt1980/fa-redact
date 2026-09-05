@@ -24,6 +24,7 @@ def test_package_all_export() -> None:
         "normalize_digits",
         "normalize_letters",
         "normalize_text",
+        "redact",
     }
     assert expected_exports.issubset(set(fa_redact.__all__))
     for name in expected_exports:
@@ -31,11 +32,13 @@ def test_package_all_export() -> None:
 
 
 def test_pipeline_and_protocols_imports() -> None:
-    """Verify direct imports from pipeline and protocols submodules."""
+    """Verify direct imports from pipeline, protocols, and redaction submodules."""
     from fa_redact.pipeline import detect as sub_detect
     from fa_redact.protocols import Detector as SubDetector
+    from fa_redact.redaction import redact as sub_redact
 
     assert callable(sub_detect)
+    assert callable(sub_redact)
     assert SubDetector is not None
 
 
