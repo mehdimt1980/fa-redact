@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from fa_redact.pipeline import detect
 from fa_redact.protocols import Detector
+from fa_redact.pseudonymization import PseudonymizationSession
 
 
 def redact(
@@ -33,48 +33,5 @@ def redact(
         TypeError: If `text` is not a string.
         ValueError: If any detected spans overlap, are nested, or are exact duplicates.
     """
-    if not isinstance(text, str):
-        raise TypeError(f"text must be a str, got {type(text).__name__}")
-
-    detections = detect(text, detectors=detectors)
-    if not detections:
-        return text
-
-    # Validate that detections do not overlap, nest, or duplicate
-    for i in range(1, len(detections)):
-        prev = detections[i - 1]
-        curr = detections[i]
-        if curr.start < prev.end:
-            raise ValueError(
-                f"Overlapping detections at spans [{prev.start}:{prev.end}] "
-                f"({prev.type}) and [{curr.start}:{curr.end}] ({curr.type})"
-            )
-
-    placeholder_by_identity: dict[tuple[str, str], str] = {}
-    assigned_placeholders: set[str] = set()
-    counters_by_type: dict[str, int] = {}
-
-    pieces: list[str] = []
-    cursor = 0
-
-    for d in detections:
-        identity = (d.type, d.normalized_value)
-        placeholder = placeholder_by_identity.get(identity)
-        if placeholder is None:
-            counter = counters_by_type.get(d.type, 0)
-            while True:
-                counter += 1
-                candidate = f"[{d.type}_{counter}]"
-                if candidate not in text and candidate not in assigned_placeholders:
-                    placeholder = candidate
-                    break
-            counters_by_type[d.type] = counter
-            placeholder_by_identity[identity] = placeholder
-            assigned_placeholders.add(placeholder)
-
-        pieces.append(text[cursor : d.start])
-        pieces.append(placeholder)
-        cursor = d.end
-
-    pieces.append(text[cursor:])
-    return "".join(pieces)
+    session = PseudonymizationSession()
+    return session.pseudonymize(text, detectors=detectors)

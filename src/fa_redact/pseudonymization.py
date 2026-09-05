@@ -1,0 +1,150 @@
+"""Stateful pseudonymization sessions with stable mappings and safe restoration."""
+
+from __future__ import annotations
+
+import re
+from collections.abc import Sequence
+
+from fa_redact.pipeline import detect
+from fa_redact.protocols import Detector
+
+
+class PseudonymizationSession:
+    """Stateful pseudonymization session for Iranian PII.
+
+    Maintains a local-only mapping between detected PII identities and stable,
+    typed placeholders across multiple messages or conversation turns. Allows
+    safe restoration of placeholders in downstream AI/LLM responses.
+    """
+
+    def __init__(self) -> None:
+        self._identity_to_placeholder: dict[tuple[str, str], str] = {}
+        self._placeholder_to_value: dict[str, str] = {}
+        self._counters_by_type: dict[str, int] = {}
+
+    @property
+    def mapping(self) -> dict[str, str]:
+        """Return a shallow copy of the placeholder-to-value mapping.
+
+        The returned mapping contains original sensitive PII values and must
+        be treated as sensitive data.
+        """
+        return self._placeholder_to_value.copy()
+
+    def pseudonymize(
+        self,
+        text: str,
+        *,
+        detectors: Sequence[Detector] | None = None,
+    ) -> str:
+        """Pseudonymize detected PII in text using stable, typed placeholders.
+
+        Identities are tracked across calls on this session. If an identifier
+        with the same entity type and normalized value was previously observed,
+        its existing placeholder is reused. New identifiers receive subsequent
+        per-type indices and record their first-observed raw representation for
+        future restoration.
+
+        Args:
+            text: Input string to pseudonymize.
+            detectors: Optional sequence of Detector instances to execute. If None,
+                uses default built-in detectors. If `[]`, no detectors run.
+
+        Returns:
+            The pseudonymized string with detected spans replaced by placeholders.
+
+        Raises:
+            TypeError: If `text` is not a string.
+            ValueError: If `text` contains a placeholder already assigned by this
+                session, or if detected spans overlap.
+        """
+        if not isinstance(text, str):
+            raise TypeError(f"text must be a str, got {type(text).__name__}")
+
+        # Check for conflicts with existing mapped placeholders in this session
+        for existing_ph in self._placeholder_to_value:
+            if existing_ph in text:
+                raise ValueError(
+                    "Input contains a placeholder already assigned by this "
+                    f"session: {existing_ph}"
+                )
+
+        # Work on isolated copies to guarantee atomic updates
+        temp_identity_to_placeholder = self._identity_to_placeholder.copy()
+        temp_placeholder_to_value = self._placeholder_to_value.copy()
+        temp_counters_by_type = self._counters_by_type.copy()
+        assigned_placeholders = set(self._placeholder_to_value.keys())
+
+        detections = detect(text, detectors=detectors)
+        if not detections:
+            return text
+
+        # Validate that detections do not overlap, nest, or duplicate
+        for i in range(1, len(detections)):
+            prev = detections[i - 1]
+            curr = detections[i]
+            if curr.start < prev.end:
+                raise ValueError(
+                    f"Overlapping detections at spans [{prev.start}:{prev.end}] "
+                    f"({prev.type}) and [{curr.start}:{curr.end}] ({curr.type})"
+                )
+
+        pieces: list[str] = []
+        cursor = 0
+
+        for d in detections:
+            identity = (d.type, d.normalized_value)
+            placeholder: str | None = temp_identity_to_placeholder.get(identity)
+            if placeholder is None:
+                counter = temp_counters_by_type.get(d.type, 0)
+                while True:
+                    counter += 1
+                    candidate = f"[{d.type}_{counter}]"
+                    if candidate not in text and candidate not in assigned_placeholders:
+                        placeholder = candidate
+                        break
+                temp_counters_by_type[d.type] = counter
+                temp_identity_to_placeholder[identity] = placeholder
+                # Record first observed raw representation for restoration:
+                temp_placeholder_to_value[placeholder] = d.value
+                assigned_placeholders.add(placeholder)
+
+            assert placeholder is not None
+            pieces.append(text[cursor : d.start])
+            pieces.append(placeholder)
+            cursor = d.end
+
+        pieces.append(text[cursor:])
+        result = "".join(pieces)
+
+        # Commit state atomically
+        self._identity_to_placeholder = temp_identity_to_placeholder
+        self._placeholder_to_value = temp_placeholder_to_value
+        self._counters_by_type = temp_counters_by_type
+        return result
+
+    def restore(self, text: str) -> str:
+        """Restore mapped placeholders in text to their original raw values.
+
+        Performs a single-pass regex replacement of exact known placeholders to
+        prevent cascading restoration. Unrecognized placeholders remain untouched.
+
+        Args:
+            text: Input string (e.g. LLM response) containing placeholders.
+
+        Returns:
+            The restored string with known placeholders replaced.
+
+        Raises:
+            TypeError: If `text` is not a string.
+        """
+        if not isinstance(text, str):
+            raise TypeError(f"text must be a str, got {type(text).__name__}")
+
+        if not self._placeholder_to_value or not text:
+            return text
+
+        # Sort descending by length for defensive matching
+        patterns = sorted(self._placeholder_to_value.keys(), key=len, reverse=True)
+        pattern = re.compile("|".join(re.escape(p) for p in patterns))
+        return pattern.sub(lambda m: self._placeholder_to_value[m.group(0)], text)

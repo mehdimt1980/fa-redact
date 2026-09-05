@@ -5,15 +5,50 @@
 
 `fa-redact` is an early-stage Python toolkit for privacy-preserving processing of Persian/Iranian text. The project is being designed to detect, pseudonymize, and redact personal identifiers, with healthcare and AI/LLM workflows as a primary use case.
 
-> **Status: Early Development (Phase 7 - Safe Placeholder-Based Redaction)**  
-> This package is currently in pre-alpha development. It provides position-preserving Persian text normalization, immutable `Detection` models, Iranian National ID and Mobile Number validation/detection, high-level `detect()` orchestration, and safe placeholder-based `redact()` functionality.
+> **Status: Early Development (Phase 8 - Stateful Pseudonymization Sessions & Safe Restoration)**  
+> This package is currently in pre-alpha development. It provides position-preserving Persian text normalization, immutable `Detection` models, Iranian National ID and Mobile Number validation/detection, high-level `detect()` orchestration, stateless `redact()`, and stateful `PseudonymizationSession` for AI/LLM workflows.
 
 ---
 
 ## Current Functionality
 
-### 1. Safe Placeholder-Based Redaction
-The top-level `redact()` function replaces detected sensitive spans with typed, referentially-consistent placeholders suitable for AI/LLM ingestion:
+### 1. Stateful Pseudonymization & Safe LLM Restoration
+The `PseudonymizationSession` class provides stateful pseudonymization with stable entity mappings across multiple messages or conversation turns, enabling safe LLM processing and single-pass local restoration:
+
+```python
+from fa_redact import PseudonymizationSession
+
+session = PseudonymizationSession()
+
+# 1. Pseudonymize sensitive text before sending to LLM:
+prompt = "کد ملی بیمار ۱۲۳۴۵۶۷۸۹۱ و شماره تماس ۰۹۱۲۳۴۵۶۷۸۹ است."
+safe_prompt = session.pseudonymize(prompt)
+print(safe_prompt)
+# Output: "کد ملی بیمار [IR_NATIONAL_ID_1] و شماره تماس [IR_MOBILE_1] است."
+
+# 2. Send ONLY safe_prompt to the external LLM/AI.
+# (Simulated LLM response containing placeholders in modified prose):
+llm_response = "برای پیگیری بیمار با [IR_MOBILE_1] تماس گرفته شد."
+
+# 3. Restore placeholders locally within trusted boundary:
+restored_response = session.restore(llm_response)
+print(restored_response)
+# Output: "برای پیگیری بیمار با ۰۹۱۲۳۴۵۶۷۸۹ تماس گرفته شد."
+```
+
+#### Key Pseudonymization Properties
+- **Local Sensitive Mapping**: The session maintains a mapping snapshot (`session.mapping`) that holds the original PII. Keep `session.mapping` strictly within your local trusted environment; never send it to external AI services.
+- **First-Observed Representative Restoration**: For each unique identity `(type, normalized_value)`, the session records the *first observed raw string* as its restoration value. Restoration is semantic to this representative value (formatting-exact roundtrip is not guaranteed across disparate surface encodings).
+- **Non-Cascading Single-Pass Restoration**: `restore()` performs an escaped single-pass substitution. Restored values that happen to contain placeholder-like text are not recursively evaluated.
+- **Unknown Placeholders**: Any unmapped or unrecognized placeholder (e.g. `[IR_MOBILE_999]`) is left unchanged without error.
+
+> [!WARNING]
+> **Sensitive Data Notice**: `session.mapping` contains original PII. Treat it as sensitive data. Do not log or export it outside trusted boundaries.
+>
+> **Scope Limitation**: `fa-redact` currently detects and redacts only the PII types supported by its enabled detectors (Iranian National IDs and Iranian Mobile Numbers in Phase 8). It does not yet provide complete clinical-text de-identification.
+
+### 2. Stateless Placeholder-Based Redaction
+The top-level `redact()` function performs standalone, single-call redaction with fresh placeholder numbering:
 
 ```python
 from fa_redact import redact
@@ -32,20 +67,7 @@ print(safe_text)
 # تماس مجدد: [IR_MOBILE_1]
 ```
 
-#### Referential Consistency
-Repeated occurrences of the same identifier (matching entity type and normalized value) within a single `redact()` call are automatically assigned the same placeholder:
-
-```text
-same entity type + same normalized value  ──►  same placeholder (e.g. [IR_MOBILE_1])
-```
-
-- **Per-Call Deterministic Numbering**: Placeholder indices (`[TYPE_1]`, `[TYPE_2]`) are deterministic within a single function invocation based on source occurrence order. They are not globally persistent identifiers.
-- **Collision Avoidance**: If input text already contains literal placeholders (e.g. `[IR_MOBILE_1]`), the generator detects and skips conflicting indices.
-
-> [!WARNING]
-> **Scope Limitation**: `fa-redact` currently redacts only the PII types supported by its enabled detectors. In Phase 7, the default detector set covers Iranian National IDs and Iranian mobile numbers only. It does not yet provide complete clinical-text de-identification. Unrecognized categories (names, medical record numbers, addresses, emails, dates) are not yet automatically detected.
-
-### 2. High-Level Detection Pipeline
+### 3. High-Level Detection Pipeline
 The top-level `detect()` function automatically normalizes input text and runs entity detectors, returning `Detection` objects in deterministic source-text order:
 
 ```python
@@ -70,7 +92,7 @@ from fa_redact import detect, IranianNationalIDDetector
 detections = detect(text, detectors=[IranianNationalIDDetector()])
 ```
 
-### 3. Position-Preserving Text Normalization
+### 4. Position-Preserving Text Normalization
 `fa-redact` provides pure, deterministic normalization functions that map individual Unicode code points 1-to-1 (`len(normalized) == len(original)`), guaranteeing that character offsets remain identical to the original input text:
 
 ```python
@@ -89,7 +111,7 @@ normalize_text("كد ملي: ۰۰۱٢٣٤٥٦٧٨")
 # Returns: "کد ملی: 0012345678"
 ```
 
-### 4. Detection Data Model
+### 5. Detection Data Model
 The immutable `Detection` dataclass represents identified spans while preserving both the original text and its normalized form:
 
 ```python
@@ -114,7 +136,7 @@ print(detection.value)  # "۰۰۱۲۳۴۵۶۷۹" (raw from original)
 print(detection.normalized_value)  # "0012345679" (normalized representation)
 ```
 
-### 5. Iranian National ID Validation
+### 6. Iranian National ID Validation
 Validate the modulo-11 checksum of Iranian National IDs (Code Melli / `کد ملی`) across ASCII, Persian, and Arabic-Indic digits:
 
 ```python
@@ -129,7 +151,7 @@ is_valid_national_id("1111111111")  # False (repeated digits rejected)
 
 > **Note on Verification Scope**: Checksum validation verifies mathematical structure only without querying official registries. These example values are algorithmic test vectors not sourced from personal or patient records. Checksum validity does not establish whether an identifier has actually been issued or belongs to a real individual.
 
-### 6. Iranian National ID Detection
+### 7. Iranian National ID Detection
 Find checksum-valid Iranian National IDs in Persian and mixed-language text:
 
 ```python
@@ -151,7 +173,7 @@ for d in detections:
     assert normalized[d.start:d.end] == d.normalized_value
 ```
 
-### 7. Iranian Mobile Number Validation
+### 8. Iranian Mobile Number Validation
 Validate Iranian mobile numbers against official 2026 Communications Regulatory Authority (CRA) mobile NDC prefixes:
 
 ```python
@@ -168,7 +190,7 @@ is_valid_mobile_number("09061234567")     # False (unlisted prefix)
 
 > **Note on Numbering Plan**: Prefix classification is derived from the Communications Regulatory Authority (CRA) of Iran National Numbering Plan (communication dated 22 April 2026, published via ITU Operational Bulletin No. 1340). Numbering plans may evolve over time. Prefix validation confirms structural allocation only and does not verify subscriber ownership, active SIM status, or carrier identity.
 
-### 8. Iranian Mobile Number Detection
+### 9. Iranian Mobile Number Detection
 Find prefix-valid Iranian mobile numbers across domestic and international representations:
 
 ```python
