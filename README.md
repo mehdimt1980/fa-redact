@@ -41,15 +41,19 @@ text = "کد ملی بیمار ۰۰۱۲۳۴۵۶۷۸ است."
 normalized = normalize_text(text)
 
 # Example illustrative Detection instance
+raw_id = "۰۰۱۲۳۴۵۶۷۸"
+start = text.index(raw_id)
+end = start + len(raw_id)
+
 detection = Detection.from_texts(
     type="IR_NATIONAL_ID",
     original_text=text,
     normalized_text=normalized,
-    start=14,
-    end=24,
+    start=start,
+    end=end,
 )
 
-print(detection.value)             # "۰۰۱۲۳۴۵۶۷۸" (raw from original)
+print(detection.value)  # "۰۰۱۲۳۴۵۶۷۸" (raw from original)
 print(detection.normalized_value)  # "0012345678" (normalized representation)
 ```
 

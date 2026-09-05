@@ -1,6 +1,6 @@
 """fa-redact: Privacy-first Persian/Iranian PII redaction and pseudonymization toolkit.
 
-This package is currently in early development (Phase 1).
+This package is currently in early development.
 """
 
 from fa_redact.models import Detection
