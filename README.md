@@ -62,14 +62,14 @@ Validate the modulo-11 checksum of Iranian National IDs (Code Melli / `کد مل
 ```python
 from fa_redact import is_valid_national_id
 
-# Synthetic checksum-valid examples
+# Checksum-valid test vectors not sourced from personal data
 is_valid_national_id("1234567891")  # True
 is_valid_national_id("۱۲۳۴۵۶۷۸۹۱")  # True (Persian digits)
 is_valid_national_id("1234567890")  # False (invalid check digit)
 is_valid_national_id("1111111111")  # False (repeated digits rejected)
 ```
 
-> **Note on Verification**: Checksum validity confirms mathematical structure only. It does not prove that an identifier has actually been issued by authorities or belongs to a real person.
+> **Note on Verification Scope**: Checksum validation verifies mathematical structure only without querying official registries. These example values are algorithmic test vectors not sourced from personal or patient records. Checksum validity does not establish whether an identifier has actually been issued or belongs to a real individual.
 
 ### 4. Iranian National ID Detection
 Find checksum-valid Iranian National IDs in Persian and mixed-language text:
@@ -84,8 +84,13 @@ detector = IranianNationalIDDetector()
 detections = detector.detect(text, normalized)
 
 for d in detections:
-    print(f"Found {d.type} at [{d.start}:{d.end}]: {d.value} -> {d.normalized_value}")
-# Found IR_NATIONAL_ID at [17:27]: ۱۲۳۴۵۶۷۸۹۱ -> 1234567891
+    print(d.type)              # "IR_NATIONAL_ID"
+    print(d.value)             # "۱۲۳۴۵۶۷۸۹۱"
+    print(d.normalized_value)  # "1234567891"
+
+    # Offsets map identically to original and normalized text:
+    assert text[d.start:d.end] == d.value
+    assert normalized[d.start:d.end] == d.normalized_value
 ```
 
 *(Note: Redaction, pseudonymization, and additional entity detectors such as phone numbers, medical record numbers, and names are under active development.)*

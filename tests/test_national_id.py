@@ -12,15 +12,15 @@ from fa_redact import (
 
 
 def test_validator_valid_synthetic_ascii() -> None:
-    """Verify checksum-valid synthetic national IDs pass validation."""
-    valid_synthetic_ids = [
+    """Verify checksum-valid test vectors pass validation."""
+    valid_test_vectors = [
         "1234567891",  # 210 % 11 = 1 -> check digit 1
         "0012345679",  # 112 % 11 = 2 -> 11 - 2 = 9
         "0490784526",  # 225 % 11 = 5 -> 11 - 5 = 6
         "7731689956",  # 313 % 11 = 5 -> 11 - 5 = 6
         "0080000002",  # 64 % 11 = 9 -> 11 - 9 = 2
     ]
-    for nid in valid_synthetic_ids:
+    for nid in valid_test_vectors:
         assert is_valid_national_id(nid) is True, f"Failed for valid ID: {nid}"
 
 
@@ -221,7 +221,7 @@ def test_detector_source_length_mismatch() -> None:
 
 
 def test_detector_healthcare_synthetic_example() -> None:
-    """Verify detection on synthetic clinical note preserving context."""
+    """Verify detection on synthetic clinical note using test vector."""
     detector = IranianNationalIDDetector()
     original = (
         "بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱ جهت تشکیل پرونده مراجعه کرد.\n"
