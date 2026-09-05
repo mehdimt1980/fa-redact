@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Conservative ASCII Internet Email address validator (`is_valid_email`) supporting dot-atom local parts and DNS-style domain names up to 254 characters (Phase 12).
+- `EmailDetector` scanning original source text for ASCII email candidates and producing `EMAIL` detections (Phase 12).
+- Opt-in email detection support in `detect()`, `redact()`, and `PseudonymizationSession.pseudonymize()` via explicit `detectors=[EmailDetector()]` usage (Phase 12).
+- Typed `[EMAIL_<INDEX>]` placeholder generation during redaction and pseudonymization when `EmailDetector` is explicitly enabled (Phase 12).
+- Public root exports `EmailDetector` and `is_valid_email` from the `fa_redact` package namespace (Phase 12).
+
+### Changed
+- Note: `EmailDetector` is strictly opt-in in Phase 12 and is not yet included in the default detector set to prevent unhandled overlaps with numeric-local-part email addresses prior to general conflict resolution (Phase 12).
+
 ## [0.1.0] - 2026-09-05
 
 ### Fixed
