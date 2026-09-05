@@ -223,7 +223,7 @@ is_valid_mobile_number("09412345678")  # False (fixed non-geographical)
 > [!NOTE]
 > **Unreleased / Development Version (Phase 13)**: Iranian IBAN / Sheba validation and detection are introduced in the unreleased development cycle and are not part of published PyPI release `0.1.0`.
 
-`fa-redact` provides an offline, deterministic Iranian International Bank Account Number (IBAN / شماره شبا) validator (`is_valid_iranian_iban`) and detector (`IranianIBANDetector`):
+`fa-redact` provides an offline, deterministic Iranian International Bank Account Number (IBAN / شماره شبا) validator (`is_valid_iranian_iban`) and detector (`IranianIBANDetector`). An Iranian IBAN in compact electronic form contains 26 characters: `IR`, followed by 2 check digits and a 22-digit BBAN (or `IR` followed by 24 numeric digits):
 
 ```python
 from fa_redact import (
@@ -258,9 +258,9 @@ restored = session.restore("تایید واریز به [IR_IBAN_1]")
 # Output: "تایید واریز به IR641234567890123456789012"
 ```
 
-- **MOD-97-10 Checksum Algorithm**: Validates the standard ISO 7064 MOD 97-10 checksum by rearranging to `BBAN (24 digits) + 1827 (IR) + CheckDigits (2 digits)` and verifying `remainder == 1`.
+- **MOD-97-10 Checksum Algorithm**: Validates the standard ISO 7064 MOD 97-10 checksum by rearranging to `BBAN (22 digits) + 1827 (IR) + CheckDigits (2 digits)` (representing `22-digit BBAN + 1827 + 2 check digits`) and verifying `remainder == 1`.
 - **Default Detector Inclusion**: Unlike `EmailDetector`, `IranianIBANDetector` is included in `_DEFAULT_DETECTORS` because its structured boundary (`IR` followed by 24 digits) has no syntactic collision with National IDs or mobile numbers.
-- **Position-Preserving & Digit Normalization**: Supports Persian (`۰-۹`) and Arabic-Indic (`٠-٩`) digits within the 24-digit BBAN, preserving the raw surface script in `Detection.value` and mapping to canonical ASCII in `Detection.normalized_value`.
+- **Position-Preserving & Digit Normalization**: Supports Persian (`۰-۹`) and Arabic-Indic (`٠-٩`) digits across the 24 numeric characters following `IR` (the 2 check digits plus the 22-digit BBAN), preserving the raw surface script in `Detection.value` and mapping to canonical ASCII in `Detection.normalized_value`.
 - **Electronic Compact Format Only**: Only compact format without spaces, hyphens, or formatting separators is accepted. Lowercase prefix (`ir`) is strictly rejected.
 - **Privacy & Financial Disclaimer**: `is_valid_iranian_iban` performs purely local, offline mathematical checksum validation. It does not perform bank API lookups, bank branch routing, or account status verification, and does not verify whether an account exists or is active.
 
@@ -709,7 +709,7 @@ is_valid_mobile_number("09412345678")  # False (شماره ثابت غیرجغر
 > [!NOTE]
 > **نسخهٔ در حال توسعه (Phase 13)**: اعتبارسنجی و تشخیص شماره شبا در چرخهٔ توسعهٔ منتشرنشده اضافه شده و در نسخهٔ فعلی منتشرشده در PyPI (`0.1.0`) وجود ندارد.
 
-کتابخانهٔ `fa-redact` تابع اعتبارسنجی مستقل `is_valid_iranian_iban` و تشخیص‌دهندهٔ `IranianIBANDetector` را برای شماره شبا / شناسه حساب بانکی ایران (IBAN) به صورت کاملاً آفلاین، قطعی و بدون وابستگی خارجی ارائه می‌دهد:
+کتابخانهٔ `fa-redact` تابع اعتبارسنجی مستقل `is_valid_iranian_iban` و تشخیص‌دهندهٔ `IranianIBANDetector` را برای شماره شبا / شناسه حساب بانکی ایران (IBAN) به صورت کاملاً آفلاین، قطعی و بدون وابستگی خارجی ارائه می‌دهد. ساختار شماره شبا در قالب فشرده الکترونیکی شامل ۲۶ کاراکتر است: پیشوند `IR`، به همراه ۲ رقم کنترلی و BBAN بیست‌ودورقمی (یا `IR` به همراه ۲۴ رقم عددی):
 
 ```python
 from fa_redact import (
@@ -744,9 +744,9 @@ restored = session.restore("تایید واریز به [IR_IBAN_1]")
 # خروجی: "تایید واریز به IR641234567890123456789012"
 ```
 
-- **الگوریتم چکسام MOD-97-10**: اعتبارسنجی استاندارد بین‌المللی ISO 7064 MOD 97-10 از طریق بازآرایی رشته به فرمت `BBAN (۲۴ رقم) + 1827 (IR) + ارقام کنترلی (۲ رقم)` و بررسی شرط `باقیمانده == 1`.
+- **الگوریتم چکسام MOD-97-10**: اعتبارسنجی استاندارد بین‌المللی ISO 7064 MOD 97-10 از طریق بازآرایی رشته به فرمت `BBAN (۲۲ رقم) + 1827 (IR) + ارقام کنترلی (۲ رقم)` و بررسی شرط `باقیمانده == 1`.
 - **حضور در پایپ‌لاین پیش‌فرض**: برخلاف `EmailDetector`، تشخیص‌دهندهٔ `IranianIBANDetector` در مجموعهٔ پیش‌فرض (`_DEFAULT_DETECTORS`) قرار دارد؛ زیرا ساختار مشخص آن (`IR` به همراه ۲۴ رقم) هیچ‌گونه تداخل یا ابهام سینتکسی با کدهای ملی یا شماره‌های موبایل ایجاد نمی‌کند.
-- **حفظ موقعیت کاراکتری و پشتیبانی از ارقام متنوع**: امکان استفاده از ارقام فارسی (`۰-۹`) و عربی (`٠-٩`) در ۲۴ رقم شبا وجود دارد؛ نگاشت در `Detection.value` بر اساس متن ورودی حفظ شده و مقدار یکپارچه در `Detection.normalized_value` قرار می‌گیرد.
+- **حفظ موقعیت کاراکتری و پشتیبانی از ارقام متنوع**: امکان استفاده از ارقام فارسی (`۰-۹`) و عربی (`٠-٩`) در ۲۴ نویسهٔ عددی پس از `IR` وجود دارد؛ این بخش شامل ۲ رقم کنترلی و BBAN بیست‌ودورقمی است. نگاشت در `Detection.value` بر اساس متن ورودی حفظ شده و مقدار یکپارچه در `Detection.normalized_value` قرار می‌گیرد.
 - **قالب فشردهٔ الکترونیکی**: صرفاً فرمت الکترونیکی فشرده بدون فاصله، خط تیره یا جداکننده پذیرفته می‌شود. پیشوند `ir` با حروف کوچک نیز پذیرفته نمی‌شود.
 - **سلب مسئولیت بانکی و حریم خصوصی**: تابع `is_valid_iranian_iban` صرفاً صحت ساختار ریاضی چکسام را به صورت محلی و آفلاین بررسی می‌کند. این تابع هیچ‌گونه استعلام بانکی، بررسی صحت شماره حساب، اتصال به شبکهٔ شتاب یا پایا انجام نمی‌دهد و فعال بودن حساب بانکی را تایید نمی‌کند.
 
