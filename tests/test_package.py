@@ -11,9 +11,10 @@ def test_package_import_and_version() -> None:
 
 
 def test_package_all_export() -> None:
-    """Verify that __all__ exports __version__ and normalization functions."""
+    """Verify that __all__ exports all expected public symbols."""
     expected_exports = {
         "__version__",
+        "Detection",
         "normalize_digits",
         "normalize_letters",
         "normalize_text",

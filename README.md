@@ -5,13 +5,14 @@
 
 `fa-redact` is an early-stage Python toolkit for privacy-preserving processing of Persian/Iranian text. The project is being designed to detect, pseudonymize, and redact personal identifiers, with healthcare and AI/LLM workflows as a primary use case.
 
-> **Status: Early Development (Phase 2 - Normalization Foundation)**  
-> This package is currently in pre-alpha development. It does not yet include active PII detection, redaction, or pseudonymization capabilities. The current release provides position-preserving Persian text normalization to support future detection modules.
+> **Status: Early Development (Phase 3 - Data Models & Protocol Foundation)**  
+> This package is currently in pre-alpha development. It does not yet include active PII detection, redaction, or pseudonymization capabilities. The current release provides position-preserving Persian text normalization and the core `Detection` data model and `Detector` protocol.
 
 ---
 
-## Current Functionality: Position-Preserving Normalization
+## Current Functionality
 
+### 1. Position-Preserving Text Normalization
 `fa-redact` provides pure, deterministic normalization functions that map individual Unicode code points 1-to-1 (`len(normalized) == len(original)`), guaranteeing that character offsets remain identical to the original input text:
 
 ```python
@@ -30,7 +31,29 @@ normalize_text("كد ملي: ۰۰۱٢٣٤٥٦٧٨")
 # Returns: "کد ملی: 0012345678"
 ```
 
-*Note: PII detection, pseudonymization, and redaction features are currently under active development.*
+### 2. Detection Data Model & Protocols
+The immutable `Detection` dataclass represents identified spans while preserving both the original text and its normalized form:
+
+```python
+from fa_redact import Detection, normalize_text
+
+text = "کد ملی بیمار ۰۰۱۲۳۴۵۶۷۸ است."
+normalized = normalize_text(text)
+
+# Example illustrative Detection instance
+detection = Detection.from_texts(
+    type="IR_NATIONAL_ID",
+    original_text=text,
+    normalized_text=normalized,
+    start=14,
+    end=24,
+)
+
+print(detection.value)             # "۰۰۱۲۳۴۵۶۷۸" (raw from original)
+print(detection.normalized_value)  # "0012345678" (normalized representation)
+```
+
+*(Note: Built-in PII and healthcare detector implementations will be introduced in subsequent phases.)*
 
 ---
 
