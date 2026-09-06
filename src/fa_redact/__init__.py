@@ -31,6 +31,11 @@ from fa_redact.reporting import (
     detection_report,
     report_detections,
 )
+from fa_redact.structured import (
+    detect_fields,
+    redact_fields,
+    report_fields,
+)
 from fa_redact.validators import (
     is_valid_bank_card_number,
     is_valid_email,
@@ -55,6 +60,7 @@ __all__: list[str] = [
     "PatternRule",
     "PseudonymizationSession",
     "detect",
+    "detect_fields",
     "detection_report",
     "is_valid_bank_card_number",
     "is_valid_email",
@@ -65,6 +71,8 @@ __all__: list[str] = [
     "normalize_letters",
     "normalize_text",
     "redact",
+    "redact_fields",
     "report_detections",
+    "report_fields",
     "resolve_detection_conflicts",
 ]

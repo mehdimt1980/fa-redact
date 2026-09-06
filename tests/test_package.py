@@ -52,6 +52,7 @@ def test_package_all_export() -> None:
         "PatternRule",
         "PseudonymizationSession",
         "detect",
+        "detect_fields",
         "detection_report",
         "is_valid_bank_card_number",
         "is_valid_email",
@@ -62,7 +63,9 @@ def test_package_all_export() -> None:
         "normalize_letters",
         "normalize_text",
         "redact",
+        "redact_fields",
         "report_detections",
+        "report_fields",
         "resolve_detection_conflicts",
     }
     assert expected_exports.issubset(set(fa_redact.__all__))
@@ -93,12 +96,24 @@ def test_pipeline_and_protocols_imports() -> None:
     from fa_redact.reporting import (
         report_detections as sub_report_detections,
     )
+    from fa_redact.structured import (
+        detect_fields as sub_detect_fields,
+    )
+    from fa_redact.structured import (
+        redact_fields as sub_redact_fields,
+    )
+    from fa_redact.structured import (
+        report_fields as sub_report_fields,
+    )
 
     assert callable(sub_detect)
     assert callable(sub_redact)
     assert callable(sub_resolve)
     assert callable(sub_detection_report)
     assert callable(sub_report_detections)
+    assert callable(sub_detect_fields)
+    assert callable(sub_redact_fields)
+    assert callable(sub_report_fields)
     assert SubReport is not None
     assert SubSession is not None
     assert SubDetector is not None
