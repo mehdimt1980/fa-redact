@@ -531,3 +531,76 @@ def test_custom_mapping_type_support() -> None:
     assert redacted["age"] == 35
     # Original untouched
     assert proxy["note"] == "کد ملی ۱۲۳۴۵۶۷۸۹۱"
+
+
+# --- 9. Cross-Field Referential Consistency and Literal Reservation ---
+
+
+def test_cross_field_referential_consistency_same_identifier() -> None:
+    """Verify identical identifiers across fields receive the same placeholder."""
+    record = {
+        "contact": "09123456789",
+        "summary": "تماس با ۰۹۱۲۳۴۵۶۷۸۹ و کد ملی ۱۲۳۴۵۶۷۸۹۱",
+    }
+    redacted = redact_fields(record, ["contact", "summary"])
+
+    assert redacted["contact"] == "[IR_MOBILE_1]"
+    assert "[IR_MOBILE_1]" in redacted["summary"]
+    assert "[IR_NATIONAL_ID_1]" in redacted["summary"]
+    # Verify original record is unchanged
+    assert record["contact"] == "09123456789"
+    assert record["summary"] == "تماس با ۰۹۱۲۳۴۵۶۷۸۹ و کد ملی ۱۲۳۴۵۶۷۸۹۱"
+
+
+def test_cross_field_referential_consistency_multiple_identifiers() -> None:
+    """Verify multiple identifiers retain stable identities across fields."""
+    record = {
+        "field_a": "a@example.com b@example.com",
+        "field_b": "b@example.com",
+    }
+    detectors: list[Detector] = [EmailDetector()]
+    redacted = redact_fields(record, ["field_a", "field_b"], detectors=detectors)
+
+    assert redacted["field_a"] == "[EMAIL_1] [EMAIL_2]"
+    assert redacted["field_b"] == "[EMAIL_2]"
+
+
+def test_cross_field_fields_ordering_determinism() -> None:
+    """Verify fields order determines placeholder assignment deterministically."""
+    record = {
+        "field_a": "a@example.com b@example.com",
+        "field_b": "b@example.com",
+    }
+    detectors: list[Detector] = [EmailDetector()]
+
+    # field_b processed first -> b@example.com gets [EMAIL_1]
+    redacted = redact_fields(record, ["field_b", "field_a"], detectors=detectors)
+    assert redacted["field_b"] == "[EMAIL_1]"
+    assert redacted["field_a"] == "[EMAIL_2] [EMAIL_1]"
+
+
+def test_cross_field_placeholder_literal_reservation() -> None:
+    """Verify placeholder-like literal in earlier field is reserved for later fields."""
+    record = {
+        "field_1": "Token literal [EMAIL_1] present",
+        "field_2": "Real email user@example.com",
+    }
+    detectors: list[Detector] = [EmailDetector()]
+    redacted = redact_fields(record, ["field_1", "field_2"], detectors=detectors)
+
+    assert redacted["field_1"] == "Token literal [EMAIL_1] present"
+    assert redacted["field_2"] == "Real email [EMAIL_2]"
+
+
+def test_cross_field_unselected_fields_not_scanned() -> None:
+    """Verify unselected fields do not participate in session mapping or scanning."""
+    record = {
+        "unselected": "Real email user@example.com and [EMAIL_1]",
+        "selected": "Real email user@example.com",
+    }
+    detectors: list[Detector] = [EmailDetector()]
+    redacted = redact_fields(record, ["selected"], detectors=detectors)
+
+    # user@example.com gets [EMAIL_1] since unselected field is never inspected
+    assert redacted["selected"] == "Real email [EMAIL_1]"
+    assert redacted["unselected"] == "Real email user@example.com and [EMAIL_1]"

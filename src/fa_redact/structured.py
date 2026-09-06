@@ -14,7 +14,7 @@ from fa_redact.conflicts import ConflictPolicy
 from fa_redact.models import Detection
 from fa_redact.pipeline import detect
 from fa_redact.protocols import Detector
-from fa_redact.redaction import redact
+from fa_redact.pseudonymization import PseudonymizationSession
 from fa_redact.reporting import DetectionReport, report_detections
 
 
@@ -237,9 +237,12 @@ def redact_fields(
 ) -> dict[str, Any]:
     """Redact PII within explicitly selected string fields of a mapping.
 
-    Processes only the exact paths provided in `fields`. Does NOT mutate the
-    caller's input mapping or nested mappings; returns a transformed dictionary
-    copy with redacted string placeholders at target fields.
+    Processes only the exact paths provided in `fields`. Maintains record-wide
+    referential consistency and placeholder reservation across all selected
+    fields within a single call.
+
+    Does NOT mutate the caller's input mapping or nested mappings; returns a
+    transformed dictionary copy with redacted string placeholders at target fields.
 
     All non-target keys, intermediate mappings, numbers, booleans, None, lists,
     and unaffected strings are preserved intact.
@@ -280,10 +283,15 @@ def redact_fields(
         target_val = _extract_target_string(record, path_str, segments)
         target_strings.append((path_str, segments, target_val))
 
-    # 2. Redact each target string using core redact()
+    # 2. Redact target strings using a single local PseudonymizationSession across
+    # all selected fields in deterministic fields order. This underlying core mechanism
+    # ensures record-wide referential consistency (identical entity instances across
+    # multiple fields receive the same placeholder) and preserves placeholder literal
+    # collision avoidance across fields without exposing session state to the caller.
+    session = PseudonymizationSession()
     redacted_values: list[tuple[tuple[str, ...], str]] = []
     for _path_str, segments, target_val in target_strings:
-        redacted_val = redact(
+        redacted_val = session.pseudonymize(
             target_val,
             detectors=detectors,
             conflict_policy=conflict_policy,

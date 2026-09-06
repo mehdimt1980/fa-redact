@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Conservative, non-destructive structured data helper `redact_fields(record, fields, *, detectors=None, conflict_policy="reject", type_priority=None)` replacing detected PII with typed placeholders across explicitly selected string paths in mappings/records without mutating original objects (Phase 20).
+- Conservative, non-destructive structured data helper `redact_fields(record, fields, *, detectors=None, conflict_policy="reject", type_priority=None)` replacing detected PII with typed placeholders across explicitly selected string paths in mappings/records with record-wide referential consistency and literal collision avoidance without mutating original objects (Phase 20).
 - Structured detection helper `detect_fields(record, fields, *, detectors=None)` executing raw detection on explicitly selected field paths and returning a dictionary mapping each path to its `Detection` instances (Phase 20).
 - Structured reporting helper `report_fields(record, fields, *, detectors=None)` generating privacy-safe, value-free `DetectionReport` summaries for explicitly selected field paths (Phase 20).
 - Dot-separated path navigation (e.g. `"note"`, `"metadata.contact"`, `"patient.info.note"`) with strict syntax validation, duplicate path rejection, and privacy-safe diagnostics that never leak target field values (Phase 20).
@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Limitations
 - Structured data helpers target explicitly selected paths only and do not perform blind recursive scanning or automatic schema-level PII field inference (Phase 20).
+- `report_fields()` output is keyed by caller-supplied paths; while reports contain no sensitive values, path names are metadata and must not encode patient identifiers (Phase 20).
 - Path model supports dot-separated mapping keys; list indexing (e.g. `items.0.note`) and wildcards (`items[*].note`, `**`) are not supported in Phase 20 (Phase 20).
 - CLI does not implement in-place destructive file editing; separate input and output destinations are required (Phase 19).
 - `PatternDetector` regex rules remain trusted application code and are not dynamically configured via generic CLI flags in Phase 19 (Phase 19).

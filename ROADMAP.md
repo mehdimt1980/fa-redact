@@ -99,8 +99,6 @@ Provide safe helpers for processing explicitly selected fields within structured
 
 ## Planned Phases
 
----
-
 ### Phase 21 — Names / Persian NER
 *Status: `RESEARCH / PLANNED`*
 
