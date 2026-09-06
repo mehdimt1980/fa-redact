@@ -490,3 +490,109 @@ def test_redact_with_pattern_detector_opt_in() -> None:
     text = "پرونده: MRN-123456 و بیمار: PAT-12345678"
     expected = "پرونده: [MRN_1] و بیمار: [PATIENT_ID_1]"
     assert redact(text, detectors=[detector]) == expected
+
+
+def test_redact_conflict_default_reject_raises_value_error() -> None:
+    """Verify default redact() rejects conflicting Email and BankCard detections."""
+    from fa_redact import BankCardDetector, EmailDetector
+
+    text = "ایمیل و کارت: 1234567890123452@example.com"
+    with pytest.raises(ValueError, match=r"[Oo]verlap"):
+        redact(text, detectors=[EmailDetector(), BankCardDetector()])
+
+
+def test_redact_conflict_longest_email_over_bank_card() -> None:
+    """Verify longest policy resolves Email over embedded BankCard span."""
+    from fa_redact import BankCardDetector, EmailDetector
+
+    text = "تماس: 1234567890123452@example.com"
+    res = redact(
+        text,
+        detectors=[EmailDetector(), BankCardDetector()],
+        conflict_policy="longest",
+    )
+    assert res == "تماس: [EMAIL_1]"
+
+
+def test_redact_conflict_priority_email_over_bank_card() -> None:
+    """Verify priority policy resolves Email over BankCard when configured."""
+    from fa_redact import BankCardDetector, EmailDetector
+
+    text = "تماس: 1234567890123452@example.com"
+    res = redact(
+        text,
+        detectors=[EmailDetector(), BankCardDetector()],
+        conflict_policy="priority",
+        type_priority=["EMAIL", "BANK_CARD"],
+    )
+    assert res == "تماس: [EMAIL_1]"
+
+
+def test_redact_conflict_priority_bank_card_over_email() -> None:
+    """Verify priority policy selects BankCard over Email when configured."""
+    from fa_redact import BankCardDetector, EmailDetector
+
+    text = "تماس: 1234567890123452@example.com"
+    res = redact(
+        text,
+        detectors=[EmailDetector(), BankCardDetector()],
+        conflict_policy="priority",
+        type_priority=["BANK_CARD", "EMAIL"],
+    )
+    # Bank card replaces first 16 chars; trailing email domain remains untouched
+    assert res == "تماس: [BANK_CARD_1]@example.com"
+
+
+def test_redact_conflict_email_and_mobile_policies() -> None:
+    """Verify conflict policies on overlapping Email and Mobile number."""
+    from fa_redact import Detector, EmailDetector, IranianMobileNumberDetector
+
+    text = "ارتباط: 09123456789@example.com"
+    detectors: list[Detector] = [EmailDetector(), IranianMobileNumberDetector()]
+
+    # Default reject
+    with pytest.raises(ValueError, match=r"[Oo]verlap"):
+        redact(text, detectors=detectors)
+
+    # Longest policy
+    res_longest = redact(text, detectors=detectors, conflict_policy="longest")
+    assert res_longest == "ارتباط: [EMAIL_1]"
+
+    # Priority mobile > email
+    res_mobile_pri = redact(
+        text,
+        detectors=detectors,
+        conflict_policy="priority",
+        type_priority=["IR_MOBILE", "EMAIL"],
+    )
+    assert res_mobile_pri == "ارتباط: [IR_MOBILE_1]@example.com"
+
+
+def test_redact_conflict_pattern_detector_policies() -> None:
+    """Verify conflict policies on overlapping custom PatternDetector rules."""
+    from fa_redact import PatternDetector, PatternRule
+
+    detector = PatternDetector(
+        [
+            PatternRule(type="FULL_MRN", pattern=r"(?<!\w)MRN-[0-9]{6}(?!\w)"),
+            PatternRule(type="RAW_MRN", pattern=r"[0-9]{6}"),
+        ]
+    )
+    text = "شماره MRN-123456 ثبت شد"
+
+    # Default reject
+    with pytest.raises(ValueError, match=r"[Oo]verlap"):
+        redact(text, detectors=[detector])
+
+    # Longest policy selects FULL_MRN
+    res_longest = redact(text, detectors=[detector], conflict_policy="longest")
+    assert res_longest == "شماره [FULL_MRN_1] ثبت شد"
+
+    # Priority policy RAW_MRN > FULL_MRN
+    res_priority = redact(
+        text,
+        detectors=[detector],
+        conflict_policy="priority",
+        type_priority=["RAW_MRN", "FULL_MRN"],
+    )
+    assert res_priority == "شماره MRN-[RAW_MRN_1] ثبت شد"

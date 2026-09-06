@@ -15,6 +15,7 @@ def test_package_all_export() -> None:
     expected_exports = {
         "__version__",
         "BankCardDetector",
+        "ConflictPolicy",
         "Detection",
         "Detector",
         "EmailDetector",
@@ -34,6 +35,7 @@ def test_package_all_export() -> None:
         "normalize_letters",
         "normalize_text",
         "redact",
+        "resolve_detection_conflicts",
     }
     assert expected_exports.issubset(set(fa_redact.__all__))
     for name in expected_exports:
@@ -42,6 +44,12 @@ def test_package_all_export() -> None:
 
 def test_pipeline_and_protocols_imports() -> None:
     """Verify direct imports from core submodules."""
+    from fa_redact.conflicts import (
+        ConflictPolicy as SubConflictPolicy,
+    )
+    from fa_redact.conflicts import (
+        resolve_detection_conflicts as sub_resolve,
+    )
     from fa_redact.pipeline import detect as sub_detect
     from fa_redact.protocols import Detector as SubDetector
     from fa_redact.pseudonymization import (
@@ -51,8 +59,10 @@ def test_pipeline_and_protocols_imports() -> None:
 
     assert callable(sub_detect)
     assert callable(sub_redact)
+    assert callable(sub_resolve)
     assert SubSession is not None
     assert SubDetector is not None
+    assert SubConflictPolicy is not None
 
 
 def test_subpackage_imports() -> None:

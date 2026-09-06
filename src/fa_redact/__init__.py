@@ -3,6 +3,10 @@
 This package is currently in early development.
 """
 
+from fa_redact.conflicts import (
+    ConflictPolicy,
+    resolve_detection_conflicts,
+)
 from fa_redact.detectors import (
     BankCardDetector,
     EmailDetector,
@@ -34,6 +38,7 @@ __version__: str = "0.1.0"
 __all__: list[str] = [
     "__version__",
     "BankCardDetector",
+    "ConflictPolicy",
     "Detection",
     "Detector",
     "EmailDetector",
@@ -53,4 +58,5 @@ __all__: list[str] = [
     "normalize_letters",
     "normalize_text",
     "redact",
+    "resolve_detection_conflicts",
 ]

@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Explicit detection conflict resolution function `resolve_detection_conflicts(detections, *, policy="reject", type_priority=None)` resolving overlapping, nested, and duplicate detections with deterministic output sorting by `(start, end, type)` (Phase 16).
+- `ConflictPolicy` type alias supporting explicit policies: `"reject"`, `"longest"`, and `"priority"` (Phase 16).
+- Explicit `reject` policy (conservative default) rejecting any overlapping, nested, or duplicate detections with privacy-safe error messages (Phase 16).
+- Explicit `longest` policy greedily prioritizing longer spans, collapsing exact duplicate detections, and raising `ValueError` on ambiguous equal-length overlapping spans (Phase 16).
+- Explicit `priority` policy resolving conflicts based on user-supplied entity type hierarchy (`type_priority`), requiring all conflicting entity types to have configured priority (Phase 16).
+- `conflict_policy` and `type_priority` parameter support in `redact()` and `PseudonymizationSession.pseudonymize()` with atomic rollback on failure (Phase 16).
+- Public root exports `ConflictPolicy` and `resolve_detection_conflicts` from the `fa_redact` package namespace (Phase 16).
 - Configurable `PatternRule` immutable frozen dataclass supporting custom regex patterns, placeholder-safe entity types (`^[A-Z][A-Z0-9_]{0,63}$`), normalized/original source selection, integer and named capture-group span selection, and standard library `re` flags (Phase 15).
 - `PatternDetector` executing user-configured `PatternRule` collections across source texts, caching compiled regular expressions once at initialization, and producing deterministic `Detection` sequences sorted by `(start, end, type)` (Phase 15).
 - Institution-specific identifier detection (e.g. MRN, Patient ID, Admission ID, Encounter ID, Case ID) with position-preserving Persian and Arabic-Indic digit normalization support (Phase 15).
@@ -31,10 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public root exports `EmailDetector` and `is_valid_email` from the `fa_redact` package namespace (Phase 12).
 
 ### Changed
+- Note: Default conflict policy across `redact()` and `PseudonymizationSession.pseudonymize()` remains `reject`; `detect()` behavior is unchanged and continues preserving raw overlapping and duplicate detections (Phase 16).
 - Note: No universal MRN, Patient ID, Encounter ID, or other institution-specific patterns are built in; `PatternDetector` is strictly opt-in and requires application-supplied rules (Phase 15).
 - Note: `BankCardDetector` and `EmailDetector` remain strictly opt-in in Phase 14/15 and are not included in the default detector set to prevent unhandled overlaps and avoid false positives on generic numeric sequences without BIN/issuer context (Phase 14/15).
 - No BIN/IIN lookup or issuer verification is performed; validation confirms structural 16-digit format and Luhn checksum only (Phase 14).
-- `_DEFAULT_DETECTORS` pipeline set remains `(IranianNationalIDDetector, IranianMobileNumberDetector, IranianIBANDetector)` (Phase 13/14/15).
+- `_DEFAULT_DETECTORS` pipeline set remains `(IranianNationalIDDetector, IranianMobileNumberDetector, IranianIBANDetector)` (Phase 13/14/15/16).
 
 ## [0.1.0] - 2026-09-05
 

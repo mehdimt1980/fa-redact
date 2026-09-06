@@ -688,3 +688,79 @@ def test_pseudonymize_pattern_detector_cross_turn_and_restore() -> None:
 
     restored = session.restore("نتیجه آزمایش [MRN_1]")
     assert restored == "نتیجه آزمایش MRN-۱۲۳۴۵۶"
+
+
+def test_pseudonymize_conflict_resolution_counter_and_mapping_isolation() -> None:
+    """Verify discarded detections do not consume counters or create mappings."""
+    from fa_redact import BankCardDetector, Detector, EmailDetector
+
+    session = PseudonymizationSession()
+    detectors: list[Detector] = [EmailDetector(), BankCardDetector()]
+
+    # Turn 1: Email + embedded BankCard resolved via longest -> EMAIL wins
+    turn1 = session.pseudonymize(
+        "ایمیل اول: 1234567890123452@example.com",
+        detectors=detectors,
+        conflict_policy="longest",
+    )
+    assert turn1 == "ایمیل اول: [EMAIL_1]"
+    # Mapping must contain [EMAIL_1] but NOT [BANK_CARD_1]
+    assert "[EMAIL_1]" in session.mapping
+    assert "[BANK_CARD_1]" not in session.mapping
+
+    # Turn 2: Non-conflicting genuine bank card must receive [BANK_CARD_1]
+    turn2 = session.pseudonymize(
+        "کارت بانکی: 6037991122334455",
+        detectors=detectors,
+        conflict_policy="longest",
+    )
+    assert turn2 == "کارت بانکی: [BANK_CARD_1]"
+    assert session.mapping["[BANK_CARD_1]"] == "6037991122334455"
+
+    # Turn 3: Same email repeated in turn 3 reuses [EMAIL_1]
+    turn3 = session.pseudonymize(
+        "تکرار ایمیل: 1234567890123452@example.com",
+        detectors=detectors,
+        conflict_policy="longest",
+    )
+    assert turn3 == "تکرار ایمیل: [EMAIL_1]"
+
+    # Restoration
+    restored = session.restore("پاسخ به [EMAIL_1] و [BANK_CARD_1]")
+    assert restored == "پاسخ به 1234567890123452@example.com و 6037991122334455"
+
+
+def test_pseudonymize_conflict_atomic_rollback_on_failure() -> None:
+    """Verify session state is completely untouched when conflict resolution fails."""
+    from fa_redact import PatternDetector, PatternRule
+
+    session = PseudonymizationSession()
+
+    # Pre-populate some valid session state
+    session.pseudonymize("کد ملی: 1234567891")
+    assert "[IR_NATIONAL_ID_1]" in session.mapping
+    orig_mapping = session.mapping.copy()
+    orig_counters = session._counters_by_type.copy()
+    orig_identities = session._identity_to_placeholder.copy()
+    orig_reserved = session._reserved_placeholders.copy()
+
+    # Ambiguous equal-length conflict under longest
+    detector = PatternDetector(
+        [
+            PatternRule(type="TYPE_A", pattern=r"[0-9]{6}"),
+            PatternRule(type="TYPE_B", pattern=r"[0-9]{6}"),
+        ]
+    )
+
+    with pytest.raises(ValueError, match=r"Ambiguous conflict"):
+        session.pseudonymize(
+            "ورودی: 123456 [LITERAL_TOKEN_1]",
+            detectors=[detector],
+            conflict_policy="longest",
+        )
+
+    # State must be exactly identical to pre-call state (including literals)
+    assert session.mapping == orig_mapping
+    assert session._counters_by_type == orig_counters
+    assert session._identity_to_placeholder == orig_identities
+    assert session._reserved_placeholders == orig_reserved
