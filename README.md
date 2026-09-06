@@ -43,6 +43,7 @@
   - [11. Redaction Semantics](#11-redaction-semantics)
   - [12. Stateful Pseudonymization Sessions](#12-stateful-pseudonymization-sessions)
   - [13. Command-Line Interface (CLI) (Unreleased)](#13-command-line-interface-cli-unreleased)
+  - [14. Structured Data Helpers (Unreleased)](#14-structured-data-helpers-unreleased)
 - [Custom Detectors](#custom-detectors)
 - [Healthcare & AI/LLM Usage Pattern](#healthcare--aillm-usage-pattern)
 - [Current Coverage & Limitations](#current-coverage--limitations)
@@ -725,6 +726,68 @@ fa-redact redact input.txt --detectors email,bank_card --conflict-policy priorit
 
 ---
 
+#### 14. Structured Data Helpers (Unreleased)
+
+`fa-redact` provides conservative, non-destructive helpers for scanning, redacting, and summarizing explicitly selected string fields inside Python mappings and JSON-like dictionaries:
+
+- `redact_fields(record, fields, ...)`: Returns a transformed dictionary copy with detected PII replaced by typed placeholders.
+- `detect_fields(record, fields, ...)`: Returns a dictionary mapping each path to its list of `Detection` instances.
+- `report_fields(record, fields, ...)`: Returns a dictionary mapping each path to a privacy-safe `DetectionReport`.
+
+##### Key Architectural Guarantees
+
+1. **Explicit Field Targeting**: Only paths explicitly listed in `fields` are inspected or modified. `fa-redact` **never** performs blind recursive scanning of whole objects and never infers sensitive fields from schema key names.
+2. **Immutability & Non-Destructive Copying**: Input mappings and nested objects are never mutated in place. Transformed copies are returned as plain Python `dict` instances.
+3. **Type Preservation**: All non-target values (integers, floats, booleans, `None`, lists, unaffected sub-mappings, and unselected strings) are preserved untouched.
+4. **Dot-Separated Path Syntax**: Target fields are specified using simple dot-separated keys (e.g. `"note"`, `"metadata.contact"`).
+5. **Fail-Loud Conservative Semantics**: Missing paths, non-mapping intermediate containers, non-string leaf values, or duplicate field paths fail loudly with clear exceptions.
+6. **Error Privacy**: Exception messages never echo or leak sensitive field contents or surrounding record data.
+
+##### Example Usage
+
+```python
+from fa_redact import detect_fields, redact_fields, report_fields
+
+record = {
+    "patient_id": "کد ملی ۱۲۳۴۵۶۷۸۹۱",
+    "note": "تماس با ۰۹۱۲۳۴۵۶۷۸۹ جهت هماهنگی",
+    "age": 42,
+    "active": True,
+    "metadata": {
+        "contact_iban": "شبا IR641234567890123456789012",
+        "visit_count": 3,
+    },
+}
+
+# 1. Redact explicitly selected fields:
+redacted = redact_fields(record, ["note", "metadata.contact_iban"])
+print(redacted["note"])
+# Output: "تماس با [IR_MOBILE_1] جهت هماهنگی"
+print(redacted["metadata"]["contact_iban"])
+# Output: "شبا [IR_IBAN_1]"
+# Non-target fields and original record remain completely untouched:
+assert record["note"] == "تماس با ۰۹۱۲۳۴۵۶۷۸۹ جهت هماهنگی"
+assert redacted["age"] == 42
+assert redacted["active"] is True
+
+# 2. Detect PII in selected fields (raw evidence layer):
+detections = detect_fields(record, ["patient_id", "note"])
+for path, dets in detections.items():
+    print(f"Path: {path} -> Found {len(dets)} detections")
+
+# 3. Privacy-safe aggregate reporting per field:
+reports = report_fields(record, ["note", "metadata.contact_iban"])
+print(reports["note"].counts)
+# Output: {'IR_MOBILE': 1}
+```
+
+> [!WARNING]
+> - **Explicit Targeting as Safety Boundary**: Structured helpers do not automatically scan arbitrary schemas. The application caller must explicitly decide which fields are candidate text fields.
+> - **List Indexing & Wildcards**: List element traversal (e.g. `items.0.note`) and wildcards (`*`, `**`) are not supported in this phase.
+> - **No De-identification / Compliance Claims**: Using structured helpers does not guarantee HIPAA Safe Harbor or GDPR de-identification compliance.
+
+---
+
 ### Custom Detectors
 
 `fa-redact` uses Python's structural typing (protocols). Any class implementing the two-argument `detect(self, original_text: str, normalized_text: str) -> Sequence[Detection]` method can be passed to `detect()`, `redact()`, or `session.pseudonymize()`:
@@ -909,6 +972,7 @@ This project is licensed under the [MIT License](LICENSE).
   - [۱۱. بازسازی دقیق بر اساس span در پنهان‌سازی](#۱۱-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
   - [۱۲. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۱۲-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
   - [۱۳. رابط خط فرمان (CLI) (در حال توسعه / منتشرنشده)](#۱۳-رابط-خط-فرمان-cli-در-حال-توسعه--منتشرنشده)
+  - [۱۴. پردازش داده‌های ساخت‌یافته (در حال توسعه / منتشرنشده)](#۱۴-پردازش-داده‌های-ساخت‌یافته-در-حال-توسعه--منتشرنشده)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
 - [جدول پوشش و قابلیت‌ها](#جدول-پوشش-و-قابلیت‌ها)
@@ -1556,6 +1620,69 @@ fa-redact redact input.txt --detectors email,bank_card --conflict-policy priorit
 > - **پیام‌های خطای بدون نشت PII**: خطاهای صادرشده به `stderr` هرگز حاوی مقادیر حساس، متن اولیه یا برش‌های محرمانه نیستند.
 > - **عدم ادعای ناشناس‌سازی بالینی کامل**: شناسه‌های پشتیبانی‌شده شامل نام اشخاص، آدرس‌های آزاد یا سوابق متنی کامل سلامت نمی‌شوند.
 > - **عدم تضمین خودکار انطباق قانونی**: استفاده از CLI به خودی خود انطباق با GDPR یا HIPAA را ایجاد نمی‌کند.
+
+---
+
+#### ۱۴. پردازش داده‌های ساخت‌یافته (در حال توسعه / منتشرنشده)
+
+کتابخانهٔ `fa-redact` توابع کمکی محافظه‌کارانه و غیرمخربی را برای تشخیص، پنهان‌سازی و گزارش‌گیری از فیلدهای متنی صریح در ساختارهای داده‌ای پایتون (دیکشنری‌ها و رکوردهای شبیه JSON) ارائه می‌دهد:
+
+- `redact_fields(record, fields, ...)`: بازگرداندن نسخه‌ای کپی‌شده از داده با جایگزینی شناسه‌های حساس در فیلدهای صریح با جانگهدارها (بدون تغییر شیء ورودی).
+- `detect_fields(record, fields, ...)`: بازگرداندن نگاشتی از مسیر هر فیلد به فهرستی از اشیاء `Detection`.
+- `report_fields(record, fields, ...)`: بازگرداندن نگاشتی از مسیر هر فیلد به گزارش آماری امن `DetectionReport`.
+
+##### اصول و تضمین‌های طراحی
+
+۱. **هدف‌گیری صریح فیلدها (Explicit Field Targeting)**: تنها مسیرهایی که به صورت صریح در پارامتر `fields` مشخص شده‌اند پردازش می‌شوند. کتابخانه هرگز جستجوی بازگشتی کورکورانه روی کل شیء انجام نمی‌دهد و نام کلیدها را برای حدس زدن حساسیت فیلد تحلیل نمی‌کند.
+۲. **تغییرناپذیری و کپی غیرمخرب (Immutability)**: نگاشت‌ها و دیکشنری‌های ورودی کاربر هرگز درجا (in-place) دستکاری نمی‌شوند و ساختار خروجی به شکل یک `dict` استاندارد جدید بازگردانده می‌شود.
+۳. **حفظ انواع داده‌های غیرهدف**: تمام داده‌های دست‌نخورده (اعداد صحیح، اعشاری، مقادیر بولی، `None`، لیست‌ها و رشته‌های انتخاب‌نشده) بدون تغییر باقی می‌مانند.
+۴. **سینتکس مسیر نقطه‌ای (Dot-Separated Path)**: مسیردهی فیلدها با استفاده از نقطه‌گذاری استاندارد (مانند `"note"` یا `"metadata.contact"`) انجام می‌شود.
+۵. **رفتار صریح در صورت خطا (Fail-Loud)**: در صورت وجود مسیرهای نامعتبر، کلیدهای مفقود، کانتینرهای میانی غیرنگاشتی، یا فیلدهای هدف غیررشته‌ای، بلافاصله خطای صریح صادر می‌شود.
+۶. **حفظ حریم خصوصی در پیام‌های خطا**: متن و مقادیر حساس فیلدها هرگز در پیام‌های خطا منعکس نمی‌شوند.
+
+##### نمونه کد
+
+```python
+from fa_redact import detect_fields, redact_fields, report_fields
+
+record = {
+    "patient_id": "کد ملی ۱۲۳۴۵۶۷۸۹۱",
+    "note": "تماس با ۰۹۱۲۳۴۵۶۷۸۹ جهت هماهنگی",
+    "age": 42,
+    "active": True,
+    "metadata": {
+        "contact_iban": "شبا IR641234567890123456789012",
+        "visit_count": 3,
+    },
+}
+
+# ۱. پنهان‌سازی فیلدهای مشخص‌شده:
+redacted = redact_fields(record, ["note", "metadata.contact_iban"])
+print(redacted["note"])
+# خروجی: "تماس با [IR_MOBILE_1] جهت هماهنگی"
+print(redacted["metadata"]["contact_iban"])
+# خروجی: "شبا [IR_IBAN_1]"
+
+# فیلدهای دیگر و شیء اولیه کاملاً دست‌نخورده باقی می‌مانند:
+assert record["note"] == "تماس با ۰۹۱۲۳۴۵۶۷۸۹ جهت هماهنگی"
+assert redacted["age"] == 42
+assert redacted["active"] is True
+
+# ۲. تشخیص شناسه‌ها در فیلدهای مشخص‌شده:
+detections = detect_fields(record, ["patient_id", "note"])
+for path, dets in detections.items():
+    print(f"مسیر: {path} -> تعداد تشخیص: {len(dets)}")
+
+# ۳. گزارش آماری امن به تفکیک هر فیلد:
+reports = report_fields(record, ["note", "metadata.contact_iban"])
+print(reports["note"].counts)
+# خروجی: {'IR_MOBILE': 1}
+```
+
+> [!WARNING]
+> - **هدف‌گیری صریح به عنوان مرز امنیتی**: توابع ساخت‌یافته فیلدهای ناشناس را به صورت خودکار اسکن نمی‌کنند؛ برنامهٔ فراخواننده باید صریحاً فیلدهای متنی مورد نظر را تعیین نماید.
+> - **اندیس لیست‌ها و وایلدکاردها**: پیمایش اندیس‌های لیست (مانند `items.0.note`) و الگوهای `*` در این فاز پشتیبانی نمی‌شوند.
+> - **عدم تضمین انطباق یا حذف کامل اطلاعات هویتی**: استفاده از این توابع به منزلهٔ حذف قطعی و خودکار همهٔ داده‌های حساس یا انطباق قانونی با استانداردهایی چون HIPAA نیست.
 
 ---
 

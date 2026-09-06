@@ -119,8 +119,10 @@ jobs:
               'src/fa_redact/cli.py',
               'src/fa_redact/conflicts.py',
               'src/fa_redact/reporting.py',
+              'src/fa_redact/structured.py',
               'src/fa_redact/detectors/pattern.py',
               'tests/test_package.py',
+              'tests/test_structured.py',
           ]
           for req in required_sdist_files:
               assert any(name.endswith('/' + req) or name == req for name in sdist_names), (
@@ -137,6 +139,7 @@ jobs:
               'fa_redact/cli.py',
               'fa_redact/conflicts.py',
               'fa_redact/reporting.py',
+              'fa_redact/structured.py',
               'fa_redact/py.typed',
               'fa_redact/detectors/email.py',
               'fa_redact/detectors/iranian_iban.py',
@@ -180,9 +183,12 @@ jobs:
 
           # Verify callable validators and functions
           assert callable(fa_redact.detect)
+          assert callable(fa_redact.detect_fields)
           assert callable(fa_redact.redact)
+          assert callable(fa_redact.redact_fields)
           assert callable(fa_redact.detection_report)
           assert callable(fa_redact.report_detections)
+          assert callable(fa_redact.report_fields)
           assert callable(fa_redact.is_valid_national_id)
           assert callable(fa_redact.is_valid_mobile_number)
           assert callable(fa_redact.is_valid_iranian_iban)
@@ -231,6 +237,13 @@ jobs:
               check=True,
           )
           assert "[IR_NATIONAL_ID_1]" in res_redact.stdout
+
+          # Verify Phase 20 structured data helpers smoke
+          record = {"meta": {"note": "کد ملی ۱۲۳۴۵۶۷۸۹۱"}, "age": 30}
+          redacted_rec = fa_redact.redact_fields(record, ["meta.note"])
+          assert "[IR_NATIONAL_ID_1]" in redacted_rec["meta"]["note"]
+          assert record["meta"]["note"] == "کد ملی ۱۲۳۴۵۶۷۸۹۱"
+          assert redacted_rec["age"] == 30
 
           print("Wheel smoke test passed.")
           PY

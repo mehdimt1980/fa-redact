@@ -72,30 +72,32 @@ Introduced aggregate, value-free detection reporting:
 
 ---
 
-## Planned Phases
-
 ### Phase 19 — CLI
-*Status: `PLANNED` (Next Phase — Not Started)*
+*Status: `MERGED / UNRELEASED` (Merged into `main` via PR #19, commit `5fe894d23424bdb3825bac75ccfbc6c250e79c19`)*
 
-Provide a conservative command-line interface over existing `fa-redact` capabilities:
-- Expose text detection, redaction, and aggregate reporting via standard CLI commands.
-- Maintain identical semantics with core Python API.
-- Support standard input/output streaming (`stdin` / `stdout`) and file-based processing.
-- Privacy-conscious defaults (prevent accidental raw PII leakage in terminal output or logs).
-- Zero external runtime dependencies (using Python standard library `argparse`).
-- Proper POSIX-compliant exit codes and clear error reporting.
+Provided a conservative command-line interface over existing `fa-redact` capabilities:
+- Command-line entry point `fa-redact` and module `python -m fa_redact`.
+- Subcommands `detect`, `report`, and `redact` across `stdin`/`stdout` streams and file paths.
+- Privacy-conscious diagnostics to `stderr` without exposing input text, detected PII, or internal state.
+- In-place overwrite protection and zero external runtime dependencies.
 
 ---
 
+## Active Phase
+
 ### Phase 20 — Structured Data Helpers
-*Status: `PLANNED`*
+*Status: `IN PROGRESS`*
 
 Provide safe helpers for processing explicitly selected fields within structured dictionaries, mappings, or JSON-like records:
-- Explicit field targeting (users specify which keys/paths to scan or redact).
+- Explicit field targeting (users specify which keys/paths to scan, redact, or report).
 - No blind recursive redaction of arbitrary structures.
 - Preserve non-target data types, booleans, numbers, and unaffected keys.
 - Maintain zero runtime dependencies (no pandas, polars, or dataframe requirements in core).
 - No database or ORM coupling.
+
+---
+
+## Planned Phases
 
 ---
 

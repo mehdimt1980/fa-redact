@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.2.0`
 - **Current source version:** `0.2.0`
-- **Development status:** `v0.2.0` released; Phase 18 merged as `[Unreleased]` development
-- **Last closed phase:** Phase 18 — Privacy-Safe Detection Report
-- **Next planned phase:** Phase 19 — CLI
+- **Development status:** `v0.2.0` released; Phase 18 and Phase 19 merged as `[Unreleased]` development
+- **Last closed phase:** Phase 19 — CLI
+- **Current active phase:** Phase 20 — Structured Data Helpers (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -73,6 +73,11 @@ The following built-in detectors remain strictly **opt-in**:
 - Privacy-safe aggregate reporting model: `DetectionReport`, `report_detections()`, and convenience helper `detection_report()`.
 - Reports aggregate metrics (counts, distinct types, conflict indicators, duplicate groups) without storing, returning, or persisting original source text, raw values, normalized values, character spans, snippets, or PII hashes.
 - Entity-type names and counts remain aggregate metadata.
+
+### CLI
+- Conservative, privacy-conscious command-line interface `fa-redact` with `detect`, `report`, and `redact` subcommands.
+- Standard I/O streaming (`stdin` / `stdout`) and file-based processing with overwrite protection.
+- Value-free JSON reporting and raw metadata streaming without terminal or error PII leakage.
 
 ---
 
@@ -186,22 +191,23 @@ A development phase transitions through three discrete states:
 
 ## Last Closed Phase
 
-- **Phase:** Phase 18 — Privacy-Safe Detection Report
+- **Phase:** Phase 19 — CLI
 - **Status:** `CLOSED`
-- **Key Deliverables:** `DetectionReport` model, pure aggregation function `report_detections()`, pipeline helper `detection_report()`, and public exports from `fa_redact`.
-- **Test Baseline:** 623 passing tests (Phase 18 branch baseline; future phases will update this count).
+- **Key Deliverables:** Command-line interface `fa-redact` and module `python -m fa_redact` with `detect`, `report`, and `redact` subcommands, privacy-safe error diagnostics, and overwrite protection.
+- **Test Baseline:** 659 passing tests.
 - **Stable Historical Anchors:**
   - `v0.2.0` release commit: `227577deeb899de9593efb296659822f1ec0bf20`
   - Phase 18 merge commit: `4ce102f95ff683d957f55bea79d393bff8976787` (PR #17)
+  - Phase 19 merge commit: `5fe894d23424bdb3825bac75ccfbc6c250e79c19` (PR #19)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
-## Next Phase
+## Active Phase
 
-- **Phase:** Phase 19 — CLI
-- **Status:** `NOT STARTED`
-- **Scope:** Provide a conservative command-line interface over existing `fa-redact` detection, redaction, and reporting capabilities without changing core detector semantics or introducing external runtime dependencies. Detailed CLI arguments and command syntax will be specified in Phase 19 itself.
+- **Phase:** Phase 20 — Structured Data Helpers
+- **Status:** `IN PROGRESS`
+- **Scope:** Provide conservative helpers for applying existing `fa-redact` detection, redaction, and reporting capabilities to explicitly selected fields in structured Python mappings / JSON-like records without blind recursion or external dependencies.
 
 ---
 
