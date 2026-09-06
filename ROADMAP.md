@@ -107,18 +107,32 @@ Established the research and evaluation foundation for Persian personal-name nam
 
 ---
 
+### Phase 21.1 — Persian NER Empirical Benchmark & Prototype
+*Status: `MERGED / UNRELEASED` (Merged into `main` via PR #22, commit `bf1a71b2e675466cb1bf7ef0ab60eaf5f0bbef0f`)*
+
+Executed a real, reproducible Persian PERSON NER benchmark on a held-out corpus:
+- Benchmarked Apache-2.0 checkpoint `HooshvareLab/bert-fa-base-uncased-ner-peyma` against the PEYMA test split (1,026 sentences, 434 gold PERSON entities).
+- Reproduced exact-span PERSON entity metrics: 99.31% precision, 99.08% recall, 99.19% exact-span F1 (TP=430, FP=3, FN=4).
+- Validated deterministic token-to-span mapping and exact character offset reconstruction without text distortion (0 structural alignment failures).
+- Analyzed error modes (3 boundary errors, 0 duplicate predictions, 0 leading-I recoveries, 0 truncated sentences).
+- Verified zero runtime dependencies in core and reached a CONDITIONAL GO decision for an opt-in implementation prototype.
+
+---
+
 ## Active Phase
 
-### Phase 21.1 — Persian NER Empirical Benchmark & Prototype
+### Phase 21.2 — Opt-in Persian NER Implementation Prototype
 *Status: `ACTIVE / IN PROGRESS`*
 
-Execute a real, reproducible Persian PERSON NER benchmark on a held-out corpus:
-- Benchmark a real candidate model checkpoint (e.g. `HooshvareLab/bert-fa-base-uncased-ner-peyma`) against a real held-out Persian benchmark dataset (e.g. PEYMA) with verified licensing.
-- Reproduce exact-span PERSON entity metrics (TP, FP, FN, precision, recall, F1) using the Phase 21 evaluation harness.
-- Validate deterministic token-to-span mapping and exact character offset reconstruction (`original_text[start:end]`) without text distortion.
-- Quantify error profiles (false positives, false negatives, compound name boundaries, ZWNJ, Arabic variants, title/honorific boundaries).
-- Keep core `fa-redact` at zero runtime dependencies (`dependencies = []`).
-- Provide an evidence-based production readiness decision (GO / CONDITIONAL GO / NO-GO) for any future production detector phase.
+Convert the validated Phase 21.1 research result into a strictly opt-in production-package detector prototype:
+- Implement `PersianNERDetector` satisfying the `Detector` structural protocol.
+- Load model checkpoints and fast tokenizers strictly from local filesystem directories (`local_files_only=True`, `trust_remote_code=False`).
+- Maintain core `fa-redact` zero runtime dependencies (`dependencies = []`) with optional `[project.optional-dependencies] ner = [...]`.
+- Require fast tokenizer with exact character offset mapping; audit offset bounds structurally.
+- Perform NER inference on position-preserving normalized text while slicing original source strings for `Detection.value`.
+- Enforce fail-loud long-text policy rejecting over-length inputs without silent truncation.
+- Preserve existing conservative defaults: `_DEFAULT_DETECTORS` unchanged, explicit `detectors=[...]` required.
+- Do not implement clinical profiles, patient/doctor role inferences, or compliance claims (Phase 22 remains FUTURE).
 
 ---
 

@@ -15,6 +15,7 @@ from fa_redact.detectors import (
     IranianNationalIDDetector,
     PatternDetector,
     PatternRule,
+    PersianNERDetector,
 )
 from fa_redact.models import Detection
 from fa_redact.normalization import (
@@ -58,6 +59,7 @@ __all__: list[str] = [
     "IranianNationalIDDetector",
     "PatternDetector",
     "PatternRule",
+    "PersianNERDetector",
     "PseudonymizationSession",
     "detect",
     "detect_fields",

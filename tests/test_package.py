@@ -50,6 +50,7 @@ def test_package_all_export() -> None:
         "IranianNationalIDDetector",
         "PatternDetector",
         "PatternRule",
+        "PersianNERDetector",
         "PseudonymizationSession",
         "detect",
         "detect_fields",
@@ -143,6 +144,9 @@ def test_subpackage_imports() -> None:
     from fa_redact.detectors import (
         PatternRule as SubPatternRule,
     )
+    from fa_redact.detectors import (
+        PersianNERDetector as SubPersianNERDetector,
+    )
     from fa_redact.validators import (
         is_valid_bank_card_number as sub_card_val,
     )
@@ -171,6 +175,7 @@ def test_subpackage_imports() -> None:
     assert SubNidDetector is not None
     assert SubPatternDetector is not None
     assert SubPatternRule is not None
+    assert SubPersianNERDetector is not None
 
 
 def test_cli_import_and_scripts() -> None:
@@ -189,3 +194,22 @@ def test_cli_import_and_scripts() -> None:
         match = re.search(r'(?m)^fa-redact\s*=\s*"([^"]+)"', content)
         assert match is not None, "fa-redact script not found in pyproject.toml"
         assert match.group(1) == "fa_redact.cli:main"
+
+
+def test_pyproject_dependencies_and_extras() -> None:
+    """Verify base package has zero mandatory dependencies and optional ner extra."""
+    import re
+    from pathlib import Path
+
+    pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    if pyproject_path.exists():
+        content = pyproject_path.read_text(encoding="utf-8")
+        # Check dependencies = []
+        dep_match = re.search(r"(?m)^dependencies\s*=\s*\[\s*\]", content)
+        assert dep_match is not None, "Core dependencies must be empty list []"
+
+        # Check optional-dependencies contain ner
+        assert "[project.optional-dependencies]" in content
+        assert "ner = [" in content
+        assert "torch" in content
+        assert "transformers" in content

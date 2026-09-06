@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.2.0`
 - **Current source version:** `0.2.0`
-- **Development status:** `v0.2.0` released; Phase 18, Phase 19, Phase 20, and Phase 21 merged as `[Unreleased]` development
-- **Last closed phase:** Phase 21 — Persian Names / NER Research & Evaluation
-- **Current active phase:** Phase 21.1 — Persian NER Empirical Benchmark & Prototype (In Progress)
+- **Development status:** `v0.2.0` released; Phase 18, Phase 19, Phase 20, Phase 21, and Phase 21.1 merged as `[Unreleased]` development
+- **Last closed phase:** Phase 21.1 — Persian NER Empirical Benchmark & Prototype
+- **Current active phase:** Phase 21.2 — Opt-in Persian NER Implementation Prototype (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -31,6 +31,7 @@ The following built-in detectors remain strictly **opt-in**:
 - `EmailDetector` (`EMAIL`)
 - `BankCardDetector` (`BANK_CARD`)
 - `PatternDetector` (user-configured entity types via `PatternRule`)
+- `PersianNERDetector` (`PERSON`, opt-in experimental detector using local ML models)
 
 ### Detector Selection Rules
 
@@ -197,34 +198,45 @@ A development phase transitions through three discrete states:
 
 ## Last Closed Phase
 
-- **Phase:** Phase 21 — Persian Names / NER Research & Evaluation
+- **Phase:** Phase 21.1 — Persian NER Empirical Benchmark & Prototype
 - **Status:** `CLOSED`
-- **PR:** #21
-- **Merge Commit:** `9ff013e1b4dddf7f2bd5f21cdf9c9feed480266c`
-- **Verified Post-Merge Main CI:** Run `34038606125` (push to `main`, conclusion: success, 5 jobs passed)
-- **Phase 21 Baseline:** 722 passing tests.
-- **Unreleased Scope:** Phase 18, 19, 20, and 21 are merged as `[Unreleased]` development.
-- **Phase 21 Boundaries:** Phase 21 did NOT add a production `PersianNameDetector` and did NOT execute a real model benchmark.
-- **Key Deliverables Produced:**
-  - Comprehensive Persian NER research document (`research/phase21_persian_ner.md`)
-  - Exact-span research evaluation harness (`research/evaluation.py`)
-  - Synthetic Persian NER challenge fixtures (`research/synthetic_fixtures.py`)
-  - Licensing, dataset terms, and optional packaging architectural analysis
+- **PR:** #22
+- **Merge Commit:** `bf1a71b2e675466cb1bf7ef0ab60eaf5f0bbef0f`
+- **Verified Post-Merge Main CI:** Run `34042292070` (push to `main`, conclusion: success, 5 jobs passed)
+- **Phase 21.1 Baseline:** 757 passing tests.
+- **Unreleased Scope:** Phase 18, 19, 20, 21, and 21.1 are merged as `[Unreleased]` development.
+- **Key Phase 21.1 Empirical Result:**
+  - 1,026 evaluated sentences
+  - 434 gold PERSON entities
+  - 433 predicted PERSON entities
+  - TP = 430
+  - FP = 3
+  - FN = 4
+  - precision = 0.993072
+  - recall = 0.990783
+  - exact-span F1 = 0.991926
+  - boundary errors = 3
+  - duplicate predictions = 0
+  - tokenizer structural alignment failures = 0
+  - truncated sentences = 0
+  - max tokenized length = 153
+- **Phase 21.1 Decision:** CONDITIONAL GO FOR AN OPT-IN NER IMPLEMENTATION PROTOTYPE
 - **Stable Historical Anchors:**
   - `v0.2.0` release commit: `227577deeb899de9593efb296659822f1ec0bf20`
   - Phase 18 merge commit: `4ce102f95ff683d957f55bea79d393bff8976787` (PR #17)
   - Phase 19 merge commit: `5fe894d23424bdb3825bac75ccfbc6c250e79c19` (PR #19)
   - Phase 20 merge commit: `5e1023a2e3f9a910cc669569525652098262b2ea` (PR #20)
   - Phase 21 merge commit: `9ff013e1b4dddf7f2bd5f21cdf9c9feed480266c` (PR #21)
+  - Phase 21.1 merge commit: `bf1a71b2e675466cb1bf7ef0ab60eaf5f0bbef0f` (PR #22)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
 ## Active Phase
 
-- **Phase:** Phase 21.1 — Persian NER Empirical Benchmark & Prototype
+- **Phase:** Phase 21.2 — Opt-in Persian NER Implementation Prototype
 - **Status:** `IN PROGRESS`
-- **Scope:** Execute a real, reproducible Persian PERSON NER benchmark on a held-out corpus with verified licensing, evaluate exact-span precision/recall/F1 metrics, validate token-to-span and exact character offset reconstruction without text distortion, perform detailed error analysis, maintain zero runtime dependencies in core, and provide a clear decision for any future production detector phase.
+- **Scope:** Implement an experimental, strictly opt-in `PersianNERDetector` satisfying the `Detector` protocol using local Hugging Face model checkpoints, optional `ner` packaging extra, exact character offset extraction from position-preserving normalized text, fail-loud long-text policy, deterministic output ordering, zero runtime dependencies in core, and no modifications to existing default detection behavior.
 
 ---
 

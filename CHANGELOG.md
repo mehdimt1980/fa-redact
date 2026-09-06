@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Experimental, opt-in `PersianNERDetector` performing local Persian personal name (`PERSON`) named entity recognition using explicitly supplied local Hugging Face-compatible token-classification model directories (Phase 21.2).
+- Optional `ner` dependency extra (`torch>=2.7.0,<3`, `transformers>=4.49.0,<5`) preserving zero mandatory runtime dependencies in core package (Phase 21.2).
+- Exact source character offset extraction from position-preserving normalized text, slicing exact raw strings for `Detection.value` and aligned normalized strings for `Detection.normalized_value` without text distortion (Phase 21.2).
+- Structural tokenizer offset safety check verifying non-special token offsets are non-negative, bounded within text length, and monotonic (Phase 21.2).
+- Deterministic BIO to `PERSON` span reconstruction supporting subword merging, consecutive distinct `B-PER` entities, and leading `I-PER` recovery (Phase 21.2).
+- Privacy-safe fail-loud long-text policy raising `ValueError` on inputs exceeding configured/model max length without silent truncation (Phase 21.2).
+- Public export of `PersianNERDetector` from `fa_redact` and `fa_redact.detectors` (Phase 21.2).
 - Persian Named Entity Recognition (NER) empirical benchmark runner and exact offset mapping utilities (`research/persian_ner_benchmark.py`) mapping subword predictions and character offsets to exact Python string slices without text distortion, parsing BIO/CoNLL annotations, and generating deterministic value-free aggregate summaries (Phase 21.1).
 - Empirical Persian NER benchmark report (`research/phase21_1_persian_ner_benchmark.md`) and aggregate result artifact (`research/results/phase21_1_persian_ner_benchmark.json`) reproducing exact-span `PERSON` metrics on the held-out PEYMA test split (1,026 sentences, 434 gold entities: TP=430, FP=3, FN=4, Precision=99.31%, Recall=99.08%, F1=99.19%, 0 offset mapping failures) with Apache-2.0 model checkpoint `HooshvareLab/bert-fa-base-uncased-ner-peyma` (Phase 21.1).
 - Persian Named Entity Recognition (NER) comprehensive research deliverable (`research/phase21_persian_ner.md`) evaluating public Persian NER corpora (PEYMA, ARMAN, WikiANN, MultiNERD, clinical/health text resources), model architectures (ParsBERT, DistilBERT, ONNX Runtime), exact-span metrics, licensing, optional packaging design (`fa-redact[ner]`), and healthcare domain shift (Phase 21).
@@ -32,6 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public root exports `DetectionReport`, `detection_report`, and `report_detections` from the `fa_redact` package namespace (Phase 18).
 
 ### Limitations
+- `PersianNERDetector` is an experimental prototype requiring explicit user opt-in and local model assets; it is not enabled by default and does not automatically download models (Phase 21.2).
+- Long documents exceeding configured model token length fail loudly; chunking and sliding-window merging are not implemented in Phase 21.2 (Phase 21.2).
+- Personal name detection predicts `PERSON` entities without inferring clinical or administrative roles (patient, physician, relative) and does not guarantee complete clinical de-identification (Phase 21.2).
 - Real empirical Persian NER benchmark completed; no production detector added in Phase 21.1 pending a dedicated implementation phase (Phase 21.1).
 - News-domain empirical benchmark results (PEYMA) do not prove clinical de-identification performance due to syntax, vocabulary, and multi-role healthcare domain shift (Phase 21.1).
 - Persian NER research foundation complete; no production detector added in Phase 21 pending dedicated empirical model benchmarking on held-out datasets (Phase 21).
