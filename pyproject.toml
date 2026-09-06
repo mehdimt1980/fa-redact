@@ -39,6 +39,9 @@ classifiers = [
 ]
 dependencies = []
 
+[project.scripts]
+fa-redact = "fa_redact.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "build>=1.0.0",

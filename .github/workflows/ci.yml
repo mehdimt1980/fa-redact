@@ -115,6 +115,8 @@ jobs:
               'LICENSE',
               'pyproject.toml',
               'src/fa_redact/__init__.py',
+              'src/fa_redact/__main__.py',
+              'src/fa_redact/cli.py',
               'src/fa_redact/conflicts.py',
               'src/fa_redact/reporting.py',
               'src/fa_redact/detectors/pattern.py',
@@ -131,6 +133,8 @@ jobs:
 
           required_wheel_entries = [
               'fa_redact/__init__.py',
+              'fa_redact/__main__.py',
+              'fa_redact/cli.py',
               'fa_redact/conflicts.py',
               'fa_redact/reporting.py',
               'fa_redact/py.typed',
@@ -161,7 +165,10 @@ jobs:
 
           ./smoke_venv/bin/python - <<'PY'
           from importlib.metadata import version
+          import subprocess
+          import sys
           import fa_redact
+          from fa_redact.cli import main as cli_main
 
           print(f"Imported fa_redact from: {fa_redact.__file__}")
 
@@ -182,6 +189,7 @@ jobs:
           assert callable(fa_redact.is_valid_email)
           assert callable(fa_redact.is_valid_bank_card_number)
           assert callable(fa_redact.resolve_detection_conflicts)
+          assert callable(cli_main)
 
           # Verify detector, report, and configuration classes
           assert fa_redact.DetectionReport is not None
@@ -204,6 +212,25 @@ jobs:
           assert report.counts["IR_NATIONAL_ID"] == 1
           assert "۱۲۳۴۵۶۷۸۹۱" not in repr(report)
           assert "1234567891" not in repr(report)
+
+          # Verify Phase 19 CLI console entry point and -m execution
+          res = subprocess.run(
+              [sys.executable, "-m", "fa_redact", "--version"],
+              capture_output=True,
+              text=True,
+              check=True,
+          )
+          assert f"fa-redact {installed_version}" in res.stdout
+
+          res_redact = subprocess.run(
+              [sys.executable, "-m", "fa_redact", "redact"],
+              input="کد ملی: ۱۲۳۴۵۶۷۸۹۱",
+              capture_output=True,
+              text=True,
+              encoding="utf-8",
+              check=True,
+          )
+          assert "[IR_NATIONAL_ID_1]" in res_redact.stdout
 
           print("Wheel smoke test passed.")
           PY

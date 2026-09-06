@@ -42,6 +42,7 @@
   - [10. Privacy-Safe Detection Reports (Unreleased)](#10-privacy-safe-detection-reports-unreleased)
   - [11. Redaction Semantics](#11-redaction-semantics)
   - [12. Stateful Pseudonymization Sessions](#12-stateful-pseudonymization-sessions)
+  - [13. Command-Line Interface (CLI) (Unreleased)](#13-command-line-interface-cli-unreleased)
 - [Custom Detectors](#custom-detectors)
 - [Healthcare & AI/LLM Usage Pattern](#healthcare--aillm-usage-pattern)
 - [Current Coverage & Limitations](#current-coverage--limitations)
@@ -635,6 +636,93 @@ resolved_report = report_detections(resolved_detections)
 - **Historical Literal Token Reservation**: Literal placeholder-like tokens observed in prior calls remain reserved so they are never assigned to real PII in later calls.
 - **Unknown Placeholders**: Unmapped placeholders (e.g., `[IR_MOBILE_99]`) are left untouched without error.
 
+#### 13. Command-Line Interface (CLI) (Unreleased)
+
+> [!NOTE]
+> **Unreleased / Development**: The command-line interface (`fa-redact` and `python -m fa_redact`) is in active development in this repository and is not included in published release v0.2.0.
+
+`fa-redact` provides a conservative, privacy-conscious command-line interface using only the Python standard library (`argparse`). The CLI exposes detection, redaction, and aggregate reporting without modifying core library semantics.
+
+##### 1. Command Help & Version
+
+```bash
+# View general CLI help
+fa-redact --help
+
+# View installed CLI version
+fa-redact --version
+```
+
+##### 2. Stdin and File Redaction
+
+```bash
+# Redact from standard input (streaming)
+echo "کد ملی بیمار ۱۲۳۴۵۶۷۸۹۱ و موبایل ۰۹۱۲۳۴۵۶۷۸۹ است." | fa-redact redact
+# Output: "کد ملی بیمار [IR_NATIONAL_ID_1] و موبایل [IR_MOBILE_1] است."
+
+# Redact from input file to stdout
+fa-redact redact clinical_note.txt
+
+# Redact from input file to an explicit output file
+fa-redact redact clinical_note.txt -o sanitized_note.txt
+```
+
+##### 3. Privacy-Safe Aggregate Detection Report
+
+Generate a value-free JSON report containing entity counts and conflict indicators:
+
+```bash
+# Generate safe aggregate report from file
+fa-redact report clinical_note.txt
+
+# Pipe report output directly to JSON tools
+fa-redact report clinical_note.txt | jq .
+```
+
+##### 4. Detection Metadata (Value-Free)
+
+Output structured detection slice metadata (`type`, `start`, `end`) as JSON:
+
+```bash
+fa-redact detect clinical_note.txt
+```
+
+> [!IMPORTANT]
+> `fa-redact detect` outputs **only** structural offsets (`type`, `start`, `end`) and intentionally **never** emits detected identifier values, normalized values, source text, context snippets, or PII hashes.
+
+##### 5. Explicit Detector Selection
+
+Explicitly passing `--detectors` **replaces** the default detector set:
+
+```bash
+# Run only the opt-in email and bank card detectors
+fa-redact redact input.txt --detectors email,bank_card
+
+# Run no detectors (passes text through untouched)
+fa-redact redact input.txt --detectors none
+```
+
+##### 6. Redaction Conflict Resolution Policies
+
+Configure how overlapping or duplicate detections are handled during redaction:
+
+```bash
+# Default 'reject' policy (fails loud with privacy-safe error on conflicts)
+fa-redact redact input.txt --conflict-policy reject
+
+# 'longest' policy (greedily prefers longer candidate spans)
+fa-redact redact input.txt --detectors email,bank_card --conflict-policy longest
+
+# 'priority' policy (resolves conflicts by explicit entity type hierarchy)
+fa-redact redact input.txt --detectors email,bank_card --conflict-policy priority --priority BANK_CARD,EMAIL
+```
+
+> [!WARNING]
+> - **In-Place File Safety**: `fa-redact` rejects overwriting the source file in-place (`input` and `output` cannot point to the same file).
+> - **Privacy-Safe Diagnostics**: Error messages sent to `stderr` never leak source text, detected values, or snippets.
+> - **No Complete De-Identification**: Supported CLI detectors do NOT constitute complete clinical de-identification, free-text name extraction, or address removal.
+> - **No Compliance Guarantees**: Using the CLI does NOT guarantee automated GDPR, HIPAA, or healthcare regulatory compliance.
+
 ---
 
 ### Custom Detectors
@@ -820,6 +908,7 @@ This project is licensed under the [MIT License](LICENSE).
   - [۱۰. گزارش امن‌تر از نظر حریم خصوصی برای تشخیص‌ها (در حال توسعه / منتشرنشده)](#۱۰-گزارش-امنتر-از-نظر-حریم-خصوصی-برای-تشخیصها-در-حال-توسعه--منتشرنشده)
   - [۱۱. بازسازی دقیق بر اساس span در پنهان‌سازی](#۱۱-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
   - [۱۲. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۱۲-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
+  - [۱۳. رابط خط فرمان (CLI) (در حال توسعه / منتشرنشده)](#۱۳-رابط-خط-فرمان-cli-در-حال-توسعه--منتشرنشده)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
 - [جدول پوشش و قابلیت‌ها](#جدول-پوشش-و-قابلیت‌ها)
@@ -1385,6 +1474,88 @@ resolved_report = report_detections(resolved_detections)
 - **به‌روزرسانی اتمیک (Atomic Updates)**: اگر در حین پردازش خطایی رخ دهد، وضعیت نشست و شمارنده‌ها دست‌نخورده باقی می‌مانند.
 - **محافظت در برابر تداخل تاریخی با نشان‌گذارهای متنی**: اگر در متون قبلی عبارتی مانند `[IR_MOBILE_2]` به عنوان متن عادی وجود داشته باشد، سیستم آن شماره را رزرو کرده و برای شناسه‌های واقعی جدید اختصاص نمی‌دهد.
 - **عدم دستکاری نشان‌گذارهای ناشناخته**: نشان‌گذارهایی که در نگاشت نشست ثبت نشده‌اند (مانند `[IR_MOBILE_99]`) بدون خطا و دست‌نخورده باقی می‌مانند.
+
+#### ۱۳. رابط خط فرمان (CLI) (در حال توسعه / منتشرنشده)
+
+> [!NOTE]
+> **در حال توسعه / منتشرنشده**: رابط خط فرمان (`fa-redact` و `python -m fa_redact`) در حال حاضر در مخزن در حال توسعه است و در نسخهٔ منتشرشدهٔ v0.2.0 موجود نیست.
+
+کتابخانهٔ `fa-redact` یک رابط خط فرمان سبک، مستقل و مبتنی بر حریم خصوصی ارائه می‌دهد که بدون وابستگی خارجی (با استفاده از کتابخانهٔ استاندارد `argparse`)، امکان تشخیص، پنهان‌سازی و گزارش‌گیری را فراهم می‌سازد.
+
+##### ۱. راهنما و مشاهدهٔ نسخه
+
+```bash
+# مشاهده راهنمای کلی CLI
+fa-redact --help
+
+# مشاهده نسخه نصب‌شده
+fa-redact --version
+```
+
+##### ۲. پنهان‌سازی از طریق Stdin و فایل
+
+```bash
+# پنهان‌سازی از طریق ورودی استاندارد (جریان / Streaming)
+echo "کد ملی بیمار ۱۲۳۴۵۶۷۸۹۱ و موبایل ۰۹۱۲۳۴۵۶۷۸۹ است." | fa-redact redact
+# خروجی: "کد ملی بیمار [IR_NATIONAL_ID_1] و موبایل [IR_MOBILE_1] است."
+
+# پنهان‌سازی فایل متنی و چاپ در خروجی استاندارد
+fa-redact redact input.txt
+
+# پنهان‌سازی فایل متنی و ذخیره در فایل مقصد
+fa-redact redact input.txt -o redacted.txt
+```
+
+##### ۳. گزارش آماری امن از نظر حریم خصوصی
+
+تولید گزارش آماری با ساختار JSON بدون ذخیره یا افشای مقادیر حساس:
+
+```bash
+# تولید گزارش آماری از فایل
+fa-redact report input.txt
+```
+
+##### ۴. فراداده‌های تشخیص (بدون مقدار)
+
+خروجی متادیتا و بازه‌های تشخیص (`type`, `start`, `end`) در قالب JSON:
+
+```bash
+fa-redact detect input.txt
+```
+
+> [!IMPORTANT]
+> دستور `fa-redact detect` ساختار بازه‌ای (`type`, `start`, `end`) را نمایش می‌دهد و عمداً **هیچ مقدار خام، مقدار نرمال‌شده، برش متنی یا هش PII** را در خروجی بازنمی‌گرداند.
+
+##### ۵. انتخاب صریح تشخیص‌دهنده‌ها
+
+استفاده از گزینهٔ `--detectors` مجموعهٔ پیش‌فرض را **جایگزین** می‌کند:
+
+```bash
+# اجرای فقط تشخیص‌دهنده‌های ایمیل و کارت بانکی
+fa-redact redact input.txt --detectors email,bank_card
+
+# اجرای بدون هیچ تشخیص‌دهنده (عدم تغییر متن)
+fa-redact redact input.txt --detectors none
+```
+
+##### ۶. سیاست‌های حل تعارض در پنهان‌سازی
+
+```bash
+# سیاست پیش‌فرض رد تعارض (خطای صریح و امن در صورت هم‌پوشانی)
+fa-redact redact input.txt --conflict-policy reject
+
+# سیاست طولانی‌ترین span
+fa-redact redact input.txt --detectors email,bank_card --conflict-policy longest
+
+# سیاست اولویت صریح انواع موجودیت
+fa-redact redact input.txt --detectors email,bank_card --conflict-policy priority --priority BANK_CARD,EMAIL
+```
+
+> [!WARNING]
+> - **امنیت عدم بازنویسی فایل درجا**: ابزار `fa-redact` بازنویسی مستقیم روی همان فایل ورودی را رد می‌کند تا از آسیب دیدن فایل منبع جلوگیری شود.
+> - **پیام‌های خطای بدون نشت PII**: خطاهای صادرشده به `stderr` هرگز حاوی مقادیر حساس، متن اولیه یا برش‌های محرمانه نیستند.
+> - **عدم ادعای ناشناس‌سازی بالینی کامل**: شناسه‌های پشتیبانی‌شده شامل نام اشخاص، آدرس‌های آزاد یا سوابق متنی کامل سلامت نمی‌شوند.
+> - **عدم تضمین خودکار انطباق قانونی**: استفاده از CLI به خودی خود انطباق با GDPR یا HIPAA را ایجاد نمی‌کند.
 
 ---
 

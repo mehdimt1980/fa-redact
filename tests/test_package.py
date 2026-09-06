@@ -156,3 +156,21 @@ def test_subpackage_imports() -> None:
     assert SubNidDetector is not None
     assert SubPatternDetector is not None
     assert SubPatternRule is not None
+
+
+def test_cli_import_and_scripts() -> None:
+    """Verify CLI module import and entry point script configuration."""
+    import re
+    from pathlib import Path
+
+    from fa_redact.cli import main as cli_main
+
+    assert callable(cli_main)
+
+    pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    if pyproject_path.exists():
+        content = pyproject_path.read_text(encoding="utf-8")
+        assert "[project.scripts]" in content
+        match = re.search(r'(?m)^fa-redact\s*=\s*"([^"]+)"', content)
+        assert match is not None, "fa-redact script not found in pyproject.toml"
+        assert match.group(1) == "fa_redact.cli:main"
