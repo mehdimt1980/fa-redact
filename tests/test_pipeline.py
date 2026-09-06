@@ -6,6 +6,7 @@ import pytest
 
 from fa_redact import (
     Detection,
+    Detector,
     IranianMobileNumberDetector,
     IranianNationalIDDetector,
     detect,
@@ -346,3 +347,63 @@ def test_email_remains_absent_from_defaults() -> None:
     # Only IBAN should be detected by default
     assert len(results) == 1
     assert results[0].type == "IR_IBAN"
+
+
+def test_bank_card_remains_absent_from_defaults() -> None:
+    """Verify BankCardDetector remains opt-in and is not run by default in detect()."""
+    text = "کارت: 1234567890123452 و شبا: IR641234567890123456789012"
+    results = detect(text)
+    # Only IBAN should be detected by default
+    assert len(results) == 1
+    assert results[0].type == "IR_IBAN"
+
+
+def test_detect_bank_card_opt_in() -> None:
+    """Verify explicit BankCardDetector detects 16-digit card numbers."""
+    from fa_redact import BankCardDetector
+
+    text = "کارت: 1234567890123452"
+    results = detect(text, detectors=[BankCardDetector()])
+    assert len(results) == 1
+    assert results[0].type == "BANK_CARD"
+    assert results[0].value == "1234567890123452"
+
+
+def test_detect_no_accidental_overlap_with_all_detectors() -> None:
+    """Verify 16-digit card does not trigger National ID or Mobile sub-span matches."""
+    from fa_redact import (
+        BankCardDetector,
+        IranianIBANDetector,
+        IranianMobileNumberDetector,
+        IranianNationalIDDetector,
+    )
+
+    text = "شماره کارت: 1234567890123452"
+    all_detectors: list[Detector] = [
+        IranianNationalIDDetector(),
+        IranianMobileNumberDetector(),
+        IranianIBANDetector(),
+        BankCardDetector(),
+    ]
+    results = detect(text, detectors=all_detectors)
+    assert len(results) == 1
+    assert results[0].type == "BANK_CARD"
+    assert results[0].value == "1234567890123452"
+
+
+def test_bank_card_and_email_overlap_behavior() -> None:
+    """Verify numeric email and bank card overlap raises ValueError on redact."""
+    from fa_redact import BankCardDetector, EmailDetector, redact
+
+    text = "ایمیل: 1234567890123452@example.com"
+    detectors: list[Detector] = [EmailDetector(), BankCardDetector()]
+
+    # detect() permits overlapping detections
+    detections = detect(text, detectors=detectors)
+    assert len(detections) == 2
+    types = {d.type for d in detections}
+    assert types == {"EMAIL", "BANK_CARD"}
+
+    # redact() fails loudly on overlaps
+    with pytest.raises(ValueError, match=r"[Oo]verlap"):
+        redact(text, detectors=detectors)

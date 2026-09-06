@@ -14,6 +14,7 @@ def test_package_all_export() -> None:
     """Verify that __all__ exports all expected public symbols."""
     expected_exports = {
         "__version__",
+        "BankCardDetector",
         "Detection",
         "Detector",
         "EmailDetector",
@@ -22,6 +23,7 @@ def test_package_all_export() -> None:
         "IranianNationalIDDetector",
         "PseudonymizationSession",
         "detect",
+        "is_valid_bank_card_number",
         "is_valid_email",
         "is_valid_iranian_iban",
         "is_valid_mobile_number",
@@ -54,6 +56,9 @@ def test_pipeline_and_protocols_imports() -> None:
 def test_subpackage_imports() -> None:
     """Verify direct imports from validators and detectors subpackages."""
     from fa_redact.detectors import (
+        BankCardDetector as SubBankCardDetector,
+    )
+    from fa_redact.detectors import (
         EmailDetector as SubEmailDetector,
     )
     from fa_redact.detectors import (
@@ -64,6 +69,9 @@ def test_subpackage_imports() -> None:
     )
     from fa_redact.detectors import (
         IranianNationalIDDetector as SubNidDetector,
+    )
+    from fa_redact.validators import (
+        is_valid_bank_card_number as sub_card_val,
     )
     from fa_redact.validators import (
         is_valid_email as sub_email_val,
@@ -78,10 +86,12 @@ def test_subpackage_imports() -> None:
         is_valid_national_id as sub_nid_val,
     )
 
+    assert callable(sub_card_val)
     assert callable(sub_email_val)
     assert callable(sub_iban_val)
     assert callable(sub_mobile_val)
     assert callable(sub_nid_val)
+    assert SubBankCardDetector is not None
     assert SubEmailDetector is not None
     assert SubIbanDetector is not None
     assert SubMobileDetector is not None

@@ -608,3 +608,40 @@ def test_pseudonymize_multiple_distinct_ibans() -> None:
         "[IR_IBAN_1]": "IR641234567890123456789012",
         "[IR_IBAN_2]": "IR220000000000000000000001",
     }
+
+
+def test_pseudonymize_bank_card_cross_script_identity_and_restoration() -> None:
+    """Verify cross-script card identity reuse and first-observed raw restoration."""
+    from fa_redact import BankCardDetector
+
+    session = PseudonymizationSession()
+    detectors = [BankCardDetector()]
+
+    # First turn: Persian digits representation
+    turn1 = session.pseudonymize("کارت اول: ۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲", detectors=detectors)
+    assert turn1 == "کارت اول: [BANK_CARD_1]"
+    assert session.mapping == {"[BANK_CARD_1]": "۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲"}
+
+    # Second turn: ASCII digits representation for the same card
+    turn2 = session.pseudonymize("کارت مجدد: 1234567890123452", detectors=detectors)
+    assert turn2 == "کارت مجدد: [BANK_CARD_1]"
+
+    # Restoration recovers the first-observed Persian representation
+    restored = session.restore("واریز به [BANK_CARD_1] انجام شد.")
+    assert restored == "واریز به ۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲ انجام شد."
+
+
+def test_pseudonymize_multiple_distinct_bank_cards() -> None:
+    """Verify multiple distinct bank cards receive sequential placeholders."""
+    from fa_redact import BankCardDetector
+
+    session = PseudonymizationSession()
+    detectors = [BankCardDetector()]
+
+    text = "کارت اول: 1234567890123452 و کارت دوم: 5022291234567897"
+    result = session.pseudonymize(text, detectors=detectors)
+    assert result == "کارت اول: [BANK_CARD_1] و کارت دوم: [BANK_CARD_2]"
+    assert session.mapping == {
+        "[BANK_CARD_1]": "1234567890123452",
+        "[BANK_CARD_2]": "5022291234567897",
+    }
