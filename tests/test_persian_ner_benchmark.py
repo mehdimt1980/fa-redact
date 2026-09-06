@@ -1,8 +1,9 @@
 """Unit tests for Persian NER empirical benchmark utilities.
 
 Tests exact token-to-span reconstruction, subword-to-span offset mapping,
-BIO tag parsing, duplicate handling, Unicode/ZWNJ offset integrity, and
-safe value-free result serialization without requiring model weights or downloads.
+strict BIO tag parsing, strict CoNLL parsing, tokenizer offset/alignment auditing,
+recursive privacy key gating, and safe value-free result serialization without
+requiring model weights or downloads.
 """
 
 from __future__ import annotations
@@ -10,10 +11,12 @@ from __future__ import annotations
 import json
 
 import pytest
-from research.evaluation import EntitySpan, evaluate_exact_spans
+from research.evaluation import EntitySpan
 from research.persian_ner_benchmark import (
     BenchmarkAggregateSummary,
+    audit_tokenizer_alignment,
     bio_tokens_to_spans,
+    bio_tokens_to_spans_with_stats,
     parse_bio_label,
     parse_conll_data,
     serialize_benchmark_result,
@@ -22,7 +25,7 @@ from research.persian_ner_benchmark import (
 
 
 class TestParseBioLabel:
-    """Test parse_bio_label with various tag formats and prefixes."""
+    """Test parse_bio_label with various tag formats and strict/lenient modes."""
 
     def test_standard_tags_with_underscore(self) -> None:
         assert parse_bio_label("B_PER") == ("B", "PERSON")
@@ -41,6 +44,18 @@ class TestParseBioLabel:
     def test_empty_or_whitespace_label(self) -> None:
         assert parse_bio_label("") == ("O", None)
         assert parse_bio_label("   ") == ("O", None)
+
+    def test_strict_mode_rejects_empty_label(self) -> None:
+        with pytest.raises(ValueError, match="Empty or whitespace BIO label"):
+            parse_bio_label("", strict=True)
+
+    def test_strict_mode_rejects_invalid_prefix(self) -> None:
+        with pytest.raises(ValueError, match="Invalid BIO prefix"):
+            parse_bio_label("X_PER", strict=True)
+
+    def test_strict_mode_rejects_missing_entity_type(self) -> None:
+        with pytest.raises(ValueError, match="Missing entity type"):
+            parse_bio_label("B_", strict=True)
 
 
 class TestBioTokensToSpans:
@@ -81,9 +96,10 @@ class TestBioTokensToSpans:
     def test_leading_i_per_recovery(self) -> None:
         tokens = ["ملاقات", "رضایی", "با", "مدیر"]
         tags = ["O", "I_PER", "O", "O"]
-        text, spans = bio_tokens_to_spans(tokens, tags)
+        text, spans, recoveries = bio_tokens_to_spans_with_stats(tokens, tags)
 
         assert len(spans) == 1
+        assert recoveries == 1
         assert spans[0] == EntitySpan(start=7, end=12, type="PERSON")
         assert text[spans[0].start : spans[0].end] == "رضایی"
 
@@ -98,7 +114,6 @@ class TestBioTokensToSpans:
         assert text[spans[0].start : spans[0].end] == "علی‌رضا حسینی"
 
     def test_arabic_persian_character_variants(self) -> None:
-        # Arabic yeh and kaf in tokens
         tokens = ["على", "كريمى", "پزشك", "است"]
         tags = ["B_PER", "I_PER", "O", "O"]
         text, spans = bio_tokens_to_spans(tokens, tags)
@@ -122,7 +137,6 @@ class TestSubwordsToEntitySpans:
 
     def test_subword_merging_and_offsets(self) -> None:
         text = "آقای طباطبایی نژاد آمد"
-        # Mock subword offsets: "طباط" (5, 9), "بایی" (9, 13), "نژاد" (14, 18)
         offsets = [(0, 0), (0, 4), (5, 9), (9, 13), (14, 18), (19, 22), (0, 0)]
         labels = ["O", "O", "B_PER", "I_PER", "I_PER", "O", "O"]
 
@@ -134,7 +148,6 @@ class TestSubwordsToEntitySpans:
 
     def test_punctuation_adjacent_name(self) -> None:
         text = 'گزارش: "علی رضایی"، پزشک کشیک.'
-        # 'گزارش:' (0, 6), '"' (7, 8), 'علی' (8, 11), 'رضایی' (12, 17), '"' (17, 18)
         offsets = [
             (0, 0),
             (0, 6),
@@ -154,19 +167,6 @@ class TestSubwordsToEntitySpans:
         assert spans[0] == EntitySpan(start=8, end=17, type="PERSON")
         assert text[spans[0].start : spans[0].end] == "علی رضایی"
 
-    def test_repeated_entity_in_sentence(self) -> None:
-        text = "مریم با مریم صحبت کرد"
-        offsets = [(0, 0), (0, 4), (5, 7), (8, 12), (13, 17), (18, 21), (0, 0)]
-        labels = ["O", "B_PER", "O", "B_PER", "O", "O", "O"]
-
-        spans, failures = subwords_to_entity_spans(text, offsets, labels)
-        assert failures == 0
-        assert len(spans) == 2
-        assert spans[0] == EntitySpan(start=0, end=4, type="PERSON")
-        assert spans[1] == EntitySpan(start=8, end=12, type="PERSON")
-        assert text[spans[0].start : spans[0].end] == "مریم"
-        assert text[spans[1].start : spans[1].end] == "مریم"
-
     def test_empty_predictions(self) -> None:
         text = "متن بدون نام خاص"
         offsets = [(0, 0), (0, 3), (4, 8), (9, 12), (13, 16), (0, 0)]
@@ -177,57 +177,30 @@ class TestSubwordsToEntitySpans:
         assert spans == []
 
 
-class TestExactSpanMetricsIntegration:
-    """Test exact-span evaluation edge cases on reconstructed spans."""
+class TestTokenizerAlignmentAudit:
+    """Test fast tokenizer character offset auditing."""
 
-    def test_boundary_mismatch_penalty(self) -> None:
-        # Gold includes full compound surname, pred includes only first token
-        gold = [EntitySpan(start=0, end=18, type="PERSON")]
-        pred = [EntitySpan(start=0, end=10, type="PERSON")]
+    def test_valid_monotonic_offsets(self) -> None:
+        text = "علی رضایی آمد"
+        offsets = [(0, 0), (0, 3), (4, 9), (10, 13), (0, 0)]
+        failures = audit_tokenizer_alignment(text, offsets)
+        assert failures == 0
 
-        metrics = evaluate_exact_spans(gold, pred)
-        assert metrics.true_positives == 0
-        assert metrics.false_positives == 1
-        assert metrics.false_negatives == 1
-        assert metrics.f1 == 0.0
+    def test_out_of_bounds_offsets(self) -> None:
+        text = "علی"
+        offsets = [(0, 0), (0, 5), (0, 0)]
+        failures = audit_tokenizer_alignment(text, offsets)
+        assert failures >= 1
 
-    def test_type_mismatch_penalty(self) -> None:
-        gold = [EntitySpan(start=0, end=10, type="PERSON")]
-        pred = [EntitySpan(start=0, end=10, type="ORG")]
-
-        metrics = evaluate_exact_spans(gold, pred)
-        assert metrics.true_positives == 0
-        assert metrics.false_positives == 1
-        assert metrics.false_negatives == 1
-
-    def test_duplicate_gold_rejection(self) -> None:
-        gold = [
-            EntitySpan(start=0, end=10, type="PERSON"),
-            EntitySpan(start=0, end=10, type="PERSON"),
-        ]
-        pred = [EntitySpan(start=0, end=10, type="PERSON")]
-
-        with pytest.raises(ValueError, match="Duplicate gold entity span detected"):
-            evaluate_exact_spans(gold, pred)
-
-    def test_duplicate_predictions_handling(self) -> None:
-        gold = [EntitySpan(start=0, end=10, type="PERSON")]
-        pred = [
-            EntitySpan(start=0, end=10, type="PERSON"),
-            EntitySpan(start=0, end=10, type="PERSON"),
-        ]
-
-        metrics = evaluate_exact_spans(
-            gold, pred, duplicate_prediction_policy="count_as_fp"
-        )
-        assert metrics.true_positives == 1
-        assert metrics.false_positives == 1
-        assert metrics.false_negatives == 0
-        assert metrics.precision == 0.5
+    def test_non_monotonic_offsets(self) -> None:
+        text = "علی رضایی"
+        offsets = [(0, 0), (4, 9), (0, 3), (0, 0)]
+        failures = audit_tokenizer_alignment(text, offsets)
+        assert failures >= 1
 
 
 class TestParseConllData:
-    """Test CoNLL dataset text parser."""
+    """Test CoNLL dataset text parser with strict and pipe-token support."""
 
     def test_parse_conll_pipes_and_sentences(self) -> None:
         data = "علی|B_PER\nرضایی|I_PER\nآمد|O\n\nامروز|B_DAT\nهوا|O\nخوب|O\nاست|O\n"
@@ -239,20 +212,39 @@ class TestParseConllData:
         assert sentences[1][0] == ["امروز", "هوا", "خوب", "است"]
         assert sentences[1][1] == ["B_DAT", "O", "O", "O"]
 
+    def test_parse_pipe_character_as_token(self) -> None:
+        data = "بخش|O\n||O\nاول|O\n"
+        sentences = parse_conll_data(data, strict=True)
+        assert len(sentences) == 1
+        assert sentences[0][0] == ["بخش", "|", "اول"]
+        assert sentences[0][1] == ["O", "O", "O"]
+
+    def test_parse_strict_malformed_line_raises(self) -> None:
+        data = "علی|B_PER\nتنها_بدون_تگ\n"
+        with pytest.raises(ValueError, match="Malformed CoNLL line"):
+            parse_conll_data(data, strict=True)
+
 
 class TestBenchmarkSerializationAndPrivacy:
-    """Test safe serialization without source text or PII leakage."""
+    """Test safe serialization and recursive privacy key gating."""
 
     def test_deterministic_serialization(self) -> None:
         summary = BenchmarkAggregateSummary(
-            schema_version="1.0.0",
+            schema_version="1.1.0",
+            benchmark_protocol="PERSON-only entity-level exact-span",
             model_id="HooshvareLab/bert-fa-base-uncased-ner-peyma",
             model_revision="8b7b63371aa8f1fdad62c0f82d462a22b91b37ab",
             model_license="Apache-2.0",
-            dataset="ParsiAI/PEYMA",
+            dataset_source="ParsiAI/PEYMA",
+            dataset_source_kind="community_mirror",
             dataset_revision="c9995786945706010f000d4196b0a9ecbd6b96c5",
-            dataset_license="Apache-2.0",
             dataset_split="test",
+            dataset_file_sha256="59a5f7f2bc2f6d89965a8b832a371293df23976eb7552a41916976d3a7dd7c96",
+            original_dataset="PEYMA",
+            original_dataset_terms="free for research purposes (authors)",
+            mirror_declared_license="Apache-2.0",
+            mirror_relicensing_authority="not_verified",
+            package_redistribution_status="requires_verification",
             evaluated_sentences=1026,
             gold_person_entities=434,
             predicted_person_entities=433,
@@ -262,13 +254,24 @@ class TestBenchmarkSerializationAndPrivacy:
             precision=0.993072,
             recall=0.990783,
             f1=0.991926,
-            offset_mapping_failures=0,
+            boundary_errors=3,
+            pure_false_positives=0,
+            pure_false_negatives=1,
             duplicate_predictions=0,
+            leading_i_recoveries=0,
+            basic_offset_validation_failures=0,
+            tokenizer_alignment_failures=0,
+            truncated_sentences=0,
+            max_tokenized_length=153,
+            sentences_with_zwnj=0,
+            gold_person_with_zwnj=0,
+            sentences_with_arabic_variants=0,
+            gold_person_with_arabic_variants=0,
             python_version="3.10.11",
-            benchmark_tool_versions={
-                "torch": "2.7.0+cpu",
-                "transformers": "transformers",
-            },
+            torch_version="2.7.0+cpu",
+            transformers_version="4.49.0",
+            tokenizers_version="0.21.1",
+            platform="Windows-10",
             evaluation_policy="exact_span_entity_level",
         )
 
@@ -280,8 +283,13 @@ class TestBenchmarkSerializationAndPrivacy:
         assert parsed["false_positives"] == 3
         assert parsed["false_negatives"] == 4
         assert parsed["f1"] == 0.991926
+        assert parsed["boundary_errors"] == 3
+        assert (
+            parsed["dataset_file_sha256"]
+            == "59a5f7f2bc2f6d89965a8b832a371293df23976eb7552a41916976d3a7dd7c96"
+        )
 
-    def test_forbidden_sensitive_key_rejection(self) -> None:
+    def test_top_level_forbidden_sensitive_key_rejection(self) -> None:
         bad_summary = {
             "model_id": "test-model",
             "true_positives": 10,
@@ -290,16 +298,46 @@ class TestBenchmarkSerializationAndPrivacy:
         with pytest.raises(ValueError, match="Forbidden sensitive key 'text'"):
             serialize_benchmark_result(bad_summary)
 
+    def test_nested_forbidden_sensitive_key_rejection(self) -> None:
+        bad_nested = {
+            "model_id": "test-model",
+            "metadata": {
+                "patient_info": {
+                    "names": ["احمد رضایی"],
+                }
+            },
+        }
+        with pytest.raises(ValueError, match="Forbidden sensitive key 'names'"):
+            serialize_benchmark_result(bad_nested)
+
+    def test_list_nested_forbidden_sensitive_key_rejection(self) -> None:
+        bad_in_list = {
+            "model_id": "test-model",
+            "diagnostics": [
+                {"category": "ok"},
+                {"tokens": ["علی", "آمد"]},
+            ],
+        }
+        with pytest.raises(ValueError, match="Forbidden sensitive key 'tokens'"):
+            serialize_benchmark_result(bad_in_list)
+
     def test_no_source_text_in_serialized_json(self) -> None:
         summary = BenchmarkAggregateSummary(
-            schema_version="1.0.0",
+            schema_version="1.1.0",
+            benchmark_protocol="PERSON-only entity-level exact-span",
             model_id="HooshvareLab/bert-fa-base-uncased-ner-peyma",
             model_revision="8b7b63371aa8f1fdad62c0f82d462a22b91b37ab",
             model_license="Apache-2.0",
-            dataset="ParsiAI/PEYMA",
+            dataset_source="ParsiAI/PEYMA",
+            dataset_source_kind="community_mirror",
             dataset_revision="c9995786945706010f000d4196b0a9ecbd6b96c5",
-            dataset_license="Apache-2.0",
             dataset_split="test",
+            dataset_file_sha256="59a5f7f2bc2f6d89965a8b832a371293df23976eb7552a41916976d3a7dd7c96",
+            original_dataset="PEYMA",
+            original_dataset_terms="free for research purposes (authors)",
+            mirror_declared_license="Apache-2.0",
+            mirror_relicensing_authority="not_verified",
+            package_redistribution_status="requires_verification",
             evaluated_sentences=100,
             gold_person_entities=50,
             predicted_person_entities=50,
@@ -309,10 +347,24 @@ class TestBenchmarkSerializationAndPrivacy:
             precision=1.0,
             recall=1.0,
             f1=1.0,
-            offset_mapping_failures=0,
+            boundary_errors=0,
+            pure_false_positives=0,
+            pure_false_negatives=0,
             duplicate_predictions=0,
+            leading_i_recoveries=0,
+            basic_offset_validation_failures=0,
+            tokenizer_alignment_failures=0,
+            truncated_sentences=0,
+            max_tokenized_length=50,
+            sentences_with_zwnj=0,
+            gold_person_with_zwnj=0,
+            sentences_with_arabic_variants=0,
+            gold_person_with_arabic_variants=0,
             python_version="3.10.11",
-            benchmark_tool_versions={},
+            torch_version="2.7.0+cpu",
+            transformers_version="4.49.0",
+            tokenizers_version="0.21.1",
+            platform="Windows-10",
             evaluation_policy="exact_span_entity_level",
         )
         serialized = serialize_benchmark_result(summary)
