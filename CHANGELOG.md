@@ -8,12 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Conservative, privacy-conscious command-line interface `fa-redact` via `[project.scripts]` and `python -m fa_redact` module entry point (Phase 19).
+- CLI `detect` subcommand reading from stdin or file and emitting deterministic machine-readable JSON metadata (`type`, `start`, `end`) without exposing raw identifier values, normalized values, source text, snippets, or PII hashes (Phase 19).
+- CLI `report` subcommand generating privacy-safe, value-free aggregate detection summaries as JSON (Phase 19).
+- CLI `redact` subcommand replacing detected PII with typed placeholders across stdin/stdout and file paths with support for explicit conflict policies (`reject`, `longest`, `priority`) (Phase 19).
+- Explicit `--detectors` selection across CLI subcommands, strictly replacing the default detector set with built-in (`national_id`, `mobile`, `iban`) or opt-in (`email`, `bank_card`) detectors without changing core Python API semantics (Phase 19).
+- Privacy-safe CLI error handling directing sanitized diagnostics to `stderr` without exposing input text, detected PII, or internal state (Phase 19).
+- In-place overwrite protection rejecting execution cleanly when input and output refer to the same file path (Phase 19).
 - Privacy-safe aggregate detection reporting model `DetectionReport` (frozen dataclass with slots) summarizing raw detection evidence without storing, returning, or persisting detected PII values, normalized values, text, spans, snippets, or PII hashes (Phase 18).
 - Pure aggregation function `report_detections(detections)` computing total detections, deterministic lexicographical type counts (`counts: Mapping[str, int]`), distinct entity types (`distinct_types`), conflict metrics (`has_conflicts`, `conflict_pairs`, `conflicting_detections`), and duplicate group counts (`duplicate_groups`) (Phase 18).
 - Convenience function `detection_report(text, *, detectors=None)` executing raw detection via `detect()` and returning an aggregate `DetectionReport` without automatic conflict resolution (Phase 18).
 - Public root exports `DetectionReport`, `detection_report`, and `report_detections` from the `fa_redact` package namespace (Phase 18).
 
 ### Limitations
+- CLI does not implement in-place destructive file editing; separate input and output destinations are required (Phase 19).
+- `PatternDetector` regex rules remain trusted application code and are not dynamically configured via generic CLI flags in Phase 19 (Phase 19).
 - `DetectionReport` is value-free by design but entity-type labels and aggregate counts are still metadata; custom detector authors must keep `Detection.type` schema-level and avoid encoding sensitive data in type names (Phase 18).
 
 ## [0.2.0] - 2026-09-06
