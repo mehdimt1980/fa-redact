@@ -26,6 +26,11 @@ from fa_redact.pipeline import detect
 from fa_redact.protocols import Detector
 from fa_redact.pseudonymization import PseudonymizationSession
 from fa_redact.redaction import redact
+from fa_redact.reporting import (
+    DetectionReport,
+    detection_report,
+    report_detections,
+)
 from fa_redact.validators import (
     is_valid_bank_card_number,
     is_valid_email,
@@ -40,6 +45,7 @@ __all__: list[str] = [
     "BankCardDetector",
     "ConflictPolicy",
     "Detection",
+    "DetectionReport",
     "Detector",
     "EmailDetector",
     "IranianIBANDetector",
@@ -49,6 +55,7 @@ __all__: list[str] = [
     "PatternRule",
     "PseudonymizationSession",
     "detect",
+    "detection_report",
     "is_valid_bank_card_number",
     "is_valid_email",
     "is_valid_iranian_iban",
@@ -58,5 +65,6 @@ __all__: list[str] = [
     "normalize_letters",
     "normalize_text",
     "redact",
+    "report_detections",
     "resolve_detection_conflicts",
 ]

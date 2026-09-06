@@ -39,8 +39,9 @@
   - [7. Bank Card / PAN Validation & Detection (Opt-in)](#7-bank-card--pan-validation--detection-opt-in)
   - [8. Configurable Institutional / Healthcare Identifiers (Opt-in)](#8-configurable-institutional--healthcare-identifiers-opt-in)
   - [9. Explicit Detection Conflict Resolution (Opt-in)](#9-explicit-detection-conflict-resolution-opt-in)
-  - [10. Redaction Semantics](#10-redaction-semantics)
-  - [11. Stateful Pseudonymization Sessions](#11-stateful-pseudonymization-sessions)
+  - [10. Privacy-Safe Detection Reports (Unreleased)](#10-privacy-safe-detection-reports-unreleased)
+  - [11. Redaction Semantics](#11-redaction-semantics)
+  - [12. Stateful Pseudonymization Sessions](#12-stateful-pseudonymization-sessions)
 - [Custom Detectors](#custom-detectors)
 - [Healthcare & AI/LLM Usage Pattern](#healthcare--aillm-usage-pattern)
 - [Current Coverage & Limitations](#current-coverage--limitations)
@@ -532,7 +533,88 @@ resolved_detections = resolve_detection_conflicts(
 > - **Substring Exposure Risk**: Selecting `longest` or `priority` may discard a detection that covers characters extending outside the winning detection. For example, selecting a shorter `BANK_CARD` over an `EMAIL` leaves `@example.com` unredacted in the output.
 > - **Conservative Recommendation**: In cases of uncertainty or high-risk privacy requirements, keep the default `reject` policy.
 
-#### 10. Redaction Semantics
+#### 10. Privacy-Safe Detection Reports (Unreleased)
+
+> [!NOTE]
+> **Unreleased / Development**: Privacy-safe detection reporting (`DetectionReport`, `detection_report`, and `report_detections`) is in active development in this repository and is not included in published release v0.2.0.
+
+`fa-redact` provides a dedicated value-free reporting layer that summarizes detection evidence without retaining, storing, or returning detected PII values, normalized values, source text, character offsets, spans, snippets, or PII hashes.
+
+##### 1. Basic Detection Report
+
+Generate a value-free summary directly from text using built-in or custom detectors:
+
+```python
+from fa_redact import detection_report
+
+text = "کد ملی: ۱۲۳۴۵۶۷۸۹۱، همراه: ۰۹۱۲۳۴۵۶۷۸۹"
+report = detection_report(text)
+
+print(report.total_detections)  # 2
+print(dict(report.counts))  # {'IR_MOBILE': 1, 'IR_NATIONAL_ID': 1}
+print(report.distinct_types)  # 2
+print(report.has_conflicts)  # False
+print(report.conflict_pairs)  # 0
+print(report.conflicting_detections)  # 0
+print(report.duplicate_groups)  # 0
+```
+
+##### 2. Raw Evidence & Conflict Observability
+
+`detection_report()` runs raw detector evidence without automatic conflict resolution. This exposes whether ambiguities or conflicts exist across active detectors:
+
+```python
+from fa_redact import (
+    BankCardDetector,
+    EmailDetector,
+    detection_report,
+)
+
+text = "ایمیل: 1234567890123452@example.com"
+report = detection_report(
+    text,
+    detectors=[
+        EmailDetector(),
+        BankCardDetector(),
+    ],
+)
+
+print(report.total_detections)  # 2
+print(dict(report.counts))  # {'BANK_CARD': 1, 'EMAIL': 1}
+print(report.has_conflicts)  # True
+print(report.conflict_pairs)  # 1
+print(report.conflicting_detections)  # 2
+```
+
+##### 3. Standalone Report Before & After Resolution
+
+Callers can summarize already-produced `Detection` sequences using `report_detections()`, enabling transparent pre- and post-resolution comparison:
+
+```python
+from fa_redact import (
+    detect,
+    report_detections,
+    resolve_detection_conflicts,
+)
+
+# 1. Raw detector evidence
+raw_detections = detect(text, detectors=detectors)
+raw_report = report_detections(raw_detections)
+# raw_report.has_conflicts is True, raw_report.total_detections == 2
+
+# 2. Resolved detections under explicit policy
+resolved_detections = resolve_detection_conflicts(raw_detections, policy="longest")
+resolved_report = report_detections(resolved_detections)
+# resolved_report.has_conflicts is False, resolved_report.total_detections == 1
+```
+
+> [!IMPORTANT]
+> - **Value-Free Design**: `DetectionReport` is value-free by design: it does not retain source text, raw values, normalized values, offsets, snippets, or PII hashes.
+> - **Aggregate Metadata Scope**: Entity-type labels (e.g. `IR_NATIONAL_ID`, `MRN`) and aggregate counts are still metadata. Applications must decide whether those metrics themselves require access control, retention limits, or restricted logging in their operational context.
+> - **Custom Entity Type Label Notice**: Custom detector authors must keep `Detection.type` schema-level and non-sensitive. Use names such as `MRN`, `PATIENT_ID`, or `CUSTOM_ID`; never place a patient's actual name, identifier, or source value inside the type label.
+> - **No Compliance Claims**: `DetectionReport` does not establish automated de-identification, anonymization, GDPR compliance, HIPAA compliance, or safe unrestricted telemetry.
+
+#### 11. Redaction Semantics
 
 - **Exact Span Reconstruction**: `redact()` rebuilds the output from the original Detection spans, preserving untouched source slices exactly and replacing only detected spans. It does not perform global value-based `str.replace()`.
 - **Typed Placeholders**: Placeholders follow the format `[<TYPE>_<INDEX>]` (e.g., `[IR_NATIONAL_ID_1]`, `[IR_MOBILE_1]`, `[IR_IBAN_1]`, `[EMAIL_1]`, `[BANK_CARD_1]`, `[MRN_1]`).
@@ -540,7 +622,7 @@ resolved_detections = resolve_detection_conflicts(
 - **Collision Avoidance**: If an input already contains a literal string matching the placeholder syntax, newly generated placeholders increment past the colliding index.
 - **Fail-Loud on Overlap by Default**: Under default `conflict_policy="reject"`, if overlapping or duplicate spans are passed to `redact()`, it raises a `ValueError`.
 
-#### 11. Stateful Pseudonymization Sessions
+#### 12. Stateful Pseudonymization Sessions
 
 `PseudonymizationSession` manages persistent mappings across multi-turn AI interactions:
 
@@ -735,8 +817,9 @@ This project is licensed under the [MIT License](LICENSE).
   - [۷. اعتبارسنجی و تشخیص شماره کارت بانکی / PAN (اختیاری)](#۷-اعتبارسنجی-و-تشخیص-شماره-کارت-بانکی--pan-اختیاری)
   - [۸. شناسه‌های سازمانی / درمانی قابل پیکربندی (اختیاری)](#۸-شناسه‌های-سازمانی--درمانی-قابل-پیکربندی-اختیاری)
   - [۹. حل صریح تعارض تشخیص‌ها (اختیاری)](#۹-حل-صریح-تعارض-تشخیص‌ها-اختیاری)
-  - [۱۰. بازسازی دقیق بر اساس span در پنهان‌سازی](#۱۰-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
-  - [۱۱. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۱۱-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
+  - [۱۰. گزارش امن‌تر از نظر حریم خصوصی برای تشخیص‌ها (در حال توسعه / منتشرنشده)](#۱۰-گزارش-امنتر-از-نظر-حریم-خصوصی-برای-تشخیصها-در-حال-توسعه--منتشرنشده)
+  - [۱۱. بازسازی دقیق بر اساس span در پنهان‌سازی](#۱۱-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
+  - [۱۲. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۱۲-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
 - [جدول پوشش و قابلیت‌ها](#جدول-پوشش-و-قابلیت‌ها)
@@ -1205,11 +1288,92 @@ redacted_priority = redact(
 > - **خطر باقی‌ماندن بخشی از شناسه در متن**: انتخاب `longest` یا `priority` ممکن است یک تشخیص همپوشان دیگر را حذف کند و بخشی از span آن تشخیص (مانند پسوند ایمیل) در متن باقی بماند.
 > - **توصیهٔ امنیتی**: در صورت هرگونه تردید، استفاده از سیاست پیش‌فرض `reject` توصیه می‌شود.
 
-#### ۱۰. بازسازی دقیق بر اساس span در پنهان‌سازی
+#### ۱۰. گزارش امن‌تر از نظر حریم خصوصی برای تشخیص‌ها (در حال توسعه / منتشرنشده)
+
+> [!NOTE]
+> **در حال توسعه / منتشرنشده**: قابلیت گزارش‌گیری امن‌تر از نظر حریم خصوصی (`DetectionReport`، `detection_report` و `report_detections`) در این مخزن در حال توسعه است و در نسخهٔ منتشرشدهٔ v0.2.0 در PyPI وجود ندارد.
+
+کتابخانهٔ `fa-redact` یک لایهٔ گزارش‌گیری تجمیعی و مستقل ارائه می‌دهد که شواهد خروجی تشخیص‌دهنده‌ها را بدون ذخیره‌سازی، نگهداری یا بازگرداندن مقادیر خام PII، مقادیر نرمال‌شده، متن منبع، بازه‌های کاراکتری (spans)، بخش‌های متنی مجاور (snippets) یا هش‌های PII خلاصه می‌کند.
+
+##### ۱. گزارش تجمیعی پایه
+
+تولید گزارش تجمیعی مستقیم از روی متن با استفاده از تشخیص‌دهنده‌های پیش‌فرض یا سفارشی:
+
+```python
+from fa_redact import detection_report
+
+text = "کد ملی: ۱۲۳۴۵۶۷۸۹۱، همراه: ۰۹۱۲۳۴۵۶۷۸۹"
+report = detection_report(text)
+
+print(report.total_detections)  # 2
+print(dict(report.counts))  # {'IR_MOBILE': 1, 'IR_NATIONAL_ID': 1}
+print(report.distinct_types)  # 2
+print(report.has_conflicts)  # False
+print(report.conflict_pairs)  # 0
+print(report.conflicting_detections)  # 0
+print(report.duplicate_groups)  # 0
+```
+
+##### ۲. مشاهده‌پذیری شواهد خام و تعارض تشخیص‌ها
+
+تابع `detection_report()` شواهد خام تشخیص‌دهنده‌ها را بدون حل خودکار تعارض اجرا می‌کند. این امر به برنامه‌ها امکان می‌دهد وجود هرگونه تداخل یا تعارض بین تشخیص‌دهنده‌ها را شناسایی و ارزیابی نمایند:
+
+```python
+from fa_redact import (
+    BankCardDetector,
+    EmailDetector,
+    detection_report,
+)
+
+text = "ایمیل: 1234567890123452@example.com"
+report = detection_report(
+    text,
+    detectors=[
+        EmailDetector(),
+        BankCardDetector(),
+    ],
+)
+
+print(report.total_detections)  # 2
+print(dict(report.counts))  # {'BANK_CARD': 1, 'EMAIL': 1}
+print(report.has_conflicts)  # True
+print(report.conflict_pairs)  # 1
+print(report.conflicting_detections)  # 2
+```
+
+##### ۳. گزارش‌گیری پیش و پس از حل صریح تعارض
+
+کاربران می‌توانند با استفاده از `report_detections()`، دنبالهٔ اشیاء `Detection` را قبل و بعد از حل تعارض ممیزی و مقایسه نمایند:
+
+```python
+from fa_redact import (
+    detect,
+    report_detections,
+    resolve_detection_conflicts,
+)
+
+# ۱. گزارش شواهد خام تشخیص‌دهنده‌ها
+raw_detections = detect(text, detectors=detectors)
+raw_report = report_detections(raw_detections)
+# raw_report.has_conflicts برابر با True و raw_report.total_detections برابر با 2 است
+
+# ۲. گزارش شواهد پس از حل صریح تعارض
+resolved_detections = resolve_detection_conflicts(raw_detections, policy="longest")
+resolved_report = report_detections(resolved_detections)
+# resolved_report.has_conflicts برابر با False و resolved_report.total_detections برابر با 1 است
+```
+
+> [!IMPORTANT]
+> - **طراحی بدون مقدار (Value-Free)**: ساختار `DetectionReport` به گونه‌ای طراحی شده که هیچ مقدار خام، مقدار نرمال‌شده، موقعیت کاراکتری، برش متنی یا هش PII را در خود نگه نمی‌دارد.
+> - **محدودهٔ فراداده (Metadata)**: نبودن مقدار خام شناسه در گزارش به این معنی نیست که خود گزارش در همهٔ محیط‌ها دادهٔ غیرحساس محسوب می‌شود. وجود نوع شناسه (مانند `MRN` یا `IR_NATIONAL_ID`) و تعداد آن‌ها نیز ممکن است در برخی محیط‌های سازمانی فرادادهٔ حساس تلقی شود و نیازمند کنترل دسترسی و محدودیت ثبت لاگ باشد.
+> - **هشدار برچسب نوع موجودیت**: توسعه‌دهندگان تشخیص‌دهنده‌های سفارشی باید فیلد `Detection.type` را صرفاً به عنوان یک نام دسته یا schema (مانند `MRN` یا `PATIENT_ID`) تعریف کنند و هرگز نام بیمار، شناسه یا مقادیر متنی را درون `Detection.type` قرار ندهند.
+> - **عدم ادعای انطباق قانونی**: ساختار `DetectionReport` به خودی خود ناشناس‌سازی کامل بالینی، انطباق با GDPR یا HIPAA یا مجوز ارسال نامحدود تله‌متری را ایجاد نمی‌کند.
+
+#### ۱۱. بازسازی دقیق بر اساس span در پنهان‌سازی
 
 خروجی بر اساس بازه‌های دقیق `Detection` از متن اصلی ساخته می‌شود؛ فقط همان spanهای تشخیص‌داده‌شده جایگزین می‌شوند و بخش‌های دیگر متن بدون تغییر کپی می‌شوند. پیاده‌سازی از `str.replace()` سراسری بر اساس مقدار استفاده نمی‌کند.
 
-#### ۱۱. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی
+#### ۱۲. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی
 
 کلاس `PseudonymizationSession` رفتارهای امنیتی زیر را تضمین می‌کند:
 

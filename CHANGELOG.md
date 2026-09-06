@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Privacy-safe aggregate detection reporting model `DetectionReport` (frozen dataclass with slots) summarizing raw detection evidence without storing, returning, or persisting detected PII values, normalized values, text, spans, snippets, or PII hashes (Phase 18).
+- Pure aggregation function `report_detections(detections)` computing total detections, deterministic lexicographical type counts (`counts: Mapping[str, int]`), distinct entity types (`distinct_types`), conflict metrics (`has_conflicts`, `conflict_pairs`, `conflicting_detections`), and duplicate group counts (`duplicate_groups`) (Phase 18).
+- Convenience function `detection_report(text, *, detectors=None)` executing raw detection via `detect()` and returning an aggregate `DetectionReport` without automatic conflict resolution (Phase 18).
+- Public root exports `DetectionReport`, `detection_report`, and `report_detections` from the `fa_redact` package namespace (Phase 18).
+
+### Limitations
+- `DetectionReport` is value-free by design but entity-type labels and aggregate counts are still metadata; custom detector authors must keep `Detection.type` schema-level and avoid encoding sensitive data in type names (Phase 18).
+
 ## [0.2.0] - 2026-09-06
 
 ### Added
