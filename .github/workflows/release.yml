@@ -29,7 +29,24 @@ jobs:
       - name: Verify release tag matches package and pyproject versions
         run: |
           TAG="${{ github.event.release.tag_name }}"
+
+          # Enforce strict lowercase 'v' prefix convention
+          case "$TAG" in
+            v*)
+              ;;
+            *)
+              echo "Error: release tag '$TAG' must start with lowercase 'v' (example: v0.2.0)"
+              exit 1
+              ;;
+          esac
+
           EXPECTED_VERSION="${TAG#v}"
+
+          if [ -z "$EXPECTED_VERSION" ]; then
+              echo "Error: release tag '$TAG' contains no version after 'v'"
+              exit 1
+          fi
+
           python -c "
           import sys
           import tomllib

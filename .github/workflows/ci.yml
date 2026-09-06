@@ -78,6 +78,76 @@ jobs:
         run: |
           python -m twine check dist/*
 
+      - name: Verify distribution contents
+        run: |
+          python -c "
+          import tarfile
+          import zipfile
+          from pathlib import Path
+
+          wheels = list(Path('dist').glob('*.whl'))
+          sdists = list(Path('dist').glob('*.tar.gz'))
+
+          assert len(wheels) == 1, f'Expected exactly 1 wheel, found {len(wheels)}'
+          assert len(sdists) == 1, f'Expected exactly 1 sdist, found {len(sdists)}'
+
+          wheel_path = wheels[0]
+          sdist_path = sdists[0]
+          print(f'Checking sdist: {sdist_path.name}')
+          print(f'Checking wheel: {wheel_path.name}')
+
+          # Verify matching package version in filenames
+          import re
+          wheel_match = re.search(r'fa_redact-([0-9]+\.[0-9]+\.[0-9]+)', wheel_path.name)
+          sdist_match = re.search(r'fa_redact-([0-9]+\.[0-9]+\.[0-9]+)', sdist_path.name)
+          assert wheel_match and sdist_match, 'Could not parse version from distribution filenames'
+          assert wheel_match.group(1) == sdist_match.group(1), (
+              f'Version mismatch in filenames: wheel={wheel_match.group(1)}, sdist={sdist_match.group(1)}'
+          )
+
+          # 1. Audit sdist contents
+          with tarfile.open(sdist_path, 'r:gz') as archive:
+              sdist_names = archive.getnames()
+
+          required_sdist_files = [
+              'CHANGELOG.md',
+              'README.md',
+              'LICENSE',
+              'pyproject.toml',
+              'src/fa_redact/__init__.py',
+              'src/fa_redact/conflicts.py',
+              'src/fa_redact/detectors/pattern.py',
+              'tests/test_package.py',
+          ]
+          for req in required_sdist_files:
+              assert any(name.endswith('/' + req) or name == req for name in sdist_names), (
+                  f'Required file {req} missing from sdist archive: {sdist_path.name}'
+              )
+
+          # 2. Audit wheel contents
+          with zipfile.ZipFile(wheel_path, 'r') as z:
+              wheel_names = set(z.namelist())
+
+          required_wheel_entries = [
+              'fa_redact/__init__.py',
+              'fa_redact/conflicts.py',
+              'fa_redact/py.typed',
+              'fa_redact/detectors/email.py',
+              'fa_redact/detectors/iranian_iban.py',
+              'fa_redact/detectors/bank_card.py',
+              'fa_redact/detectors/pattern.py',
+              'fa_redact/validators/email.py',
+              'fa_redact/validators/iranian_iban.py',
+              'fa_redact/validators/bank_card.py',
+          ]
+          for req in required_wheel_entries:
+              assert req in wheel_names, (
+                  f'Required module {req} missing from wheel: {wheel_path.name}'
+              )
+
+          print('Distribution contents audit passed successfully.')
+          "
+
       - name: Wheel smoke test in isolated environment
         run: |
           mkdir -p /tmp/wheel_smoke
