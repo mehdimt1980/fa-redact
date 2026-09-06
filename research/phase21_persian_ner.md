@@ -88,13 +88,13 @@ We conducted a review of publicly available Persian Named Entity Recognition cor
 | **PEYMA** | [LSCP-Lab/PEYMA](https://github.com/LSCP-Lab/PEYMA) | Shahshahani et al. (2018), University of Tehran | Persian News (BBC Persian, VOA, Deutsche Welle) | 7 types: `Person`, `Organization`, `Location`, `Date`, `Time`, `Money`, `Percent` | 302,530 tokens / 7,145 sentences / 41,148 entity tokens | Train (~5,716 sent) / Test (~1,429 sent) | Research / Academic use stated by authors | **Safe for external academic citation & research reference.** *Redistribution / commercial / package vendoring requires separate verification.* |
 | **ArmanPersoNERCorpus (ARMAN)** | [HaniehP/PersianNER](https://github.com/HaniehP/PersianNER) / [ACL Anthology L18-1701](https://aclanthology.org/L18-1701/) | Poostchi et al. (LREC 2018) | Contemporary Persian text & news (BijanKhan subset) | 6 types: `pers` (Person), `org`, `loc`, `fac`, `event`, `pro`, `other` | 250,015 tokens / 7,682 sentences | 3-fold cross-validation / Standard splits | Academic Research Use Only (corpus terms) | **Safe for external academic reference & research benchmarking.** *Unsafe to vendor in MIT package.* |
 | **MultiNERD (Persian subset)** | [Babelscape/multinerd](https://huggingface.co/datasets/Babelscape/multinerd) | Tedeschi & Navigli (NAACL 2022) | Multilingual Wikipedia / Wikinews | 15 types: `PER`, `ORG`, `LOC`, `DIS`, `ANIM`, etc. | ~30,000 sentences (fa) | Standard train/dev/test | CC BY-NC-SA 4.0 | **Safe for research reference.** *Wikipedia domain; non-commercial / ShareAlike restrictions.* |
-| **WikiANN (Persian subset)** | [Hugging Face `wikiann`](https://huggingface.co/datasets/wikiann) | Pan et al. (ACL 2017) / Rahimi et al. (ACL 2019) | Persian Wikipedia articles with cross-lingual entity links | 3 types: `PER`, `ORG`, `LOC` | ~20,000 sentences (train) / ~10,000 (test) | Standard train/dev/test | ODC-By 1.0 / CC BY-SA 3.0 (Wikipedia-derived) | **Safe to download for research.** *High label noise, partial spans, silver standard; unsuited for high-precision redaction.* |
+| **WikiANN (Persian subset)** | [unimelb-nlp/wikiann](https://huggingface.co/datasets/unimelb-nlp/wikiann) | Pan et al. (ACL 2017) / Rahimi et al. (ACL 2019) | Persian Wikipedia articles with cross-lingual entity links | 3 types: `PER`, `ORG`, `LOC` | ~20,000 sentences (train) / ~10,000 (test) | Standard train/dev/test | UNKNOWN / REQUIRES VERIFICATION (Hugging Face `unimelb-nlp/wikiann` shows license: unknown; Apache-2.0 in loader script applies to script code only) | **License unverified.** *Silver standard with high label noise and partial spans; do not redistribute, vendor, or assume permissive reuse.* |
 | **Persian Clinical Corpora** | Academic literature (Tehran Univ. of Med. Sci., Shahid Beheshti Univ.) | Various medical informatics papers (2020–2024) | Medical Q&A, clinical health articles | Disease, Drug, Symptom (rarely gold `PERSON`) | Variable / Small | Non-standard | Restricted access / Confidential | **Restricted / Internal.** No public, open, gold-standard clinical discharge summary dataset with personal names exists in Persian. |
 
 ### Key Dataset Findings:
 - **PEYMA and ARMAN** are the primary established research benchmarks for Persian NER, containing human-annotated `PERSON` / `pers` entities in news and formal text.
 - **No public, redistributable clinical EHR corpus with gold personal names exists in Persian.** Medical datasets in the literature focus on clinical terminology (diseases, pharmacology), not de-identification of real patient records.
-- All primary general corpora carry **academic research restrictions, non-commercial (NC), or ShareAlike (SA)** terms, making vendoring corpus files into the `fa-redact` repository unacceptable.
+- All primary general corpora carry **academic research restrictions, non-commercial (NC), ShareAlike (SA), or unverified license terms (WikiANN)**, making vendoring corpus files into the `fa-redact` repository unacceptable. WikiANN dataset content licensing is unknown and requires verification; the Apache-2.0 header on dataset scripts covers loader code only, not the underlying Wikipedia-derived corpus.
 
 ---
 
@@ -102,15 +102,14 @@ We conducted a review of publicly available Persian Named Entity Recognition cor
 
 We investigated candidate approaches for Persian `PERSON` NER:
 
-| Approach / Model | Architecture | Framework & Dependencies | Model Size (Weights) | Stated Model License | Offline Feasibility | Literature Reported Metrics | Computational Characteristics | Feasibility for `fa-redact` |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1. Heuristic / Dictionary / Regex** | Static name lists + Honorific prefixes + Suffix rules | Standard Library (`re`, `set`) — **0 dependencies** | ~2–10 MB (lookup tables) | MIT | 100% Offline | Poor (severe false positives on common words; misses out-of-vocabulary names) | Minimal CPU overhead | **REJECTED.** Unacceptable false positive / false negative rates. |
-| **2. Statistical CRF / Stanza** | Conditional Random Fields (`stanza.Pipeline(lang='fa')`) | `stanza`, `torch` OR `sklearn-crfsuite` | ~100–300 MB | Apache 2.0 (Stanza) | Offline once downloaded | ~82–86% F1 reported in literature | Moderate CPU overhead | **CONDITIONAL.** Moderate accuracy; still requires heavy runtime dependencies. |
-| **3. ParsBERT PEYMA NER** (`HooshvareLab/bert-fa-base-uncased-ner-peyma`) | 12-layer Transformer (BERT-base, 110M params) | `transformers`, `torch`, `tokenizers` | ~440 MB | Apache-2.0 (Model Card) | 100% Offline with local weights | **93.40% Overall F1** on PEYMA (Model Card) | Requires PyTorch runtime; CPU latency requires benchmarking | **CANDIDATE FOUNDATION.** Strong Persian linguistic modeling; Apache-2.0 license. |
-| **4. ParsBERT ARMAN NER** (`HooshvareLab/bert-fa-base-uncased-ner-arman`) | 12-layer Transformer (BERT-base, 110M params) | `transformers`, `torch`, `tokenizers` | ~440 MB | Apache-2.0 (Model Card) | 100% Offline with local weights | **99.84% Overall F1** on ARMAN (Model Card) | Requires PyTorch runtime; benchmark setup is dataset-specific | **CANDIDATE FOUNDATION.** Strong linguistic representation on ARMAN fold. |
-| **5. DistilBERT-fa NER** (`HooshvareLab/distilbert-fa-zwnj-base-ner`) | 6-layer Transformer (66M params, distilled) | `transformers`, `torch`, `tokenizers` | ~260 MB | Apache-2.0 (Model Card) | 100% Offline with local weights | **95.07% Overall F1**, **95.85% PER F1** on combined Persian NER dataset | Reduced parameter count; faster CPU inference than BERT-base | **CANDIDATE LIGHTWEIGHT.** Compact architecture with PER-specific reporting. |
-| **6. Multilingual Transformer** (`xlm-roberta-base-ner`) | 12-layer Multilingual RoBERTa (270M params) | `transformers`, `torch`, `tokenizers` | ~1.1 GB | MIT / Apache-2.0 | 100% Offline with local weights | ~87–90% F1 on Persian subsets | Large memory footprint; lower Persian accuracy than ParsBERT | **NOT RECOMMENDED.** Significantly larger footprint. |
-| **7. ONNX Runtime Exported ParsBERT / DistilBERT** | Pre-quantized INT8 / FP32 ONNX graph + Fast Subword Tokenizer | `onnxruntime` + Python standard library | ~110–220 MB | Apache-2.0 (Model) / MIT (ONNX Runtime) | 100% Offline | Expected close to PyTorch baseline; requires empirical benchmarking | Reduced dependency footprint compared to full PyTorch | **CANDIDATE ARCHITECTURE.** Requires prototype validation for Python matrix compatibility. |
+| Approach / Model | Architecture | Framework & Dependencies | Stated Model License | Offline Feasibility | Literature Reported Metrics | Computational Characteristics | Feasibility for `fa-redact` |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1. Heuristic / Dictionary / Regex** | Static name lists + Honorific prefixes + Suffix rules | Standard Library (`re`, `set`) — **0 dependencies** | MIT | 100% Offline | Poor (severe false positives on common words; misses out-of-vocabulary names) | Minimal CPU overhead | **REJECTED.** Unacceptable false positive / false negative rates. |
+| **2. Stanza Persian ARMAN NER** | BiLSTM-CRF (`stanza.Pipeline(lang='fa', processors='tokenize,ner')`) | `stanza`, `torch` | Apache-2.0 | Offline after explicit local model installation/download | **80.07% F1** on ARMAN (Stanza documentation) | Moderate CPU overhead; requires Stanza/PyTorch ecosystem | **CONDITIONAL.** Moderate accuracy on ARMAN; requires Stanza/PyTorch runtime dependencies. |
+| **3. ParsBERT PEYMA NER** (`HooshvareLab/bert-fa-base-uncased-ner-peyma`) | 12-layer Transformer (BERT-base, 110M params) | `transformers`, `torch`, `tokenizers` | Apache-2.0 (Model Card) | 100% Offline with local weights | **93.40% Overall F1** on PEYMA (Model Card) | Requires PyTorch runtime; CPU latency requires benchmarking | **CANDIDATE FOUNDATION.** Strong Persian linguistic modeling; Apache-2.0 license. |
+| **4. ParsBERT ARMAN NER** (`HooshvareLab/bert-fa-base-uncased-ner-arman`) | 12-layer Transformer (BERT-base, 110M params) | `transformers`, `torch`, `tokenizers` | Apache-2.0 (Model Card) | 100% Offline with local weights | **99.84% Overall F1** on ARMAN (Model Card) | Requires PyTorch runtime; benchmark setup is dataset-specific | **CANDIDATE FOUNDATION.** Strong linguistic representation on ARMAN fold. |
+| **5. DistilBERT-fa NER** (`HooshvareLab/distilbert-fa-zwnj-base-ner`) | 6-layer Transformer (66M params, distilled) | `transformers`, `torch`, `tokenizers` | UNCLEAR / REQUIRES VERIFICATION (Base model is Apache-2.0, but fine-tuned NER checkpoint lacks explicit license declaration on its repository) | 100% Offline with local weights | **95.07% Overall F1**, **95.85% PER F1** on combined Persian NER dataset | Reduced parameter count; faster CPU inference than BERT-base | **CANDIDATE LIGHTWEIGHT.** Compact architecture with PER-specific reporting. |
+| **6. ONNX Runtime Exported ParsBERT / DistilBERT** | Pre-quantized INT8 / FP32 ONNX graph + Fast Subword Tokenizer | `onnxruntime` + Python standard library | Apache-2.0 (Model permitting) / MIT (ONNX Runtime) | 100% Offline | Expected close to PyTorch baseline; requires empirical benchmarking | Reduced dependency footprint compared to full PyTorch | **CANDIDATE ARCHITECTURE.** Requires prototype validation for Python matrix compatibility. |
 
 ---
 
@@ -123,10 +122,10 @@ Licensing is a **hard gate** for any software component or data asset considered
 | **PEYMA Corpus** | Dataset | Research / Academic use stated by authors | **YES** | **YES** | **NO** (Terms do not permit unconditional PyPI package bundling) | **NO** (Cannot bundle data files in PyPI wheel) |
 | **ARMAN Corpus** | Dataset | Academic Research Use Only (corpus terms) | **YES** | **YES** | **NO** (Academic-only terms incompatible with MIT package) | **NO** (Cannot bundle data files) |
 | **MultiNERD (fa)** | Dataset | CC BY-NC-SA 4.0 | **YES** | **YES** | **NO** (Non-commercial restriction) | **NO** |
-| **WikiANN (fa)** | Dataset | ODC-By 1.0 / CC BY-SA 3.0 | **YES** | **YES** | **NO** (ShareAlike restriction) | **NO** |
+| **WikiANN (fa)** | Dataset | UNKNOWN / REQUIRES VERIFICATION (Canonical `unimelb-nlp/wikiann` metadata declares unknown; script Apache-2.0 covers loader code only) | **YES** (Academic reference) | **YES** (Academic research download) | **NO** (Unverified license / silver data) | **NO** (Cannot bundle or redistribute unverified corpus) |
 | **ParsBERT PEYMA Weights** (`HooshvareLab`) | Model Weights | Apache-2.0 (Model Card) | **YES** | **YES** | **NO** (Large binary files do not belong in git) | **YES** (Permissive Apache-2.0; user-downloaded / local path) |
 | **ParsBERT ARMAN Weights** (`HooshvareLab`) | Model Weights | Apache-2.0 (Model Card) | **YES** | **YES** | **NO** (Large binary files do not belong in git) | **YES** (Permissive Apache-2.0) |
-| **DistilBERT-fa Weights** (`HooshvareLab`) | Model Weights | Apache-2.0 (Model Card) | **YES** | **YES** | **NO** (Large binary files do not belong in git) | **YES** (Permissive Apache-2.0) |
+| **DistilBERT-fa Weights** (`HooshvareLab`) | Model Weights | UNCLEAR / REQUIRES VERIFICATION (Fine-tuned NER checkpoint lacks explicit license tag; base model is Apache-2.0) | **YES** | **YES** | **NO** (Large binary files do not belong in git) | **NO / REQUIRES VERIFICATION** (Unclear license prevents unverified redistribution/integration) |
 | **ONNX Runtime** | Runtime Engine | MIT | **YES** | **YES** | N/A (Standard pip dependency) | **YES** (Compatible with `fa-redact` MIT license) |
 
 ### Hard Gate Summary:
@@ -146,23 +145,15 @@ The core `fa-redact` package must remain completely free of mandatory runtime de
 dependencies = []
 ```
 
-### 6.2 Optional Extra Design
-To support Persian NER without burdening lightweight users:
-```toml
-[project.optional-dependencies]
-ner = [
-    # Bounded dependency constraint to support Python 3.10-3.13
-    "onnxruntime>=1.16.0; python_version < '3.14'",
-]
-ner-transformers = [
-    "torch>=2.0.0",
-    "transformers>=4.30.0",
-]
-```
+### 6.2 Optional Extra Principles (Future Sub-Phase)
+No optional dependencies are added in Phase 21. For any future prototype sub-phase, an optional extra (e.g. `fa-redact[ner]`) must be strictly decoupled from the core package so that `dependencies = []` is preserved.
 
 ### 6.3 ONNX Runtime Python Version Compatibility
-- Recent releases of `onnxruntime` (e.g. 1.29.0) require `python >= 3.11` on some platforms, while earlier releases (e.g. 1.16.0–1.24.2) maintain `python >= 3.10` compatibility.
-- Any future implementation phase must specify explicit, tested version bounds or environment markers to ensure clean resolution across the entire supported Python matrix (3.10, 3.11, 3.12, 3.13).
+- `onnxruntime` 1.29.0 requires `python >= 3.11` on certain platforms.
+- `onnxruntime` 1.24.2 requires `python >= 3.10`.
+- An open-ended future requirement such as `onnxruntime>=1.16.0; python_version < '3.14'` must not be proposed as though that guarantees Python 3.10 resolution forever; while a resolver on Python 3.10 may choose the newest compatible version today, future release behavior must be tested.
+- **Requirement:** The prototype phase must establish tested dependency bounds/environment markers for each supported Python version before defining `fa-redact[ner]`.
+- **Phase 21 Status:** Do NOT add an optional dependency in Phase 21.
 
 ### 6.4 Offline Model Loading & Asset Management
 - In accordance with Privacy Invariant 19, `fa-redact` **must never initiate automatic runtime network requests** to Hugging Face or remote CDNs during `detect()` or `redact()`.
@@ -325,7 +316,9 @@ To maintain rigorous transparency, metrics are strictly separated into three dis
 | `HooshvareLab/distilbert-fa-zwnj-base-ner` | Hugging Face Model Card | Combined Persian NER dataset | **94.63%** (`0.946326`) | **95.50%** (`0.955040`) | **95.07%** (`0.950663`) | **PER Precision: 95.98%** (`0.959818`), **PER Recall: 95.73%** (`0.957278`), **PER F1: 95.85%** (`0.958546`) |
 
 ### Tier B: Metrics Reproduced by this Phase 21 Research
-- **Empirical Model Execution on Raw Corpus:** Real empirical model evaluation requires a dedicated execution environment with verified local model weights and tokenizer mapping. In Phase 21, empirical evaluation was scoped to the mathematical harness and synthetic challenge validation. Full model evaluation on held-out datasets is planned for the implementation prototype sub-phase.
+- **Empirical Model Execution on Raw Corpus:** Real empirical model evaluation performed in Phase 21: **NO**.
+- Phase 21 delivered the exact-span mathematical evaluation harness, synthetic challenge fixtures, and architectural/licensing research. It did **NOT** perform real empirical evaluation of model checkpoints on raw Persian corpora.
+- Model suitability has **not** been empirically validated by this repository in this phase.
 
 ### Tier C: Synthetic Evaluator Sanity Checks (Harness Self-Test)
 - **Evaluator Self-Test / Perfect-Prediction Sanity Check:**
@@ -370,20 +363,34 @@ Phase 21 delivered standard-library-only evaluation tooling:
 
 ## 15. Recommendation & Decision
 
-### 15.1 Decision: CONDITIONAL GO FOR A DEDICATED PROTOTYPE SUB-PHASE
+### 15.1 Decision: CONDITIONAL GO ONLY FOR A DEDICATED EMPIRICAL BENCHMARK / PROTOTYPE SUB-PHASE
 
-- **GO for Research & Evaluation Foundation:** The research establishes that Persian personal name NER is technically viable using fine-tuned Persian Transformer models (ParsBERT / DistilBERT-fa).
-- **CONDITIONAL GO for Prototype Implementation:** Implementation must proceed in a dedicated prototype sub-phase as an **optional extra** (`fa-redact[ner]`), preserving the zero-dependency core and enforcing exact character offset mapping.
-- **NO Production Detector Added in Phase 21:** In strict compliance with Phase 21 gate criteria, no production `PersianNameDetector` is added to `src/fa_redact/detectors/` in this phase.
+- **Research Foundation Status:** RESEARCH FOUNDATION COMPLETE, BUT NO-GO FOR PRODUCTION NER IMPLEMENTATION UNTIL A REAL REPRODUCIBLE MODEL BENCHMARK IS COMPLETED.
+- **Phase 21 Empirical Scope:** Real empirical model evaluation performed in Phase 21: **NO**. Phase 21 delivered the exact-span mathematical evaluation harness, synthetic challenge fixtures, and architectural research. Phase 21 itself did **NOT** empirically establish real-world model quality.
+- **Decision:** CONDITIONAL GO ONLY FOR A DEDICATED EMPIRICAL BENCHMARK / PROTOTYPE SUB-PHASE.
+- **Production Decision:** NO-GO pending reproduced PERSON exact-span evaluation, offset validation, dependency compatibility, and clinical-domain evidence.
+- **No Production Detector in Phase 21:** In strict compliance with Phase 21 gate criteria, no production `PersianNameDetector` is added to `src/fa_redact/detectors/` in this phase.
 
-### 15.2 Next Implementation Step (Phase 21.1 / Prototype Sub-Phase)
+### 15.2 Next Sub-Phase Roadmap (Dedicated Benchmark / Prototype Sub-Phase)
 
-Following approval of this research deliverable:
-1. **Prototype Model Export:** Export fine-tuned ParsBERT/DistilBERT checkpoint to ONNX with INT8 dynamic quantization and verify Python 3.10–3.13 matrix resolution.
-2. **Subword Offset Mapper:** Implement an exact-span character offset mapping engine that projects subword token spans back to the original unmodified input text without lossy drift.
-3. **Optional Extra Definition:** Introduce `[project.optional-dependencies] ner = [...]` with tested version bounds.
-4. **Implement `PersianNERDetector`:** Create an optional detector adhering to `fa_redact.protocols.Detector` accepting an explicit local model path (`model_path: str | Path`).
-5. **CI Smoke Tests:** Provide mock/synthetic ONNX test fixtures to run in CI without requiring massive model downloads.
+The next sub-phase must begin with real model benchmarking before ONNX export or production detector implementation. The prescribed sequence is:
+
+1. **Select Candidate Models:** Select one or two legally usable model candidates.
+2. **Pin Revisions:** Pin exact model revisions.
+3. **Obtain Local Held-Out Corpus:** Obtain legally usable held-out evaluation corpus locally.
+4. **Run Actual Inference:** Run actual inference.
+5. **Convert Predictions:** Convert BIO/BIOES predictions to entities.
+6. **Reconstruct Character Offsets:** Reconstruct/verify exact original-text character offsets.
+7. **Report PERSON Metrics:** Report PERSON:
+   - True Positives (TP)
+   - False Positives (FP)
+   - False Negatives (FN)
+   - Exact-span precision
+   - Exact-span recall
+   - Exact-span F1
+8. **Perform Error Analysis:** Perform error analysis.
+9. **Benchmark ONNX Export:** Only then benchmark/compare ONNX export if justified.
+10. **Production Decision:** Only after that decide whether `PersianNERDetector` implementation is warranted.
 
 ---
 
@@ -393,5 +400,6 @@ Following approval of this research deliverable:
 2. **Shahshahani, M. S., Mohseni, M., Shakery, A., & Faili, H.** (2018). *PEYMA: A Tagged Persian Named Entity Recognition Corpus*. Laboratory for Systems and Cognitive Processing (LSCP), University of Tehran. [GitHub: LSCP-Lab/PEYMA](https://github.com/LSCP-Lab/PEYMA).
 3. **Farahani, M., Gharachorloo, M., Farahani, M., & Manthouri, M.** (2021). *ParsBERT: Transformer-based Model for Persian Language Understanding*. Neural Computing and Applications, 33(21), 14213-14223. [Hugging Face: HooshvareLab/bert-fa-base-uncased-ner-peyma](https://huggingface.co/HooshvareLab/bert-fa-base-uncased-ner-peyma).
 4. **HooshvareLab** (2021). *DistilBERT Persian ZWNJ NER*. [Hugging Face: HooshvareLab/distilbert-fa-zwnj-base-ner](https://huggingface.co/HooshvareLab/distilbert-fa-zwnj-base-ner).
-5. **Tedeschi, S., & Navigli, R.** (2022). *MultiNERD: A Multilingual, Multi-Genre and Fine-Grained Dataset for Named Entity Recognition*. In Findings of NAACL 2022. [Hugging Face: Babelscape/multinerd](https://huggingface.co/datasets/Babelscape/multinerd).
-6. **Pan, X., Zhang, B., May, J., Nothman, J., Knight, K., & Ji, H.** (2017). *Cross-lingual Name Tagging and Linking for 282 Languages*. In Proceedings of ACL 2017. [Hugging Face: wikiann](https://huggingface.co/datasets/wikiann).
+5. **Qi, P., Zhang, Y., Zhang, Y., Bolton, J., & Manning, C. D.** (2020). *Stanza: A Python Natural Language Processing Toolkit for Many Human Languages*. In Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics: System Demonstrations. [Stanza Persian NER Documentation](https://stanfordnlp.github.io/stanza/ner_models.html).
+6. **Tedeschi, S., & Navigli, R.** (2022). *MultiNERD: A Multilingual, Multi-Genre and Fine-Grained Dataset for Named Entity Recognition*. In Findings of NAACL 2022. [Hugging Face: Babelscape/multinerd](https://huggingface.co/datasets/Babelscape/multinerd).
+7. **Pan, X., Zhang, B., May, J., Nothman, J., Knight, K., & Ji, H.** (2017). *Cross-lingual Name Tagging and Linking for 282 Languages*. In Proceedings of ACL 2017. [Hugging Face: unimelb-nlp/wikiann](https://huggingface.co/datasets/unimelb-nlp/wikiann).

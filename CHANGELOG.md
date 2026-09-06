@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public root exports `DetectionReport`, `detection_report`, and `report_detections` from the `fa_redact` package namespace (Phase 18).
 
 ### Limitations
+- Persian NER research foundation complete; no production detector added in Phase 21 pending dedicated empirical model benchmarking on held-out datasets (Phase 21).
 - Structured data helpers target explicitly selected paths only and do not perform blind recursive scanning or automatic schema-level PII field inference (Phase 20).
 - `report_fields()` output is keyed by caller-supplied paths; while reports contain no sensitive values, path names are metadata and must not encode patient identifiers (Phase 20).
 - Path model supports dot-separated mapping keys; list indexing (e.g. `items.0.note`) and wildcards (`items[*].note`, `**`) are not supported in Phase 20 (Phase 20).
