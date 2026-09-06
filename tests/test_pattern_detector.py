@@ -2,6 +2,7 @@
 
 import re
 from dataclasses import FrozenInstanceError
+from typing import cast
 
 import pytest
 
@@ -101,37 +102,10 @@ class TestPatternRuleValidation:
         with pytest.raises((FrozenInstanceError, AttributeError)):
             rule.pattern = r".*"  # type: ignore[misc]
 
-    def test_invalid_regex_syntax_raises_value_error(self) -> None:
-        """Verify invalid regex syntax raises ValueError with entity type."""
-        with pytest.raises(
-            ValueError,
-            match=r"Invalid regular expression pattern.*for entity type 'MRN'",
-        ):
-            PatternRule(type="MRN", pattern=r"[0-9++")
-
-    def test_invalid_integer_group_out_of_range(self) -> None:
-        """Verify integer group exceeding pattern capture count raises ValueError."""
-        with pytest.raises(
-            ValueError,
-            match=r"Configured group index 2 out of range for entity type 'MRN'",
-        ):
-            PatternRule(type="MRN", pattern=r"MRN-([0-9]{6})", group=2)
-
     def test_negative_integer_group_raises_value_error(self) -> None:
         """Verify negative integer group index raises ValueError."""
         with pytest.raises(ValueError, match=r"group index must be non-negative"):
             PatternRule(type="MRN", pattern=r"MRN-[0-9]{6}", group=-1)
-
-    def test_invalid_named_group_nonexistent(self) -> None:
-        """Verify named group missing from pattern raises ValueError."""
-        with pytest.raises(
-            ValueError,
-            match=(
-                r"Configured named group 'id' not found in pattern for "
-                r"entity type 'MRN'"
-            ),
-        ):
-            PatternRule(type="MRN", pattern=r"MRN-(?P<identifier>[0-9]{6})", group="id")
 
     def test_invalid_group_type_raises_value_error(self) -> None:
         """Verify group types other than int and str raise ValueError."""
@@ -149,7 +123,7 @@ class TestPatternRuleValidation:
             PatternRule(type="MRN", pattern=r"MRN-[0-9]{6}", flags="i")  # type: ignore[arg-type]
 
     def test_valid_flags_and_groups(self) -> None:
-        """Verify valid flags and capture groups configure successfully."""
+        """Verify valid flags and capture groups configure on PatternRule."""
         rule_int = PatternRule(
             type="MRN",
             pattern=r"MRN\s*:\s*([0-9]{6})",
@@ -170,6 +144,75 @@ class TestPatternRuleValidation:
 
 class TestPatternDetectorConstruction:
     """Unit tests for PatternDetector constructor and validation."""
+
+    def test_invalid_regex_syntax_raises_value_error(self) -> None:
+        """Verify uncompilable regex raises ValueError during detector init."""
+        rule = PatternRule(type="MRN", pattern=r"[0-9++")
+        with pytest.raises(
+            ValueError,
+            match=r"Invalid regular expression pattern.*for entity type 'MRN'",
+        ):
+            PatternDetector([rule])
+
+    def test_invalid_integer_group_out_of_range(self) -> None:
+        """Verify out-of-range integer group raises ValueError during detector init."""
+        rule = PatternRule(type="MRN", pattern=r"MRN-([0-9]{6})", group=2)
+        with pytest.raises(
+            ValueError,
+            match=r"Configured group index 2 out of range for entity type 'MRN'",
+        ):
+            PatternDetector([rule])
+
+    def test_invalid_named_group_nonexistent(self) -> None:
+        """Verify missing named group raises ValueError during detector init."""
+        rule = PatternRule(
+            type="MRN", pattern=r"MRN-(?P<identifier>[0-9]{6})", group="id"
+        )
+        with pytest.raises(
+            ValueError,
+            match=(
+                r"Configured named group 'id' not found in pattern for "
+                r"entity type 'MRN'"
+            ),
+        ):
+            PatternDetector([rule])
+
+    def test_compile_once_behavior(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Verify regexes compile once upon detector init and 0 times in detect()."""
+        compile_count = 0
+        real_compile = re.compile
+
+        def counting_compile(
+            pattern: str | bytes, flags: int | re.RegexFlag = 0
+        ) -> re.Pattern[str]:
+            nonlocal compile_count
+            compile_count += 1
+            return cast(re.Pattern[str], real_compile(pattern, flags))
+
+        monkeypatch.setattr("fa_redact.detectors.pattern.re.compile", counting_compile)
+
+        # 1. Constructing PatternRules performs 0 compilations
+        rule1 = PatternRule(type="MRN", pattern=r"(?<!\w)MRN-[0-9]{6}(?!\w)")
+        rule2 = PatternRule(type="PATIENT_ID", pattern=r"(?<!\w)PAT-[0-9]{8}(?!\w)")
+        rule3 = PatternRule(
+            type="ADM_ID",
+            pattern=r"ADM\s*:\s*(?P<id>[0-9]{4})",
+            group="id",
+            flags=re.IGNORECASE,
+        )
+        assert compile_count == 0
+
+        # 2. Constructing PatternDetector with 3 rules performs exactly 3 compilations
+        detector = PatternDetector([rule1, rule2, rule3])
+        assert compile_count == 3
+
+        # 3. Multiple detect() calls perform 0 additional compilations
+        text = "MRN-123456 PAT-12345678 ADM: 1234"
+        for _ in range(5):
+            res = detector.detect(text, text)
+            assert len(res) == 3
+
+        assert compile_count == 3
 
     def test_empty_rules_raises_value_error(self) -> None:
         """Verify empty rules collection raises ValueError."""

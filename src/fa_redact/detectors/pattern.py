@@ -75,28 +75,6 @@ class PatternRule:
                 f"{self.type!r}: flags must be an int"
             )
 
-        try:
-            compiled = re.compile(self.pattern, self.flags)
-        except re.error as err:
-            raise ValueError(
-                f"Invalid regular expression pattern {self.pattern!r} for "
-                f"entity type {self.type!r}: {err}"
-            ) from None
-
-        if isinstance(self.group, int):
-            if self.group > compiled.groups:
-                raise ValueError(
-                    f"Configured group index {self.group} out of range for "
-                    f"entity type {self.type!r} "
-                    f"(pattern has {compiled.groups} capture groups)"
-                )
-        elif isinstance(self.group, str):
-            if self.group not in compiled.groupindex:
-                raise ValueError(
-                    f"Configured named group {self.group!r} not found in "
-                    f"pattern for entity type {self.type!r}"
-                )
-
 
 class PatternDetector:
     """Detects configurable, institution-specific identifiers using custom regex rules.
