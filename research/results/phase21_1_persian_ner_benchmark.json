@@ -1,0 +1,27 @@
+{
+  "benchmark_tool_versions": {
+    "torch": "2.7.0+cpu",
+    "transformers": "transformers"
+  },
+  "dataset": "ParsiAI/PEYMA",
+  "dataset_license": "Apache-2.0",
+  "dataset_revision": "c9995786945706010f000d4196b0a9ecbd6b96c5",
+  "dataset_split": "test",
+  "duplicate_predictions": 0,
+  "evaluated_sentences": 1026,
+  "evaluation_policy": "exact_span_entity_level",
+  "f1": 0.991926,
+  "false_negatives": 4,
+  "false_positives": 3,
+  "gold_person_entities": 434,
+  "model_id": "HooshvareLab/bert-fa-base-uncased-ner-peyma",
+  "model_license": "Apache-2.0",
+  "model_revision": "8b7b63371aa8f1fdad62c0f82d462a22b91b37ab",
+  "offset_mapping_failures": 0,
+  "precision": 0.993072,
+  "predicted_person_entities": 433,
+  "python_version": "3.10.11",
+  "recall": 0.990783,
+  "schema_version": "1.0.0",
+  "true_positives": 430
+}

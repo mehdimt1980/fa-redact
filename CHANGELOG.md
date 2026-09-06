@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Persian Named Entity Recognition (NER) empirical benchmark runner and exact offset mapping utilities (`research/persian_ner_benchmark.py`) mapping subword predictions and character offsets to exact Python string slices without text distortion, parsing BIO/CoNLL annotations, and generating deterministic value-free aggregate summaries (Phase 21.1).
+- Empirical Persian NER benchmark report (`research/phase21_1_persian_ner_benchmark.md`) and aggregate result artifact (`research/results/phase21_1_persian_ner_benchmark.json`) reproducing exact-span `PERSON` metrics on the held-out PEYMA test split (1,026 sentences, 434 gold entities: TP=430, FP=3, FN=4, Precision=99.31%, Recall=99.08%, F1=99.19%, 0 offset mapping failures) with Apache-2.0 model checkpoint `HooshvareLab/bert-fa-base-uncased-ner-peyma` (Phase 21.1).
 - Persian Named Entity Recognition (NER) comprehensive research deliverable (`research/phase21_persian_ner.md`) evaluating public Persian NER corpora (PEYMA, ARMAN, WikiANN, MultiNERD, clinical/health text resources), model architectures (ParsBERT, DistilBERT, ONNX Runtime), exact-span metrics, licensing, optional packaging design (`fa-redact[ner]`), and healthcare domain shift (Phase 21).
 - Standard-library-only research evaluation harness (`research/evaluation.py`) computing exact-span entity-level precision, recall, and F1 with corpus micro-averaging and detailed error analysis (Phase 21).
 - Synthetic Persian NER challenge set (`research/synthetic_fixtures.py`) containing 14 challenge fixtures covering multi-token compound surnames, honorifics, common-word/name homographs, ZWNJ variations, Arabic character variants, and clinical contexts (Phase 21).
@@ -30,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public root exports `DetectionReport`, `detection_report`, and `report_detections` from the `fa_redact` package namespace (Phase 18).
 
 ### Limitations
+- Real empirical Persian NER benchmark completed; no production detector added in Phase 21.1 pending a dedicated implementation phase (Phase 21.1).
+- News-domain empirical benchmark results (PEYMA) do not prove clinical de-identification performance due to syntax, vocabulary, and multi-role healthcare domain shift (Phase 21.1).
 - Persian NER research foundation complete; no production detector added in Phase 21 pending dedicated empirical model benchmarking on held-out datasets (Phase 21).
 - Structured data helpers target explicitly selected paths only and do not perform blind recursive scanning or automatic schema-level PII field inference (Phase 20).
 - `report_fields()` output is keyed by caller-supplied paths; while reports contain no sensitive values, path names are metadata and must not encode patient identifiers (Phase 20).
