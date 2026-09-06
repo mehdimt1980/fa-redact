@@ -175,18 +175,40 @@ class TestEvaluateExactSpans:
         assert metrics.recall == 0.0
         assert metrics.f1 == 0.0
 
-    def test_duplicate_prediction_deduplication(self) -> None:
+    def test_duplicate_gold_raises_error(self) -> None:
+        gold = [(0, 10, "PERSON"), (0, 10, "PERSON")]
+        pred = [(0, 10, "PERSON")]
+        with pytest.raises(ValueError, match="Duplicate gold entity span detected"):
+            evaluate_exact_spans(gold, pred)
+
+    def test_duplicate_prediction_counted_as_fp(self) -> None:
+        # Under default 'count_as_fp', extra duplicate predictions penalize precision
         gold = [(0, 10, "PERSON")]
         pred = [(0, 10, "PERSON"), (0, 10, "PERSON"), (0, 10, "PERSON")]
-        metrics = evaluate_exact_spans(gold, pred)
+        metrics = evaluate_exact_spans(
+            gold, pred, duplicate_prediction_policy="count_as_fp"
+        )
 
         assert metrics.true_positives == 1
-        assert metrics.false_positives == 0
+        assert metrics.false_positives == 2
         assert metrics.false_negatives == 0
-        assert metrics.precision == 1.0
+        assert metrics.precision == pytest.approx(1 / 3)
         assert metrics.recall == 1.0
-        assert metrics.f1 == 1.0
-        assert metrics.total_predicted == 1
+        assert metrics.f1 == pytest.approx(0.5)
+        assert metrics.total_gold == 1
+        assert metrics.total_predicted == 3
+
+    def test_duplicate_prediction_reject_policy_raises_error(self) -> None:
+        gold = [(0, 10, "PERSON")]
+        pred = [(0, 10, "PERSON"), (0, 10, "PERSON")]
+        with pytest.raises(
+            ValueError, match="Duplicate predicted entity span detected"
+        ):
+            evaluate_exact_spans(gold, pred, duplicate_prediction_policy="reject")
+
+    def test_invalid_duplicate_policy_raises_error(self) -> None:
+        with pytest.raises(ValueError, match="Invalid duplicate_prediction_policy"):
+            evaluate_exact_spans([], [], duplicate_prediction_policy="unknown")
 
     def test_mixed_span_input_types(self) -> None:
         # Mix of EntitySpan, Detection, and tuple

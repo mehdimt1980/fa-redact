@@ -118,24 +118,24 @@ class SpanErrorAnalysis:
     type_mismatches: list[tuple[EntitySpan, EntitySpan]]
 
 
-def _coerce_spans(
+def _coerce_span_list(
     spans: Sequence[EntitySpan | Detection | tuple[int, int, str]],
 ) -> list[EntitySpan]:
-    """Coerce various span representations into sorted, unique EntitySpans."""
-    coerced: set[EntitySpan] = set()
+    """Coerce various span representations into a list of EntitySpans."""
+    coerced: list[EntitySpan] = []
     for item in spans:
         if isinstance(item, EntitySpan):
-            coerced.add(item)
+            coerced.append(item)
         elif isinstance(item, Detection):
-            coerced.add(EntitySpan.from_detection(item))
+            coerced.append(EntitySpan.from_detection(item))
         elif isinstance(item, tuple) and len(item) == 3:
-            coerced.add(EntitySpan.from_tuple(item))
+            coerced.append(EntitySpan.from_tuple(item))
         else:
             raise TypeError(
                 f"Unsupported span item type: {type(item).__name__}; "
                 "expected EntitySpan, Detection, or (start, end, type) tuple"
             )
-    return sorted(coerced, key=lambda s: (s.start, s.end, s.type))
+    return coerced
 
 
 def calculate_metrics(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
@@ -162,30 +162,74 @@ def calculate_metrics(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
 def evaluate_exact_spans(
     gold: Sequence[EntitySpan | Detection | tuple[int, int, str]],
     predicted: Sequence[EntitySpan | Detection | tuple[int, int, str]],
+    *,
+    duplicate_prediction_policy: str = "count_as_fp",
 ) -> ExactSpanMetrics:
     """Compute exact-span entity metrics between gold and predicted annotations.
 
-    Deduplicates identical spans within gold and predicted sets before matching.
-    A true positive requires exact match in start, end, and entity type.
+    Enforces that gold annotations contain no duplicate spans (failing loudly with
+    ValueError if duplicate gold spans are detected).
+
+    Duplicate predictions are evaluated according to `duplicate_prediction_policy`:
+    - 'count_as_fp' (default): the first occurrence of a predicted span matches a gold
+      entity (TP); subsequent duplicate predictions of the same span are counted as
+      False Positives (FP), penalizing redundant emissions.
+    - 'reject': raises ValueError if duplicate predicted spans are detected.
 
     Args:
         gold: Gold-standard entity spans.
         predicted: Model-predicted entity spans.
+        duplicate_prediction_policy: 'count_as_fp' (default) or 'reject'.
 
     Returns:
         ExactSpanMetrics instance containing counts and precision/recall/F1.
+
+    Raises:
+        ValueError: If gold contains duplicate spans, if predicted contains duplicate
+            spans under 'reject' policy, or if an invalid policy is passed.
     """
-    gold_set = set(_coerce_spans(gold))
-    pred_set = set(_coerce_spans(predicted))
+    gold_list = _coerce_span_list(gold)
+    pred_list = _coerce_span_list(predicted)
 
-    tp_set = gold_set.intersection(pred_set)
-    fp_set = pred_set.difference(gold_set)
-    fn_set = gold_set.difference(pred_set)
+    # Validate gold annotations: duplicates indicate corrupted evaluation data
+    gold_set: set[EntitySpan] = set()
+    for g in gold_list:
+        if g in gold_set:
+            raise ValueError(
+                f"Duplicate gold entity span detected: start={g.start}, "
+                f"end={g.end}, type='{g.type}'"
+            )
+        gold_set.add(g)
 
-    tp = len(tp_set)
-    fp = len(fp_set)
-    fn = len(fn_set)
+    # Validate prediction policy
+    if duplicate_prediction_policy == "reject":
+        pred_set: set[EntitySpan] = set()
+        for p in pred_list:
+            if p in pred_set:
+                raise ValueError(
+                    f"Duplicate predicted entity span detected: start={p.start}, "
+                    f"end={p.end}, type='{p.type}'"
+                )
+            pred_set.add(p)
+    elif duplicate_prediction_policy != "count_as_fp":
+        raise ValueError(
+            f"Invalid duplicate_prediction_policy '{duplicate_prediction_policy}'; "
+            "expected 'count_as_fp' or 'reject'"
+        )
 
+    # 1-to-1 exact matching
+    matched_gold: set[EntitySpan] = set()
+    tp = 0
+    fp = 0
+
+    for p in pred_list:
+        if p in gold_set and p not in matched_gold:
+            tp += 1
+            matched_gold.add(p)
+        else:
+            fp += 1
+
+    fn = len(gold_set) - len(matched_gold)
     precision, recall, f1 = calculate_metrics(tp, fp, fn)
 
     return ExactSpanMetrics(
@@ -195,14 +239,16 @@ def evaluate_exact_spans(
         precision=precision,
         recall=recall,
         f1=f1,
-        total_gold=len(gold_set),
-        total_predicted=len(pred_set),
+        total_gold=len(gold_list),
+        total_predicted=len(pred_list),
     )
 
 
 def evaluate_corpus(
     gold_docs: Sequence[Sequence[EntitySpan | Detection | tuple[int, int, str]]],
     predicted_docs: Sequence[Sequence[EntitySpan | Detection | tuple[int, int, str]]],
+    *,
+    duplicate_prediction_policy: str = "count_as_fp",
 ) -> CorpusEvaluationResult:
     """Evaluate exact-span metrics across multiple documents in a corpus.
 
@@ -211,6 +257,7 @@ def evaluate_corpus(
     Args:
         gold_docs: Sequence of gold-standard entity spans per document.
         predicted_docs: Sequence of predicted entity spans per document.
+        duplicate_prediction_policy: 'count_as_fp' (default) or 'reject'.
 
     Returns:
         CorpusEvaluationResult with overall and per-type metrics.
@@ -238,35 +285,39 @@ def evaluate_corpus(
     type_pred_count: dict[str, int] = {}
 
     for g_doc, p_doc in zip(gold_docs, predicted_docs, strict=True):
-        gold_spans = set(_coerce_spans(g_doc))
-        pred_spans = set(_coerce_spans(p_doc))
+        doc_metrics = evaluate_exact_spans(
+            g_doc,
+            p_doc,
+            duplicate_prediction_policy=duplicate_prediction_policy,
+        )
+        total_tp += doc_metrics.true_positives
+        total_fp += doc_metrics.false_positives
+        total_fn += doc_metrics.false_negatives
+        total_gold_count += doc_metrics.total_gold
+        total_pred_count += doc_metrics.total_predicted
 
-        for s in gold_spans:
+        g_list = _coerce_span_list(g_doc)
+        p_list = _coerce_span_list(p_doc)
+
+        for s in g_list:
             all_types.add(s.type)
-        for s in pred_spans:
-            all_types.add(s.type)
-
-        tp_set = gold_spans.intersection(pred_spans)
-        fp_set = pred_spans.difference(gold_spans)
-        fn_set = gold_spans.difference(pred_spans)
-
-        total_tp += len(tp_set)
-        total_fp += len(fp_set)
-        total_fn += len(fn_set)
-        total_gold_count += len(gold_spans)
-        total_pred_count += len(pred_spans)
-
-        for s in tp_set:
-            type_tp[s.type] = type_tp.get(s.type, 0) + 1
-        for s in fp_set:
-            type_fp[s.type] = type_fp.get(s.type, 0) + 1
-        for s in fn_set:
-            type_fn[s.type] = type_fn.get(s.type, 0) + 1
-
-        for s in gold_spans:
             type_gold_count[s.type] = type_gold_count.get(s.type, 0) + 1
-        for s in pred_spans:
+        for s in p_list:
+            all_types.add(s.type)
             type_pred_count[s.type] = type_pred_count.get(s.type, 0) + 1
+
+        g_set = set(g_list)
+        matched_g: set[EntitySpan] = set()
+        for p in p_list:
+            if p in g_set and p not in matched_g:
+                type_tp[p.type] = type_tp.get(p.type, 0) + 1
+                matched_g.add(p)
+            else:
+                type_fp[p.type] = type_fp.get(p.type, 0) + 1
+
+        for g in g_list:
+            if g not in matched_g:
+                type_fn[g.type] = type_fn.get(g.type, 0) + 1
 
     overall_prec, overall_rec, overall_f1 = calculate_metrics(
         total_tp, total_fp, total_fn
@@ -287,14 +338,14 @@ def evaluate_corpus(
         tp = type_tp.get(entity_type, 0)
         fp = type_fp.get(entity_type, 0)
         fn = type_fn.get(entity_type, 0)
-        p, r, f = calculate_metrics(tp, fp, fn)
+        type_prec, type_rec, type_f1 = calculate_metrics(tp, fp, fn)
         by_type[entity_type] = ExactSpanMetrics(
             true_positives=tp,
             false_positives=fp,
             false_negatives=fn,
-            precision=p,
-            recall=r,
-            f1=f,
+            precision=type_prec,
+            recall=type_rec,
+            f1=type_f1,
             total_gold=type_gold_count.get(entity_type, 0),
             total_predicted=type_pred_count.get(entity_type, 0),
         )
@@ -326,8 +377,8 @@ def analyze_errors(
     Returns:
         SpanErrorAnalysis detailing error categories.
     """
-    gold_spans = _coerce_spans(gold)
-    pred_spans = _coerce_spans(predicted)
+    gold_spans = _coerce_span_list(gold)
+    pred_spans = _coerce_span_list(predicted)
 
     exact_matches: list[EntitySpan] = []
     false_positives: list[EntitySpan] = []
