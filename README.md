@@ -14,8 +14,9 @@
 
 `fa-redact` is a lightweight, zero-dependency, privacy-first Python toolkit for Persian/Iranian Personally Identifiable Information (PII) detection, redaction, and pseudonymization, designed especially for healthcare and AI/LLM applications.
 
-> **Status: v0.1.0 (Alpha) — available on PyPI**  
-> `fa-redact` is publicly available on [PyPI](https://pypi.org/project/fa-redact/) and [GitHub Releases](https://github.com/mehdimt1980/fa-redact/releases/tag/v0.1.0).
+> **Status: Alpha**  
+> Package version in this source tree: `v0.2.0`.  
+> Published releases are available on [PyPI](https://pypi.org/project/fa-redact/) and [GitHub Releases](https://github.com/mehdimt1980/fa-redact/releases). The PyPI badge above reflects the latest published PyPI version.
 
 ---
 
@@ -33,11 +34,11 @@
   - [2. Detection Model & Pipeline](#2-detection-model--pipeline)
   - [3. Iranian National ID Validation & Detection](#3-iranian-national-id-validation--detection)
   - [4. Iranian Mobile Number Validation & Detection](#4-iranian-mobile-number-validation--detection)
-  - [5. Iranian IBAN / Sheba Validation & Detection (Unreleased)](#5-iranian-iban--sheba-validation--detection-unreleased)
-  - [6. Conservative ASCII Email Validation & Detection (Opt-in / Unreleased)](#6-conservative-ascii-email-validation--detection-opt-in--unreleased)
-  - [7. Bank Card / PAN Validation & Detection (Opt-in / Unreleased)](#7-bank-card--pan-validation--detection-opt-in--unreleased)
-  - [8. Configurable Institutional / Healthcare Identifiers (Opt-in / Unreleased)](#8-configurable-institutional--healthcare-identifiers-opt-in--unreleased)
-  - [9. Explicit Detection Conflict Resolution (Opt-in / Unreleased)](#9-explicit-detection-conflict-resolution-opt-in--unreleased)
+  - [5. Iranian IBAN / Sheba Validation & Detection](#5-iranian-iban--sheba-validation--detection)
+  - [6. Conservative ASCII Email Validation & Detection (Opt-in)](#6-conservative-ascii-email-validation--detection-opt-in)
+  - [7. Bank Card / PAN Validation & Detection (Opt-in)](#7-bank-card--pan-validation--detection-opt-in)
+  - [8. Configurable Institutional / Healthcare Identifiers (Opt-in)](#8-configurable-institutional--healthcare-identifiers-opt-in)
+  - [9. Explicit Detection Conflict Resolution (Opt-in)](#9-explicit-detection-conflict-resolution-opt-in)
   - [10. Redaction Semantics](#10-redaction-semantics)
   - [11. Stateful Pseudonymization Sessions](#11-stateful-pseudonymization-sessions)
 - [Custom Detectors](#custom-detectors)
@@ -221,10 +222,10 @@ is_valid_mobile_number("09412345678")  # False (fixed non-geographical)
 - **Strict Formatting**: Only compact forms (`09xxxxxxxxx`, `+989xxxxxxxxx`, `00989xxxxxxxxx`) are accepted. The validator does not strip spaces, remove hyphens, or auto-format.
 - **Verification Notice**: Prefix validation confirms structural numbering-plan compliance only; it does not verify active SIM status, subscriber identity, carrier ownership, or number portability status.
 
-#### 5. Iranian IBAN / Sheba Validation & Detection (Unreleased)
+#### 5. Iranian IBAN / Sheba Validation & Detection
 
 > [!NOTE]
-> **Unreleased / Development Version (Phase 13)**: Iranian IBAN / Sheba validation and detection are introduced in the unreleased development cycle and are not part of published PyPI release `0.1.0`.
+> **Introduced in v0.2.0**: Iranian IBAN validation and detection (`IranianIBANDetector` and `is_valid_iranian_iban`) are included in `fa-redact` v0.2.0 as part of the default detector set.
 
 `fa-redact` provides an offline, deterministic Iranian International Bank Account Number (IBAN / شماره شبا) validator (`is_valid_iranian_iban`) and detector (`IranianIBANDetector`). An Iranian IBAN in compact electronic form contains 26 characters: `IR`, followed by 2 check digits and a 22-digit BBAN (or `IR` followed by 24 numeric digits):
 
@@ -267,10 +268,10 @@ restored = session.restore("تایید واریز به [IR_IBAN_1]")
 - **Electronic Compact Format Only**: Only compact format without spaces, hyphens, or formatting separators is accepted. Lowercase prefix (`ir`) is strictly rejected.
 - **Privacy & Financial Disclaimer**: `is_valid_iranian_iban` performs purely local, offline mathematical checksum validation. It does not perform bank API lookups, bank branch routing, or account status verification, and does not verify whether an account exists or is active.
 
-#### 6. Conservative ASCII Email Validation & Detection (Opt-in / Unreleased)
+#### 6. Conservative ASCII Email Validation & Detection (Opt-in)
 
 > [!NOTE]
-> **Unreleased / Development Version (Phase 12)**: Email validation and detection are introduced in the unreleased development cycle and are not part of published PyPI release `0.1.0`.
+> **Introduced in v0.2.0**: Email validation and detection (`EmailDetector` and `is_valid_email`) are introduced in `fa-redact` v0.2.0 as an opt-in detector.
 
 `fa-redact` provides a conservative, zero-dependency ASCII email address validator (`is_valid_email`) and detector (`EmailDetector`):
 
@@ -316,10 +317,10 @@ restored = session.restore("پیام به [EMAIL_1] ارسال شد.")
 - **Unsupported Complex/Obsolete Forms**: Quoted local parts (`"john doe"@example.com`), IP domain literals (`user@[192.168.1.1]`), comments, folding whitespace, single-label domains (`user@localhost`), and internationalized/Unicode email addresses (EAI / RFC 6530+) are rejected.
 - **Privacy & Verification Disclaimer**: `is_valid_email` performs purely local, offline syntactic validation. It performs no DNS queries, MX record lookups, mailbox verification, or network requests, and logs no PII. Syntactic validity does not verify that a mailbox exists or is deliverable.
 
-#### 7. Bank Card / PAN Validation & Detection (Opt-in / Unreleased)
+#### 7. Bank Card / PAN Validation & Detection (Opt-in)
 
 > [!NOTE]
-> **Unreleased / Development Version (Phase 14)**: Bank card validation and detection are introduced in the unreleased development cycle and are not part of published PyPI release `0.1.0`.
+> **Introduced in v0.2.0**: Bank card validation and detection (`BankCardDetector` and `is_valid_bank_card_number`) are introduced in `fa-redact` v0.2.0 as an opt-in detector.
 
 `fa-redact` provides an offline, deterministic 16-digit payment card (Primary Account Number / PAN) validator (`is_valid_bank_card_number`) and detector (`BankCardDetector`):
 
@@ -361,7 +362,7 @@ restored = session.restore("تایید واریز به [BANK_CARD_1]")
 # Output: "تایید واریز به ۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲"
 ```
 
-- **Opt-in Architecture**: `BankCardDetector` is intentionally **opt-in** in Phase 14 and is not included in the default detector set (`_DEFAULT_DETECTORS`).
+- **Opt-in Architecture**: `BankCardDetector` is intentionally **opt-in** and is not included in the default detector set (`_DEFAULT_DETECTORS`).
 - **Standard Luhn MOD-10 Checksum**: Validates 16-digit payment card numbers using the standard Luhn algorithm (doubling digits at odd offsets from the right, subtracting 9 if the product exceeds 9, and verifying `sum % 10 == 0`).
 - **Position-Preserving Digit Normalization**: Accepts ASCII (`0-9`), Persian (`۰-۹`), and Arabic-Indic (`٠-٩`) digits. Preserves the exact surface script in `Detection.value` and normalizes to canonical ASCII in `Detection.normalized_value`.
 - **Defensive Sequence Filtering**: Trivial all-identical sequences (such as `0000000000000000` through `9999999999999999`) are defensively rejected regardless of their Luhn checksum status.
@@ -369,10 +370,10 @@ restored = session.restore("تایید واریز به [BANK_CARD_1]")
 - **Issuer Neutrality**: `BankCardDetector` uses issuer-neutral terminology and entities (`BANK_CARD`). The library does not maintain an Iranian BIN/IIN registry and does not verify whether a card was issued by an Iranian bank or any specific card network.
 - **Privacy & Financial Disclaimer**: `is_valid_bank_card_number` performs purely local, offline mathematical checksum validation. It does not perform payment gateway verification, card activation status checks, CVV2/expiry checks, or account balance lookups. Checksum validity does not prove that a payment card exists, is active, or belongs to a specific cardholder.
 
-#### 8. Configurable Institutional / Healthcare Identifiers (Opt-in / Unreleased)
+#### 8. Configurable Institutional / Healthcare Identifiers (Opt-in)
 
 > [!NOTE]
-> **Unreleased / Development Version (Phase 15)**: Configurable institutional identifier detection (`PatternRule` and `PatternDetector`) is introduced in the unreleased development cycle and is not part of published PyPI release `0.1.0`.
+> **Introduced in v0.2.0**: Configurable institutional identifier detection (`PatternRule` and `PatternDetector`) is introduced in `fa-redact` v0.2.0 as an opt-in detector.
 
 MRNs (Medical Record Numbers), Patient IDs, Admission IDs, Encounter IDs, Case IDs, and similar clinical/enterprise identifiers are institution-specific. `fa-redact` does not pretend there is one universal regex for them, nor does it hardcode synthetic assumptions into package defaults.
 
@@ -447,17 +448,17 @@ restored = session.restore("پاسخ به [MRN_1]")
 - **Raw Matching Mode**: For institutions requiring candidate matching strictly on unnormalized text, `source="original"` is supported.
 - **Context-Aware Capture Groups**: Supports integer indices (`group=1`) and named capture groups (`group="id"`), allowing the detector to match context prefixes (e.g. `Patient ID: `) while extracting only the identifier into the detection span. Nonparticipating capture groups fail loud with a `ValueError`.
 - **Regex Boundary Ownership**: `PatternDetector` does not wrap configured patterns with word boundaries (`\b` or `(?<!\w)`). Institutions own full regex semantics.
-- **Pre-Compiled & Immutable**: `PatternRule` is an immutable frozen dataclass. Rules are compiled once during `PatternDetector` construction and safely snapshot caller lists against external mutation.
+- **Pre-Compiled & Immutable**: `PatternRule` is an immutable frozen dataclass. Rules are compiled once during `PatternDetector` construction.
 
 > [!WARNING]
 > - **Synthetic Demonstration Patterns Only**: The example patterns shown above (`MRN-[0-9]{6}`, `PAT-AB-...`) are purely synthetic demonstration examples. They are **not** healthcare standards.
 > - **Trusted Configuration Security Notice**: Pattern rules are trusted application configuration. Python's standard `re` engine does not provide a built-in match timeout. Do not execute arbitrary unreviewed regexes supplied by untrusted users, tenants, LLMs, or external configuration sources.
 > - **Offline Syntactic Matching Only**: A regex match proves only that configured syntax matched. It does not perform HIS/FHIR lookups, database queries, or network requests, and does not verify that a patient, encounter, admission, or hospital record exists.
 
-#### 9. Explicit Detection Conflict Resolution (Opt-in / Unreleased)
+#### 9. Explicit Detection Conflict Resolution (Opt-in)
 
 > [!NOTE]
-> **Unreleased / Development Version (Phase 16)**: Explicit conflict resolution (`ConflictPolicy` and `resolve_detection_conflicts`) is introduced in the unreleased development cycle and is not part of published PyPI release `0.1.0`.
+> **Introduced in v0.2.0**: Explicit conflict resolution (`ConflictPolicy` and `resolve_detection_conflicts`) is introduced in `fa-redact` v0.2.0.
 
 `detect()` always returns raw detector evidence and intentionally preserves overlapping and duplicate detections. This design allows callers to audit and inspect raw matches without hidden priority heuristics.
 
@@ -545,7 +546,7 @@ resolved_detections = resolve_detection_conflicts(
 
 - **Local Sensitive Mapping**: `session.mapping` contains `{placeholder: original_raw_value}`. Keep this mapping strictly inside your trusted boundary.
 - **Cross-Call Identity**: Entities are tracked by `(type, normalized_value)`. For example, `۰۹۱۲۳۴۵۶۷۸۹` in turn 1 and `09123456789` in turn 2 both resolve to `[IR_MOBILE_1]`.
-- **Domestic vs. International Limitation**: `09123456789` and `+989123456789` have different normalized strings and are not canonicalized into the same identity in v0.1.0.
+- **Domestic vs. International Limitation**: `09123456789` and `+989123456789` have different normalized strings and are not canonicalized into the same identity in v0.2.0.
 - **First-Observed Representative Restoration**: Placeholders are restored using the first-observed raw representation. Restoration is semantic placeholder restoration and is not guaranteed to reconstruct the exact original surface representation of every occurrence byte-for-byte.
 - **Non-Cascading Restoration**: `restore()` performs an escaped single-pass replacement, preventing recursive expansion if restored values contain placeholder syntax.
 - **Atomic Updates**: If a call fails during processing, the session state, mappings, and counters remain unmodified.
@@ -623,32 +624,32 @@ Local Hospital / Trusted Boundary
 ```
 
 > [!WARNING]
-> **This is not complete clinical de-identification.** `fa-redact` v0.1.0 detects only Iranian National IDs and mobile numbers. It does not detect personal names, free-text addresses, dates, or other protected health categories by default.
+> **This is not complete clinical de-identification.** `fa-redact` detects only supported direct identifiers (National IDs, mobile numbers, and IBANs by default, plus opt-in detectors). It does not detect personal names, free-text addresses, dates, or other protected health categories by default.
 
 ---
 
 ### Current Coverage & Limitations
 
-| Identifier Type | Published (v0.1.0) | Development (Unreleased) | Notes |
+| Identifier / Capability | v0.1.0 | v0.2.0 | Notes |
 | :--- | :---: | :---: | :--- |
 | **Iranian National ID (`کد ملی`)** | ✅ Supported | ✅ Default | Strict 10-digit modulo-11 checksum validation |
 | **Iranian Mobile Number** | ✅ Supported | ✅ Default | Prefix-aware validation against 2026 CRA numbering plan |
-| **Iranian IBAN / Sheba (`شبا`)** | ❌ Not Supported | 🧪 Supported (Default) | Strict 26-char MOD-97 checksum validation (`IR` + 24 digits) |
-| **Email Addresses** | ❌ Not Supported | 🧪 Supported (Opt-in) | Conservative ASCII email validation and detection (`detectors=[EmailDetector()]`) |
+| **Iranian IBAN / Sheba (`شبا`)** | ❌ Not Supported | ✅ Default | Strict 26-char MOD-97 checksum validation (`IR` + 24 digits) |
+| **Email Addresses** | ❌ Not Supported | 🧪 Opt-in | Conservative ASCII email validation and detection (`detectors=[EmailDetector()]`) |
+| **16-digit Bank Card (PAN)** | ❌ Not Supported | 🧪 Opt-in | 16-digit compact PAN + Luhn checksum validation (`detectors=[BankCardDetector()]`) |
+| **Institutional / Healthcare IDs (MRN, Patient ID)** | ❌ Not Supported | 🧪 Opt-in | Configurable via user-defined `PatternRule` / `PatternDetector` |
+| **Explicit Conflict Resolution** | ❌ Not Supported | 🧪 Opt-in Policy | Resolves overlaps/duplicates via `"longest"` or `"priority"` policy |
 | **Personal Names** | ❌ Not Supported | ❌ Not Supported | Planned for future versions (requires NER/contextual models) |
 | **Postal Addresses** | ❌ Not Supported | ❌ Not Supported | Unstructured spatial entities |
-| **Medical Record Numbers (MRN)** | ❌ Not Supported | 🧪 Configurable (Opt-in) | User-defined `PatternRule`; no universal format |
-| **Patient / Admission / Encounter IDs** | ❌ Not Supported | 🧪 Configurable (Opt-in) | Institution-specific rules via `PatternDetector` |
+| **Dates of Birth / Timestamps** | ❌ Not Supported | ❌ Not Supported | Planned for future versions |
 | **Health Insurance Numbers** | ❌ Not Supported | ❌ Not Supported | Institution-specific |
-| **16-digit Bank Card (PAN)** | ❌ Not Supported | 🧪 Supported (Opt-in) | 16-digit compact PAN + Luhn; no BIN/IIN or issuer verification (`detectors=[BankCardDetector()]`) |
-| **Dates of Birth** | ❌ Not Supported | ❌ Not Supported | Planned for future release |
 
 ---
 
 ### Privacy and Security Model
 
 > [!WARNING]
-> - **Scope Limitation**: `fa-redact` detects and redacts only the specific PII types supported by its enabled detectors (National IDs and mobile numbers in v0.1.0). It does **not** provide complete automated clinical de-identification.
+> - **Scope Limitation**: `fa-redact` detects and redacts only the specific PII types supported by its enabled detectors (National IDs, mobile numbers, and IBANs by default, plus explicitly configured opt-in detectors). It does **not** provide complete automated clinical de-identification.
 > - **Sensitive Mapping Notice**: `session.mapping` contains raw, sensitive PII. Treat session instances as sensitive in-memory objects and never transmit mappings to external services.
 > - **Not Production Clinical Software**: `fa-redact` is an open-source library and is **not** certified as a medical device.
 > - **No Inherent Regulatory Compliance**: Using this package does not by itself establish compliance with HIPAA, GDPR, or other privacy regulations.
@@ -709,8 +710,9 @@ This project is licensed under the [MIT License](LICENSE).
 
 `fa-redact` یک کتابخانهٔ پایتونی سبک، مستقل (بدون وابستگی خارجی / Zero-dependency) و مبتنی بر حریم خصوصی (Privacy-first) است که با هدف **تشخیص (Detection)**، **پنهان‌سازی (Redaction)** و **نام‌مستعارسازی (Pseudonymization)** اطلاعات هویتی و حساس در متون فارسی و داده‌های مرتبط با ایران طراحی شده است.
 
-> **وضعیت نسخه: v0.1.0 (آلفا) — منتشر شده در PyPI**  
-> این بسته هم‌اکنون از طریق مخزن رسمی [PyPI](https://pypi.org/project/fa-redact/) و [گیت‌هاب](https://github.com/mehdimt1980/fa-redact/releases/tag/v0.1.0) در دسترس عموم قرار دارد.
+> **وضعیت: آلفا (Alpha)**  
+> نسخه بسته در این درخت منبع: `v0.2.0`  
+> نسخه‌های منتشرشده در [PyPI](https://pypi.org/project/fa-redact/) و [گیت‌هاب](https://github.com/mehdimt1980/fa-redact/releases) در دسترس هستند. نشان (Badge) بالای صفحه آخرین نسخهٔ منتشرشده در PyPI را نمایش می‌دهد.
 
 ---
 
@@ -728,16 +730,16 @@ This project is licensed under the [MIT License](LICENSE).
   - [۲. مدل داده و پایپ‌لاین تشخیص](#۲-مدل-داده-و-پایپ‌لاین-تشخیص)
   - [۳. اعتبارسنجی و تشخیص کد ملی ایران](#۳-اعتبارسنجی-و-تشخیص-کد-ملی-ایران)
   - [۴. اعتبارسنجی و تشخیص شماره موبایل ایران](#۴-اعتبارسنجی-و-تشخیص-شماره-موبایل-ایران)
-  - [۵. اعتبارسنجی و تشخیص شماره شبا / IBAN ایران (در حال توسعه)](#۵-اعتبارسنجی-و-تشخیص-شماره-شبا--iban-ایران-در-حال-توسعه)
-  - [۶. اعتبارسنجی و تشخیص آدرس ایمیل اسکی (اختیاری / در حال توسعه)](#۶-اعتبارسنجی-و-تشخیص-آدرس-ایمیل-اسکی-اختیاری--در-حال-توسعه)
-  - [۷. اعتبارسنجی و تشخیص شماره کارت بانکی / PAN (اختیاری / در حال توسعه)](#۷-اعتبارسنجی-و-تشخیص-شماره-کارت-بانکی--pan-اختیاری--در-حال-توسعه)
-  - [۸. شناسه‌های سازمانی / درمانی قابل پیکربندی (اختیاری / در حال توسعه)](#۸-شناسه‌های-سازمانی--درمانی-قابل-پیکربندی-اختیاری--در-حال-توسعه)
-  - [۹. حل صریح تعارض تشخیص‌ها (اختیاری / در حال توسعه)](#۹-حل-صریح-تعارض-تشخیص‌ها-اختیاری--در-حال-توسعه)
+  - [۵. اعتبارسنجی و تشخیص شماره شبا / IBAN ایران](#۵-اعتبارسنجی-و-تشخیص-شماره-شبا--iban-ایران)
+  - [۶. اعتبارسنجی و تشخیص آدرس ایمیل اسکی (اختیاری)](#۶-اعتبارسنجی-و-تشخیص-آدرس-ایمیل-اسکی-اختیاری)
+  - [۷. اعتبارسنجی و تشخیص شماره کارت بانکی / PAN (اختیاری)](#۷-اعتبارسنجی-و-تشخیص-شماره-کارت-بانکی--pan-اختیاری)
+  - [۸. شناسه‌های سازمانی / درمانی قابل پیکربندی (اختیاری)](#۸-شناسه‌های-سازمانی--درمانی-قابل-پیکربندی-اختیاری)
+  - [۹. حل صریح تعارض تشخیص‌ها (اختیاری)](#۹-حل-صریح-تعارض-تشخیص‌ها-اختیاری)
   - [۱۰. بازسازی دقیق بر اساس span در پنهان‌سازی](#۱۰-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
   - [۱۱. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۱۱-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
-- [جدول پوشش و محدودیت‌ها در نسخه v0.1.0](#جدول-پوشش-و-محدودیت‌ها-در-نسخه-v010)
+- [جدول پوشش و قابلیت‌ها](#جدول-پوشش-و-قابلیت‌ها)
 - [مدل حریم خصوصی و سلب مسئولیت‌های امنیتی](#مدل-حریم-خصوصی-و-سلب-مسئولیت‌های-امنیتی)
 - [سیاست داده‌های آزمایشی امن](#سیاست-داده‌های-آزمایشی-امن)
 - [توسعه و کنترل کیفیت](#توسعه-و-کنترل-کیفیت)
@@ -926,10 +928,10 @@ is_valid_mobile_number("09412345678")  # False (شماره ثابت غیرجغر
 - **قالب فشرده**: فقط قالب‌های فشرده (`09xxxxxxxxx`، `+989xxxxxxxxx`، `00989xxxxxxxxx`) پذیرفته می‌شوند و حذف فاصله، پرانتز یا خط تیره انجام نمی‌شود.
 - **سلب مسئولیت مالکیت**: اعتبارسنجی ساختاری است و وضعیت فعال بودن سیم‌کارت، هویت مشترک، اپراتور فعلی یا ترابردپذیری را بررسی نمی‌کند.
 
-#### ۵. اعتبارسنجی و تشخیص شماره شبا / IBAN ایران (در حال توسعه)
+#### ۵. اعتبارسنجی و تشخیص شماره شبا / IBAN ایران
 
 > [!NOTE]
-> **نسخهٔ در حال توسعه (Phase 13)**: اعتبارسنجی و تشخیص شماره شبا در چرخهٔ توسعهٔ منتشرنشده اضافه شده و در نسخهٔ فعلی منتشرشده در PyPI (`0.1.0`) وجود ندارد.
+> **معرفی‌شده در نسخهٔ v0.2.0**: اعتبارسنجی و تشخیص شماره شبا (`IranianIBANDetector` و `is_valid_iranian_iban`) در نسخهٔ v0.2.0 به مجموعهٔ تشخیص‌دهنده‌های پیش‌فرض اضافه شده است.
 
 کتابخانهٔ `fa-redact` تابع اعتبارسنجی مستقل `is_valid_iranian_iban` و تشخیص‌دهندهٔ `IranianIBANDetector` را برای شماره شبا / شناسه حساب بانکی ایران (IBAN) به صورت کاملاً آفلاین، قطعی و بدون وابستگی خارجی ارائه می‌دهد. ساختار شماره شبا در قالب فشرده الکترونیکی شامل ۲۶ کاراکتر است: پیشوند `IR`، به همراه ۲ رقم کنترلی و BBAN بیست‌ودورقمی (یا `IR` به همراه ۲۴ رقم عددی):
 
@@ -972,10 +974,10 @@ restored = session.restore("تایید واریز به [IR_IBAN_1]")
 - **قالب فشردهٔ الکترونیکی**: صرفاً فرمت الکترونیکی فشرده بدون فاصله، خط تیره یا جداکننده پذیرفته می‌شود. پیشوند `ir` با حروف کوچک نیز پذیرفته نمی‌شود.
 - **سلب مسئولیت بانکی و حریم خصوصی**: تابع `is_valid_iranian_iban` صرفاً صحت ساختار ریاضی چکسام را به صورت محلی و آفلاین بررسی می‌کند. این تابع هیچ‌گونه استعلام بانکی، بررسی صحت شماره حساب، اتصال به شبکهٔ شتاب یا پایا انجام نمی‌دهد و فعال بودن حساب بانکی را تایید نمی‌کند.
 
-#### ۶. اعتبارسنجی و تشخیص آدرس ایمیل اسکی (اختیاری / در حال توسعه)
+#### ۶. اعتبارسنجی و تشخیص آدرس ایمیل اسکی (اختیاری)
 
 > [!NOTE]
-> **نسخهٔ در حال توسعه (Phase 12)**: اعتبارسنجی و تشخیص آدرس ایمیل در چرخهٔ توسعهٔ منتشرنشده اضافه شده و در نسخهٔ فعلی منتشرشده در PyPI (`0.1.0`) وجود ندارد.
+> **معرفی‌شده در نسخهٔ v0.2.0**: اعتبارسنجی و تشخیص آدرس ایمیل (`EmailDetector` و `is_valid_email`) در نسخهٔ v0.2.0 به صورت اختیاری (Opt-in) ارائه شده است.
 
 کتابخانهٔ `fa-redact` تابع اعتبارسنجی مستقل `is_valid_email` و تشخیص‌دهندهٔ `EmailDetector` را برای آدرس‌های ایمیل استاندارد اسکی به صورت بدون وابستگی ارائه می‌دهد:
 
@@ -1021,10 +1023,10 @@ restored = session.restore("پیام به [EMAIL_1] ارسال شد.")
 - **قالب‌های پشتیبانی‌نشده**: ساختارهای پیچیده یا منسوخ مانند رشته‌های کوتیشن‌دار (`"john doe"@example.com`)، دامنه‌های لیترال IP (`user@[192.168.1.1]`)، کامنت‌ها، فاصله‌های شکسته‌شده (folding whitespace)، دامنه‌های تک‌بخشی (`user@localhost`) و ایمیل‌های بین‌المللی غیر اسکی (EAI / RFC 6530+) پذیرفته نمی‌شوند.
 - **سلب مسئولیت و حریم خصوصی**: تابع `is_valid_email` صرفاً ساختار نگارشی را به صورت محلی و آفلاین بررسی می‌کند. این تابع هیچ‌گونه درخواست شبکه، استعلام DNS یا بررسی وجود صندوق پستی (Mailbox) انجام نمی‌دهد و هیچ داده‌ای را لاگ نمی‌کند. صحت ساختاری به منزلهٔ وجود واقعی آدرس ایمیل نیست.
 
-#### ۷. اعتبارسنجی و تشخیص شماره کارت بانکی / PAN (اختیاری / در حال توسعه)
+#### ۷. اعتبارسنجی و تشخیص شماره کارت بانکی / PAN (اختیاری)
 
 > [!NOTE]
-> **نسخهٔ در حال توسعه (Phase 14)**: این قابلیت بخشی از نسخهٔ توسعه است و در PyPI `0.1.0` وجود ندارد.
+> **معرفی‌شده در نسخهٔ v0.2.0**: اعتبارسنجی و تشخیص شماره کارت بانکی (`BankCardDetector` و `is_valid_bank_card_number`) در نسخهٔ v0.2.0 به صورت اختیاری (Opt-in) ارائه شده است.
 
 کتابخانهٔ `fa-redact` تابع اعتبارسنجی مستقل `is_valid_bank_card_number` و تشخیص‌دهندهٔ `BankCardDetector` را برای شماره‌های ۱۶ رقمی کارت‌های پرداخت بانکی (Primary Account Number / PAN) به صورت کاملاً آفلاین و قطعی ارائه می‌دهد:
 
@@ -1074,10 +1076,10 @@ restored = session.restore("تایید واریز به [BANK_CARD_1]")
 - **بی‌طرفی نسبت به صادرکننده (Issuer Neutrality)**: شناسه‌ها و نام‌گذاری‌ها به صورت خنثی (`BANK_CARD`) طراحی شده‌اند. این کتابخانه پایگاه داده BIN/IIN بانکی نگهداری نمی‌کند و تعلقی به یک بانک ایرانی یا شبکهٔ خاص را تایید نمی‌کند.
 - **سلب مسئولیت بانکی و امنیتی**: معتبر بودن الگوریتم Luhn به معنی واقعی بودن کارت، فعال بودن آن، تعلق آن به بانک ایرانی، مالکیت آن توسط شخص مشخص یا وجود حساب مرتبط با آن نیست. این تابع صرفاً اعتبارسنجی محلی و آفلاین ریاضی انجام می‌دهد و هیچ‌گونه اتصال به درگاه پرداخت، استعلام CVV2 یا بررسی وضعیت حساب انجام نمی‌دهد.
 
-#### ۸. شناسه‌های سازمانی / درمانی قابل پیکربندی (اختیاری / در حال توسعه)
+#### ۸. شناسه‌های سازمانی / درمانی قابل پیکربندی (اختیاری)
 
 > [!NOTE]
-> **نسخهٔ در حال توسعه (Phase 15)**: تشخیص شناسه‌های سازمانی و درمانی قابل پیکربندی (`PatternRule` و `PatternDetector`) در چرخهٔ توسعهٔ منتشرنشده اضافه شده و در نسخهٔ فعلی منتشرشده در PyPI (`0.1.0`) وجود ندارد.
+> **معرفی‌شده در نسخهٔ v0.2.0**: تشخیص شناسه‌های سازمانی و درمانی قابل پیکربندی (`PatternRule` و `PatternDetector`) در نسخهٔ v0.2.0 به صورت اختیاری (Opt-in) ارائه شده است.
 
 شماره پرونده پزشکی (MRN)، شناسه بیمار، شناسه پذیرش، شناسه مراجعه / Encounter، شناسه پرونده و سایر شناسه‌های درمانی و سازمانی کاملاً وابسته به سازمان یا بیمارستان مربوطه هستند. **برای این شناسه‌ها قالب واحد و جهانی وجود ندارد** و کتابخانهٔ `fa-redact` الگوهای حدسی یا پیش‌فرض برای آن‌ها تعریف نمی‌کند.
 
@@ -1159,10 +1161,10 @@ restored = session.restore("پاسخ به [MRN_1]")
 > - **هشدار امنیتی اعتماد به رجکس**: قواعد `PatternRule` باید بخشی از پیکربندی مورد اعتماد برنامه باشند. موتور استاندارد `re` پایتون timeout داخلی برای اجرای regex ندارد. نباید regex تأییدنشده یا تولیدشده توسط کاربران ناشناس یا LLM بدون بازبینی اجرا شود.
 > - **سلب مسئولیت استعلام و پرونده**: تطابق رجکس صرفاً صحت ساختار متنی را نشان می‌دهد؛ هیچ‌گونه استعلام از سامانه‌های اطلاعات بیمارستانی (HIS)، سرورهای FHIR یا پایگاه‌های داده انجام نمی‌شود و وجود خارجی بیمار یا پرونده تایید نمی‌گردد.
 
-#### ۹. حل صریح تعارض تشخیص‌ها (اختیاری / در حال توسعه)
+#### ۹. حل صریح تعارض تشخیص‌ها (اختیاری)
 
 > [!NOTE]
-> **نسخهٔ در حال توسعه (Phase 16)**: حل صریح تعارض تشخیص‌ها (`ConflictPolicy` و `resolve_detection_conflicts`) در چرخهٔ توسعهٔ منتشرنشده اضافه شده و در نسخهٔ فعلی منتشرشده در PyPI (`0.1.0`) وجود ندارد.
+> **معرفی‌شده در نسخهٔ v0.2.0**: حل صریح تعارض تشخیص‌ها (`ConflictPolicy` و `resolve_detection_conflicts`) در نسخهٔ v0.2.0 ارائه شده است.
 
 تابع `detect()` همواره شواهد خام تشخیص‌دهنده‌ها را بازمی‌گرداند و همپوشانی‌ها و رکوردهای تکراری را دقیقاً حفظ می‌کند تا امکان ممیزی و بازبینی شفاف وجود داشته باشد.
 
@@ -1213,7 +1215,7 @@ redacted_priority = redact(
 
 - **ایزوله‌سازی نشست‌ها (Mapping Isolation)**: هر نشست دارای حافظه و نگاشت مستقل است.
 - **یکپارچگی هویت در چند مرحله (Cross-Call Identity)**: هویت یک موجودیت بر اساس `(type, normalized_value)` ردیابی می‌شود. بنابراین `۰۹۱۲۳۴۵۶۷۸۹` در نوبت اول و `09123456789` در نوبت دوم هر دو به `[IR_MOBILE_1]` متصل می‌شوند.
-- **محدودیت تفاوت فرمت داخلی و بین‌المللی**: مقادیر `09123456789` و `+989123456789` دارای رشته‌های نرمال‌شدهٔ متفاوتی هستند و در نسخهٔ v0.1.0 به یک هویت یکسان تبدیل نمی‌شوند.
+- **محدودیت تفاوت فرمت داخلی و بین‌المللی**: مقادیر `09123456789` و `+989123456789` دارای رشته‌های نرمال‌شدهٔ متفاوتی هستند و در نسخهٔ v0.2.0 به یک هویت یکسان تبدیل نمی‌شوند.
 - **بازگردانی به اولین نمایش دیده‌شده (First-Observed Representative)**: تابع `restore()` یک بازگردانی معنایی بر اساس placeholder انجام می‌دهد و تضمین نمی‌کند که شکل نویسه‌ای دقیق تک‌تک occurrenceهای متن اولیه به‌صورت byte-for-byte بازسازی شود.
 - **بازگردانی غیرآبشاری (Non-Cascading Restore)**: بازگردانی در یک مرحله و با فرار کاراکترهای خاص انجام می‌شود تا اگر مقدار بازگردانده‌شده شبیه به نشان‌گذار باشد، بازگردانی بازگشتی و ناخواسته رخ ندهد.
 - **به‌روزرسانی اتمیک (Atomic Updates)**: اگر در حین پردازش خطایی رخ دهد، وضعیت نشست و شمارنده‌ها دست‌نخورده باقی می‌مانند.
@@ -1294,32 +1296,32 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 ```
 
 > [!WARNING]
-> **این فرایند به معنی ناشناس‌سازی یا de-identification کامل متن بالینی نیست.** `fa-redact` در نسخهٔ v0.1.0 صرفاً کد ملی و شماره موبایل ایران را پوشش می‌دهد و داده‌هایی نظیر نام اشخاص، آدرس‌ها، تاریخ‌ها یا سایر رده‌های سلامت حفاظت‌شده را به‌طور پیش‌فرض تشخیص نمی‌دهد.
+> **این فرایند به معنی ناشناس‌سازی یا de-identification کامل متن بالینی نیست.** `fa-redact` به صورت پیش‌فرض صرفاً کد ملی، شماره موبایل و شماره شبا (به همراه تشخیص‌دهنده‌های فعال‌شدهٔ اختیاری) را پوشش می‌دهد و داده‌هایی نظیر نام اشخاص، آدرس‌ها، تاریخ‌ها یا سایر رده‌های سلامت حفاظت‌شده را به‌طور پیش‌فرض تشخیص نمی‌دهد.
 
 ---
 
-### جدول پوشش و محدودیت‌ها
+### جدول پوشش و قابلیت‌ها
 
-| نوع شناسه هویتی | وضعیت در v0.1.0 (منتشر شده) | نسخه در حال توسعه (Unreleased) | توضیحات |
+| نوع شناسه هویتی / قابلیت | v0.1.0 | v0.2.0 | توضیحات |
 | :--- | :---: | :---: | :--- |
 | **کد ملی ایران** | ✅ پشتیبانی می‌شود | ✅ پیش‌فرض | اعتبارسنجی دقیق ۱۰ رقمی با قاعدهٔ چکسام Modulo-11 |
 | **شماره تلفن همراه ایران** | ✅ پشتیبانی می‌شود | ✅ پیش‌فرض | اعتبارسنجی پیش‌شماره‌های مصوب رگولاتوری ایران (CRA 2026) |
-| **شماره شبا (IBAN)** | ❌ پشتیبانی نمی‌شود | 🧪 پشتیبانی می‌شود (پیش‌فرض) | اعتبارسنجی دقیق ۲۶ کاراکتری با قاعدهٔ چکسام MOD-97 (`IR` + ۲۴ رقم) |
-| **آدرس ایمیل** | ❌ پشتیبانی نمی‌شود | 🧪 پشتیبانی می‌شود (اختیاری) | اعتبارسنجی و تشخیص ایمیل‌های اسکی محافظه‌کارانه (`detectors=[EmailDetector()]`) |
+| **شماره شبا (IBAN)** | ❌ پشتیبانی نمی‌شود | ✅ پیش‌فرض | اعتبارسنجی دقیق ۲۶ کاراکتری با قاعدهٔ چکسام MOD-97 (`IR` + ۲۴ رقم) |
+| **آدرس ایمیل** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | اعتبارسنجی و تشخیص ایمیل‌های اسکی محافظه‌کارانه (`detectors=[EmailDetector()]`) |
+| **شماره کارت بانکی (PAN)** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | فرمت فشردهٔ ۱۶ رقمی + Luhn؛ بدون استعلام BIN/IIN یا صادرکننده (`detectors=[BankCardDetector()]`) |
+| **شناسه‌های سازمانی / درمانی (MRN و بیمار)** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | قابل پیکربندی اختصاصی توسط کاربر با `PatternRule` و `PatternDetector` |
+| **حل صریح تعارض تشخیص‌ها** | ❌ پشتیبانی نمی‌شود | 🧪 سیاست اختیاری | حل همپوشانی‌ها و تکرارها با سیاست `"longest"` یا `"priority"` |
 | **نام اشخاص** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | نیازمند مدل‌های پردازش زبان طبیعی و بازشناسی موجودیت‌های نام‌دار (NER) |
 | **آدرس پستی و موقعیت مکانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | موجودیت‌های غیرساختاریافته |
-| **شماره پرونده پزشکی (MRN)** | ❌ پشتیبانی نمی‌شود | 🧪 قابل پیکربندی (اختیاری) | تعریف شده توسط کاربر با `PatternRule`؛ فاقد قالب جهانی |
-| **شناسه‌های بیمار / پذیرش / مراجعه** | ❌ پشتیبانی نمی‌شود | 🧪 قابل پیکربندی (اختیاری) | قواعد ویژهٔ سازمان/بیمارستان با `PatternDetector` |
-| **شماره بیمه درمانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی |
-| **شماره کارت بانکی (PAN)** | ❌ پشتیبانی نمی‌شود | 🧪 پشتیبانی می‌شود (اختیاری) | فرمت فشردهٔ ۱۶ رقمی + Luhn؛ بدون استعلام BIN/IIN یا صادرکننده (`detectors=[BankCardDetector()]`) |
 | **تاریخ تولد و زمان‌ها** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | برنامه‌ریزی‌شده برای نسخه‌های آتی |
+| **شماره بیمه درمانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی |
 
 ---
 
 ### مدل حریم خصوصی و سلب مسئولیت‌های امنیتی
 
 > [!WARNING]
-> - **محدودیت دامنهٔ پوشش**: این بسته در نسخهٔ فعلی (v0.1.0) صرفاً کد ملی و شماره موبایل ایران را پوشش می‌دهد و به هیچ وجه سیستم دی‌ایدنتیفیکیشن (De-identification) کامل پرونده‌های پزشکی بالینی نیست.
+> - **محدودیت دامنهٔ پوشش**: این بسته به صورت پیش‌فرض صرفاً کد ملی، شماره موبایل و شماره شبای ایران (به همراه تشخیص‌دهنده‌های فعال‌شدهٔ اختیاری) را پوشش می‌دهد و به هیچ وجه سیستم دی‌ایدنتیفیکیشن (De-identification) کامل پرونده‌های پزشکی بالینی نیست.
 > - **حساسیت نگاشت**: نگاشت `session.mapping` حاوی PII واقعی است و باید با بالاترین تدابیر امنیتی در حافظهٔ محلی نگهداری شود.
 > - **عدم گواهی پزشکی**: `fa-redact` یک نرم‌افزار تجهیزات پزشکی (Medical Device) تأییدشده نیست.
 > - **عدم انطباق خودکار با مقررات**: استفاده از این ابزار به خودی خود انطباق کامل با قوانین بین‌المللی نظیر HIPAA یا GDPR را تضمین نمی‌کند.

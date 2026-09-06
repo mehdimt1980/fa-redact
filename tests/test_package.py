@@ -4,10 +4,35 @@ import fa_redact
 
 
 def test_package_import_and_version() -> None:
-    """Verify that the package imports successfully and exposes version 0.1.0."""
+    """Verify that the package imports successfully and exposes version 0.2.0."""
     assert hasattr(fa_redact, "__version__")
-    assert fa_redact.__version__ == "0.1.0"
+    assert fa_redact.__version__ == "0.2.0"
     assert isinstance(fa_redact.__version__, str)
+
+
+def test_version_consistency() -> None:
+    """Verify consistency between pyproject.toml, metadata, and __version__."""
+    import re
+    from pathlib import Path
+
+    assert fa_redact.__version__ == "0.2.0"
+
+    # 1. Check pyproject.toml version
+    pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    if pyproject_path.exists():
+        content = pyproject_path.read_text(encoding="utf-8")
+        match = re.search(r'(?m)^version\s*=\s*"([^"]+)"', content)
+        assert match is not None, "Version not found in pyproject.toml"
+        assert match.group(1) == fa_redact.__version__
+
+    # 2. Check importlib.metadata if package is installed in environment
+    try:
+        import importlib.metadata
+
+        installed_ver = importlib.metadata.version("fa-redact")
+        assert installed_ver == fa_redact.__version__
+    except importlib.metadata.PackageNotFoundError:
+        pass
 
 
 def test_package_all_export() -> None:

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-06
+
 ### Added
 - Explicit detection conflict resolution function `resolve_detection_conflicts(detections, *, policy="reject", type_priority=None)` resolving overlapping, nested, and duplicate detections with deterministic output sorting by `(start, end, type)` (Phase 16).
 - `ConflictPolicy` type alias supporting explicit policies: `"reject"`, `"longest"`, and `"priority"` (Phase 16).
