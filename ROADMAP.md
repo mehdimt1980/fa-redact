@@ -1,0 +1,144 @@
+# fa-redact Roadmap
+
+> This roadmap outlines past milestones, current unreleased development, and planned future phases.
+> For current branch state and development workflow, see [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
+---
+
+## Roadmap Principles
+
+- **Privacy-First Architecture:** Minimize risk of data exposure at every layer. Value-free reporting, sensitive mapping isolation, and leak-free error handling are fundamental defaults.
+- **Deterministic & Offline Behavior:** Detection and redaction must produce reproducible, predictable outputs without relying on network lookups or external cloud services.
+- **Conservative Defaults:** Fail-loud on unhandled ambiguities (e.g., `conflict_policy="reject"` by default) rather than guessing user intent.
+- **Standard-Library-Only Core:** The core `fa-redact` package maintains zero external runtime dependencies.
+- **Optional Dependencies Only When Justified:** Any heavy ML, NLP, or framework integrations must remain strictly optional extras and must not compromise core lightweight execution.
+- **Incremental & Phased Delivery:** Every major phase is implemented in an isolated branch, covered by thorough tests, reviewed in a single PR, and verified on CI before closing.
+- **Clear Regulatory & Clinical Boundaries:** Anti-claims are maintained rigorously. We do not claim automated HIPAA/GDPR compliance, medical device certification, or complete clinical de-identification.
+
+---
+
+## Released Foundation
+
+### v0.1.0 — Foundation & Direct Identifiers
+*Status: `RELEASED` (Published on PyPI and GitHub Releases)*
+
+Established the project baseline, core architecture, and first Iranian direct identifier detectors:
+
+- **Phase 1 — Package Foundation:** Scaffolding, `pyproject.toml`, packaging layout, type marker (`py.typed`), linting/formatting configs.
+- **Phase 2 — Position-Preserving Normalization:** 1-to-1 Unicode character mapping for Persian/Arabic digits and letter variants without string length change (`len(normalized) == len(original)`).
+- **Phase 3 — Detection Model & Protocol:** Immutable `Detection` dataclass preserving raw/normalized values and offsets; `Detector` structural typing protocol.
+- **Phase 4 — Iranian National ID:** Strict 10-digit modulo-11 checksum validator (`is_valid_national_id`) and detector (`IranianNationalIDDetector`).
+- **Phase 5 — Iranian Mobile Number:** 2026 CRA National Numbering Plan prefix validator (`is_valid_mobile_number`) and detector (`IranianMobileNumberDetector`).
+- **Phase 6 — High-Level Pipeline:** `detect()` orchestrating normalization, multi-detector aggregation, and deterministic sorting `(start, end, type)`.
+- **Phase 7 — Stateless Redaction:** `redact()` replacing detected spans with typed placeholders, referential consistency, and literal collision avoidance.
+- **Phase 8 — Stateful Pseudonymization:** `PseudonymizationSession` managing cross-turn entity persistence, atomic state updates, and single-pass non-cascading `restore()`.
+- **Phase 8.1 — Historical Literal Token Reservation:** Collision prevention across multi-turn session calls.
+- **Phase 9 — CI & Release Readiness:** Matrix testing (Python 3.10–3.13), quality checks, and twine validation.
+- **Phase 10 — Trusted Publishing:** GitHub Actions OIDC Trusted Publishing workflow for PyPI.
+- **Phase 11 — Bilingual Documentation:** Complete English and Persian documentation alignment.
+
+---
+
+### v0.2.0 — Extended Identifiers, Configurable Rules & Conflict Resolution
+*Status: `RELEASED` (Published on PyPI and GitHub Releases)*
+
+Expanded identifier support, introduced institution-specific pattern configuration, and added explicit conflict resolution:
+
+- **Phase 12 — Conservative ASCII Email:** Syntactic dot-atom/domain validator (`is_valid_email`) and opt-in detector (`EmailDetector`).
+- **Phase 13 — Iranian IBAN / Sheba:** 26-character MOD-97 checksum validator (`is_valid_iranian_iban`) and default detector (`IranianIBANDetector`).
+- **Phase 14 — Bank Card / PAN:** 16-digit payment card Luhn checksum validator (`is_valid_bank_card_number`) and opt-in detector (`BankCardDetector`).
+- **Phase 15 — Configurable Institutional Identifiers:** Immutable `PatternRule` and `PatternDetector` supporting custom regexes, normalized matching, and context-aware capture groups.
+- **Phase 16 — Explicit Detection Conflict Resolution:** `resolve_detection_conflicts()` with `"reject"`, `"longest"`, and `"priority"` policies; parameter support in `redact()` and `PseudonymizationSession.pseudonymize()`.
+- **Phase 17 — Release Preparation & Publication:** v0.2.0 release documentation, verification, and PyPI publication.
+
+**Key Behavioral Defaults in v0.2.0:**
+- Default `detect()` detectors: `IR_NATIONAL_ID`, `IR_MOBILE`, `IR_IBAN`.
+- Opt-in detectors: `EmailDetector`, `BankCardDetector`, `PatternDetector`.
+- Default conflict policy: `"reject"`.
+
+---
+
+## Current Unreleased Development
+
+### Phase 18 — Privacy-Safe Detection Report
+*Status: `MERGED / UNRELEASED` (Merged into `main` via PR #17, commit `4ce102f95ff683d957f55bea79d393bff8976787`)*
+
+Introduced aggregate, value-free detection reporting:
+- `DetectionReport` immutable data model capturing total counts, deterministic type breakdowns, conflict counts, and duplicate metrics.
+- Pure aggregation function `report_detections(detections)`.
+- High-level pipeline helper `detection_report(text, detectors=...)`.
+- Value-free guarantee: reports contain no raw values, normalized values, source text, character spans, snippets, or PII hashes.
+- Exported publicly from `fa_redact`.
+
+---
+
+## Planned Phases
+
+### Phase 19 — CLI
+*Status: `PLANNED` (Next Phase — Not Started)*
+
+Provide a conservative command-line interface over existing `fa-redact` capabilities:
+- Expose text detection, redaction, and aggregate reporting via standard CLI commands.
+- Maintain identical semantics with core Python API.
+- Support standard input/output streaming (`stdin` / `stdout`) and file-based processing.
+- Privacy-conscious defaults (prevent accidental raw PII leakage in terminal output or logs).
+- Zero external runtime dependencies (using Python standard library `argparse`).
+- Proper POSIX-compliant exit codes and clear error reporting.
+
+---
+
+### Phase 20 — Structured Data Helpers
+*Status: `PLANNED`*
+
+Provide safe helpers for processing explicitly selected fields within structured dictionaries, mappings, or JSON-like records:
+- Explicit field targeting (users specify which keys/paths to scan or redact).
+- No blind recursive redaction of arbitrary structures.
+- Preserve non-target data types, booleans, numbers, and unaffected keys.
+- Maintain zero runtime dependencies (no pandas, polars, or dataframe requirements in core).
+- No database or ORM coupling.
+
+---
+
+### Phase 21 — Names / Persian NER
+*Status: `RESEARCH / PLANNED`*
+
+Investigate and design named entity recognition (NER) for Persian personal names and unstructured medical entities:
+- Acknowledge that name recognition is probabilistic and qualitatively distinct from rule-based/checksum detection.
+- Conduct empirical evaluation against Persian datasets with rigorous precision/recall and false-positive analysis.
+- If machine learning models or tokenizers are required, package them strictly as **optional dependencies / extras** to ensure core `fa-redact` remains lightweight and zero-dependency.
+- Do not select or hardcode any external NLP framework or model until research is completed.
+
+---
+
+### Phase 22 — Clinical De-identification Layer
+*Status: `FUTURE`*
+
+Provide high-level composite policies and presets for Persian healthcare text workflows:
+- Compose built-in and institutional detectors into coherent clinical profiles.
+- Offer standardized redaction templates for outpatient notes, discharge summaries, and referral letters.
+- Explicit invariant: must NOT be presented as guaranteed clinical de-identification or automated regulatory compliance.
+
+---
+
+## Later Candidates
+
+The following topics represent potential future directions after the core planned phases:
+
+- **Batch Processing Helpers:** Safe multi-document or chunked streaming utilities.
+- **Benchmark & Evaluation Corpus Tooling:** Offline evaluation harnesses using synthetic test suites.
+- **Optional Structured Serialization:** Format adapters for specific healthcare interchange formats.
+- **Additional Iranian Identifier Types:** Research into other standardized national numbers (e.g., postal codes, registration numbers) where unambiguous formats and checksums exist.
+- **Performance Profiling & Optimization:** Micro-benchmarking regex execution and normalization throughput on large corpora.
+
+---
+
+## Explicitly Out of Scope for Now
+
+To maintain focus, safety, and architectural integrity, the following are explicitly out of scope:
+
+- **Automatic Regulatory Certification:** No claims or automated guarantees of HIPAA, GDPR, or Iranian data protection law compliance.
+- **Automatic Database / HIS / FHIR Integration:** No direct connectors to database systems, hospital information systems (HIS), or EHR APIs.
+- **Network / Registry Lookups:** No online verification of National IDs, bank accounts, or phone numbers in core validators.
+- **Mandatory Machine Learning Dependencies:** Core package will not require torch, transformers, spacy, or other heavy ML runtimes.
+- **Automatic Telemetry or Analytics:** Zero network telemetry, usage tracking, or remote error reporting.
+- **Silent Conflict Resolution or Auto-Activation:** No hidden detector activation or unrequested heuristic conflict resolution.
