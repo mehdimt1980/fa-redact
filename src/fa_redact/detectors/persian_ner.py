@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -15,55 +16,7 @@ _SUPPORTED_B_LABELS: frozenset[str] = frozenset(
 _SUPPORTED_I_LABELS: frozenset[str] = frozenset(
     {"I_PER", "I-PER", "I_PERSON", "I-PERSON"}
 )
-
-
-class _FakeTensor:
-    """Minimal tensor wrapper for offline testing without torch."""
-
-    def __init__(self, data: Any) -> None:
-        self._data = data
-
-    def tolist(self) -> Any:
-        if isinstance(self._data, list):
-            return self._data
-        if hasattr(self._data, "tolist"):
-            return self._data.tolist()
-        return self._data
-
-
-class _FakeTorch:
-    """Minimal torch mock for unit testing without torch dependency."""
-
-    long: int = 0
-    float32: int = 1
-
-    @staticmethod
-    def tensor(data: Any, dtype: Any = None) -> _FakeTensor:
-        return _FakeTensor(data)
-
-    @staticmethod
-    def inference_mode() -> Any:
-        import contextlib
-
-        return contextlib.nullcontext()
-
-    @staticmethod
-    def argmax(tensor: Any, dim: int = -1) -> _FakeTensor:
-        data = tensor._data if isinstance(tensor, _FakeTensor) else tensor
-        if hasattr(data, "argmax"):
-            res = data.argmax(dim=dim)
-            return _FakeTensor(res.tolist() if hasattr(res, "tolist") else res)
-
-        if isinstance(data, list):
-            result: list[int] = []
-            for row in data:
-                if isinstance(row, list) and row:
-                    max_idx = max(range(len(row)), key=lambda i: row[i])
-                    result.append(max_idx)
-                elif isinstance(row, (int, float)):
-                    result.append(int(row))
-            return _FakeTensor(result)
-        return _FakeTensor([])
+_MAX_CREDIBLE_POSITION_LIMIT: int = 100_000
 
 
 class PersianNERDetector:
@@ -90,7 +43,7 @@ class PersianNERDetector:
         Raises:
             TypeError: If arguments are of incorrect types.
             ValueError: If max_length is non-positive, exceeds model position limits,
-                or model labels are incompatible.
+                exceeds tokenizer maximum length, or model labels are incompatible.
             FileNotFoundError: If model_path does not exist.
             NotADirectoryError: If model_path is not a directory.
             ImportError: If optional 'ner' dependencies are not installed.
@@ -118,16 +71,24 @@ class PersianNERDetector:
             )
 
         try:
-            import torch
-            from transformers import (  # type: ignore[import-untyped]
-                AutoModelForTokenClassification,
-                AutoTokenizer,
-            )
-        except ImportError as e:
+            torch = importlib.import_module("torch")
+            transformers = importlib.import_module("transformers")
+        except ImportError as exc:
             raise ImportError(
-                "PersianNERDetector requires optional 'ner' dependencies. "
+                "PersianNERDetector requires optional dependencies. "
                 'Install them with: pip install "fa-redact[ner]"'
-            ) from e
+            ) from exc
+
+        AutoTokenizer = getattr(transformers, "AutoTokenizer", None)
+        AutoModelForTokenClassification = getattr(
+            transformers, "AutoModelForTokenClassification", None
+        )
+        if AutoTokenizer is None or AutoModelForTokenClassification is None:
+            raise ImportError(
+                "PersianNERDetector requires optional dependencies with "
+                "AutoTokenizer and AutoModelForTokenClassification. "
+                'Install them with: pip install "fa-redact[ner]"'
+            )
 
         tokenizer = AutoTokenizer.from_pretrained(
             str(resolved_path),
@@ -162,17 +123,9 @@ class PersianNERDetector:
         model: Any,
         *,
         max_length: int = 512,
-        torch_module: Any = None,
+        torch_module: Any,
     ) -> PersianNERDetector:
         """Internal constructor for testing without loading files from disk."""
-        if torch_module is None:
-            try:
-                import torch
-
-                torch_module = torch
-            except ImportError:
-                torch_module = _FakeTorch()
-
         instance = cls.__new__(cls)
         instance._init_from_components(
             model_path=Path("fake_test_model"),
@@ -207,12 +160,26 @@ class PersianNERDetector:
             model_pos_limit is not None
             and isinstance(model_pos_limit, int)
             and not isinstance(model_pos_limit, bool)
-            and model_pos_limit > 0
+            and 0 < model_pos_limit <= _MAX_CREDIBLE_POSITION_LIMIT
         ):
             if max_length > model_pos_limit:
                 raise ValueError(
                     f"Configured max_length ({max_length}) exceeds model "
                     f"positional capacity ({model_pos_limit})"
+                )
+
+        # Check tokenizer model_max_length capacity where reliably declared
+        tok_max_len = getattr(tokenizer, "model_max_length", None)
+        if (
+            tok_max_len is not None
+            and isinstance(tok_max_len, int)
+            and not isinstance(tok_max_len, bool)
+            and 0 < tok_max_len <= _MAX_CREDIBLE_POSITION_LIMIT
+        ):
+            if max_length > tok_max_len:
+                raise ValueError(
+                    f"Configured max_length ({max_length}) exceeds tokenizer "
+                    f"maximum sequence length ({tok_max_len})"
                 )
 
         # Validate model label configuration
@@ -350,22 +317,7 @@ class PersianNERDetector:
         with torch.inference_mode():
             outputs = self._model(**model_kwargs)
             logits = outputs.logits[0]
-            if hasattr(logits, "argmax"):
-                argmax_res = logits.argmax(dim=-1)
-                pred_indices: list[int] = (
-                    argmax_res.tolist()
-                    if hasattr(argmax_res, "tolist")
-                    else list(argmax_res)
-                )
-            elif isinstance(logits, list):
-                pred_indices = []
-                for row in logits:
-                    if isinstance(row, list) and row:
-                        pred_indices.append(max(range(len(row)), key=lambda i: row[i]))
-                    elif isinstance(row, (int, float)):
-                        pred_indices.append(int(row))
-            else:
-                pred_indices = torch.argmax(logits, dim=-1).tolist()
+            pred_indices: list[int] = torch.argmax(logits, dim=-1).tolist()
 
         # Reconstruct BIO entities into exact PERSON Detection spans
         detections: list[Detection] = []

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import sys
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,77 @@ from fa_redact import (
     redact,
     resolve_detection_conflicts,
 )
+
+
+class FakeTensor:
+    """Mock tensor object implementing operations required by test assertions."""
+
+    def __init__(self, data: Any) -> None:
+        self._data = data
+
+    def __getitem__(self, item: Any) -> FakeTensor:
+        if isinstance(self._data, list):
+            return FakeTensor(self._data[item])
+        return FakeTensor(self._data)
+
+    def tolist(self) -> Any:
+        if isinstance(self._data, list):
+            return self._data
+        if hasattr(self._data, "tolist"):
+            return self._data.tolist()
+        return self._data
+
+
+class FakeTorch:
+    """Mock torch module implementing operations required by PersianNERDetector."""
+
+    long: int = 0
+    float32: int = 1
+
+    @staticmethod
+    def tensor(data: Any, dtype: Any = None) -> FakeTensor:
+        return FakeTensor(data)
+
+    @staticmethod
+    def inference_mode() -> Any:
+        return contextlib.nullcontext()
+
+    @staticmethod
+    def argmax(tensor: Any, dim: int = -1) -> FakeTensor:
+        data = tensor._data if isinstance(tensor, FakeTensor) else tensor
+        if hasattr(data, "argmax"):
+            res = data.argmax(dim=dim)
+            return FakeTensor(res.tolist() if hasattr(res, "tolist") else res)
+
+        if isinstance(data, list):
+            result: list[int] = []
+            for row in data:
+                if isinstance(row, list) and row:
+                    max_idx = max(range(len(row)), key=lambda i: row[i])
+                    result.append(max_idx)
+                elif isinstance(row, (int, float)):
+                    result.append(int(row))
+            return FakeTensor(result)
+        return FakeTensor([])
+
+
+DEFAULT_FAKE_TORCH = FakeTorch()
+
+
+def create_test_detector(
+    tokenizer: Any,
+    model: Any,
+    *,
+    max_length: int = 512,
+    torch_module: Any = DEFAULT_FAKE_TORCH,
+) -> PersianNERDetector:
+    """Helper for constructing PersianNERDetector in tests with explicit torch mock."""
+    return PersianNERDetector._create_for_test(
+        tokenizer,
+        model,
+        max_length=max_length,
+        torch_module=torch_module,
+    )
 
 
 class DummyConfig:
@@ -80,12 +152,12 @@ class DummyModel:
                 row = [-100.0] * num_classes
                 row[idx] = 100.0
                 batch_logits.append(row)
-            logits_data: Any = [batch_logits]
+            logits_tensor = FakeTensor([batch_logits])
         else:
             # Default single O
-            logits_data = [[[0.0] * len(self.config.id2label)]]
+            logits_tensor = FakeTensor([[[0.0] * len(self.config.id2label)]])
 
-        return DummyOutput(logits=logits_data)
+        return DummyOutput(logits=logits_tensor)
 
 
 class DummyFastTokenizer:
@@ -287,7 +359,7 @@ def test_missing_b_per_label_rejected(tmp_path: Path) -> None:
     model = DummyModel(config=config)
 
     with pytest.raises(ValueError, match="missing required B-PER"):
-        PersianNERDetector._create_for_test(tokenizer, model)
+        create_test_detector(tokenizer, model)
 
 
 def test_missing_i_per_label_rejected(tmp_path: Path) -> None:
@@ -297,7 +369,7 @@ def test_missing_i_per_label_rejected(tmp_path: Path) -> None:
     model = DummyModel(config=config)
 
     with pytest.raises(ValueError, match="missing required I-PER"):
-        PersianNERDetector._create_for_test(tokenizer, model)
+        create_test_detector(tokenizer, model)
 
 
 def test_string_numeric_id2label_keys_supported() -> None:
@@ -306,7 +378,7 @@ def test_string_numeric_id2label_keys_supported() -> None:
     tokenizer = DummyFastTokenizer()
     model = DummyModel(config=config)
 
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
     assert 1 in detector._b_per_ids
     assert 2 in detector._i_per_ids
 
@@ -320,19 +392,37 @@ def test_invalid_max_length() -> None:
     invalid_vals: list[Any] = [0, -10, "512", True, False, 3.14]
     for invalid_val in invalid_vals:
         with pytest.raises(ValueError, match="max_length"):
-            PersianNERDetector._create_for_test(
-                tokenizer, model, max_length=invalid_val
-            )
+            create_test_detector(tokenizer, model, max_length=invalid_val)
 
 
 def test_max_length_exceeding_model_capacity_rejected() -> None:
     """Verify max_length > model max_position_embeddings is rejected."""
     config = DummyConfig(max_position_embeddings=256)
-    tokenizer = DummyFastTokenizer()
+    tokenizer = DummyFastTokenizer(model_max_length=1024)
     model = DummyModel(config=config)
 
     with pytest.raises(ValueError, match="exceeds model positional capacity"):
-        PersianNERDetector._create_for_test(tokenizer, model, max_length=512)
+        create_test_detector(tokenizer, model, max_length=512)
+
+
+def test_max_length_exceeding_tokenizer_model_max_length_rejected() -> None:
+    """Verify max_length > tokenizer model_max_length is rejected when credible."""
+    config = DummyConfig(max_position_embeddings=1024)
+    tokenizer = DummyFastTokenizer(model_max_length=256)
+    model = DummyModel(config=config)
+
+    with pytest.raises(ValueError, match="exceeds tokenizer maximum sequence length"):
+        create_test_detector(tokenizer, model, max_length=512)
+
+
+def test_huge_sentinel_tokenizer_model_max_length_ignored() -> None:
+    """Verify huge sentinel model_max_length is ignored as non-authoritative."""
+    config = DummyConfig(max_position_embeddings=512)
+    tokenizer = DummyFastTokenizer(model_max_length=1000000000000000019884624838656)
+    model = DummyModel(config=config)
+
+    detector = create_test_detector(tokenizer, model, max_length=512)
+    assert detector._max_length == 512
 
 
 # =========================================================================
@@ -345,7 +435,7 @@ def test_empty_input_returns_empty_list() -> None:
     config = DummyConfig()
     tokenizer = DummyFastTokenizer()
     model = DummyModel(config=config)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     assert detector.detect("", "") == []
     assert len(model.call_kwargs) == 0
@@ -356,7 +446,7 @@ def test_length_mismatch_rejected() -> None:
     config = DummyConfig()
     tokenizer = DummyFastTokenizer()
     model = DummyModel(config=config)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     with pytest.raises(ValueError, match="length"):
         detector.detect("ali", "alii")
@@ -367,7 +457,7 @@ def test_non_string_inputs_rejected() -> None:
     config = DummyConfig()
     tokenizer = DummyFastTokenizer()
     model = DummyModel(config=config)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     with pytest.raises(TypeError):
         detector.detect(123, "123")  # type: ignore[arg-type]
@@ -390,7 +480,7 @@ def test_single_token_person_span() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     detections = detector.detect(text, text)
     assert len(detections) == 1
@@ -423,7 +513,7 @@ def test_multi_token_person_span() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     detections = detector.detect(text, text)
     assert len(detections) == 1
@@ -445,7 +535,7 @@ def test_multi_subword_person_span() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     detections = detector.detect(text, text)
     assert len(detections) == 1
@@ -466,7 +556,7 @@ def test_consecutive_b_per_entities_remain_distinct() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     detections = detector.detect(text, text)
     assert len(detections) == 2
@@ -487,7 +577,7 @@ def test_leading_i_per_conservative_recovery() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     detections = detector.detect(text, text)
     assert len(detections) == 1
@@ -515,7 +605,7 @@ def test_punctuation_adjacent_person() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     detections = detector.detect(text, text)
     assert len(detections) == 2
@@ -541,7 +631,7 @@ def test_special_tokens_ignored() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     detections = detector.detect(text, text)
     assert len(detections) == 1
@@ -558,7 +648,7 @@ def test_out_of_bounds_offset_rejected() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     with pytest.raises(ValueError, match="out-of-bounds"):
         detector.detect(text, text)
@@ -573,7 +663,7 @@ def test_non_monotonic_offset_rejected() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     with pytest.raises(ValueError, match="non-monotonic"):
         detector.detect(text, text)
@@ -593,7 +683,7 @@ def test_arabic_yeh_kaf_alignment_preservation() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     detections = detector.detect(original_text, normalized_text)
     assert len(detections) == 1
@@ -613,7 +703,7 @@ def test_zwnj_offset_preservation() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     detections = detector.detect(text, text)
     assert len(detections) == 1
@@ -631,7 +721,7 @@ def test_deterministic_detection_ordering() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    detector = PersianNERDetector._create_for_test(tokenizer, model)
+    detector = create_test_detector(tokenizer, model)
 
     detections = detector.detect(text, text)
     assert len(detections) == 2
@@ -649,7 +739,7 @@ def test_overlength_input_rejected_without_truncation() -> None:
     # Over 300 tokens, with max_length=128
     tokenizer = DummyFastTokenizer()
     model = DummyModel()
-    detector = PersianNERDetector._create_for_test(tokenizer, model, max_length=128)
+    detector = create_test_detector(tokenizer, model, max_length=128)
 
     with pytest.raises(ValueError) as exc_info:
         detector.detect(text, text)
@@ -673,7 +763,7 @@ def test_detect_pipeline_explicit_ner_integration() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    ner = PersianNERDetector._create_for_test(tokenizer, model)
+    ner = create_test_detector(tokenizer, model)
 
     # 1. detect with explicit NER detector
     detections = detect(text, detectors=[ner])
@@ -712,7 +802,7 @@ def test_redact_pipeline_person_placeholder() -> None:
 
     tokenizer = DummyFastTokenizer(token_offsets=offsets)
     model = DummyModel(pred_indices=pred_indices)
-    ner = PersianNERDetector._create_for_test(tokenizer, model)
+    ner = create_test_detector(tokenizer, model)
 
     redacted = redact(text, detectors=[ner])
     assert redacted == "بیمار [PERSON_1] مراجعه کرد و [PERSON_1] بستری شد."
@@ -740,7 +830,7 @@ def test_pseudonymization_session_with_ner() -> None:
     tokenizer.side_effect = tok_side_effect
 
     model = DummyModel(pred_indices=[0, 0, 1, 2, 0, 0, 0])
-    ner = PersianNERDetector._create_for_test(tokenizer, model)
+    ner = create_test_detector(tokenizer, model)
 
     session = PseudonymizationSession()
     res1 = session.pseudonymize(text1, detectors=[ner])
@@ -795,7 +885,7 @@ def test_offline_mock_detector_when_torch_uninstalled() -> None:
     model = DummyModel(pred_indices=pred_indices)
 
     with patch.dict(sys.modules, {"torch": None, "transformers": None}):
-        detector = PersianNERDetector._create_for_test(tokenizer, model)
+        detector = create_test_detector(tokenizer, model)
         detections = detector.detect(text, text)
 
     assert len(detections) == 1

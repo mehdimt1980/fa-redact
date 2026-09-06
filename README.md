@@ -820,14 +820,14 @@ text = "بیمار علی رضایی به درمانگاه مراجعه کرد."
 
 # Explicit detectors list replaces default detectors:
 detections = detect(text, detectors=[ner])
-for d in detections:
-    print(f"Type: {d.type} | Value: {d.value} | Span: [{d.start}:{d.end}]")
-# Output: Type: PERSON | Value: علی رضایی | Span: [6:15]
+# Illustrative output (with a compatible tested model):
+# Type: PERSON | Value: علی رضایی | Span: [6:15]
 
 # Redaction with standard typed placeholder:
 redacted = redact(text, detectors=[ner])
 print(redacted)
-# Output: "بیمار [PERSON_1] به درمانگاه مراجعه کرد."
+# Illustrative output (with a compatible tested model):
+# "بیمار [PERSON_1] به درمانگاه مراجعه کرد."
 ```
 
 ##### Combining NER with Built-in Direct Identifiers
@@ -854,7 +854,8 @@ all_detectors = [
 text = "بیمار علی رضایی با کد ملی 0012345679 مراجعه کرد."
 redacted = redact(text, detectors=all_detectors)
 print(redacted)
-# Output: "بیمار [PERSON_1] با کد ملی [IR_NATIONAL_ID_1] مراجعه کرد."
+# Illustrative output (with a compatible tested model):
+# "بیمار [PERSON_1] با کد ملی [IR_NATIONAL_ID_1] مراجعه کرد."
 ```
 
 > [!WARNING]
@@ -1795,14 +1796,14 @@ text = "بیمار علی رضایی به درمانگاه مراجعه کرد."
 
 # پاس دادن صریح تشخیص‌دهنده (جایگزین پیش‌فرض‌ها می‌شود):
 detections = detect(text, detectors=[ner])
-for d in detections:
-    print(f"نوع: {d.type} | مقدار: {d.value} | موقعیت: [{d.start}:{d.end}]")
-# خروجی: نوع: PERSON | مقدار: علی رضایی | موقعیت: [6:15]
+# خروجی نمونه (با یک مدل سازگارِ آزموده‌شده):
+# نوع: PERSON | مقدار: علی رضایی | موقعیت: [6:15]
 
 # پنهان‌سازی با جانگهدار استاندارد:
 redacted = redact(text, detectors=[ner])
 print(redacted)
-# خروجی: "بیمار [PERSON_1] به درمانگاه مراجعه کرد."
+# خروجی نمونه (با یک مدل سازگارِ آزموده‌شده):
+# "بیمار [PERSON_1] به درمانگاه مراجعه کرد."
 ```
 
 ##### ترکیب NER با شناسه‌های مستقیم پیش‌فرض
@@ -1829,7 +1830,8 @@ all_detectors = [
 text = "بیمار علی رضایی با کد ملی 0012345679 مراجعه کرد."
 redacted = redact(text, detectors=all_detectors)
 print(redacted)
-# خروجی: "بیمار [PERSON_1] با کد ملی [IR_NATIONAL_ID_1] مراجعه کرد."
+# خروجی نمونه (با یک مدل سازگارِ آزموده‌شده):
+# "بیمار [PERSON_1] با کد ملی [IR_NATIONAL_ID_1] مراجعه کرد."
 ```
 
 > [!WARNING]
