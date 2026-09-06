@@ -121,8 +121,10 @@ jobs:
               'src/fa_redact/reporting.py',
               'src/fa_redact/structured.py',
               'src/fa_redact/detectors/pattern.py',
+              'src/fa_redact/detectors/persian_ner.py',
               'tests/test_package.py',
               'tests/test_structured.py',
+              'tests/test_persian_ner_detector.py',
           ]
           for req in required_sdist_files:
               assert any(name.endswith('/' + req) or name == req for name in sdist_names), (
@@ -145,6 +147,7 @@ jobs:
               'fa_redact/detectors/iranian_iban.py',
               'fa_redact/detectors/bank_card.py',
               'fa_redact/detectors/pattern.py',
+              'fa_redact/detectors/persian_ner.py',
               'fa_redact/validators/email.py',
               'fa_redact/validators/iranian_iban.py',
               'fa_redact/validators/bank_card.py',
@@ -207,6 +210,7 @@ jobs:
           assert fa_redact.BankCardDetector is not None
           assert fa_redact.PatternDetector is not None
           assert fa_redact.PatternRule is not None
+          assert fa_redact.PersianNERDetector is not None
           assert fa_redact.ConflictPolicy is not None
 
           result = fa_redact.redact("کد ملی: ۱۲۳۴۵۶۷۸۹۱")

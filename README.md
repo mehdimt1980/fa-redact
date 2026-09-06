@@ -44,6 +44,7 @@
   - [12. Stateful Pseudonymization Sessions](#12-stateful-pseudonymization-sessions)
   - [13. Command-Line Interface (CLI) (Unreleased)](#13-command-line-interface-cli-unreleased)
   - [14. Structured Data Helpers (Unreleased)](#14-structured-data-helpers-unreleased)
+  - [15. Experimental Opt-in Persian PERSON NER (Unreleased)](#15-experimental-opt-in-persian-person-ner-unreleased)
 - [Custom Detectors](#custom-detectors)
 - [Healthcare & AI/LLM Usage Pattern](#healthcare--aillm-usage-pattern)
 - [Current Coverage & Limitations](#current-coverage--limitations)
@@ -795,6 +796,77 @@ print(reports["note"].counts)
 
 ---
 
+#### 15. Experimental Opt-in Persian PERSON NER (Unreleased)
+
+`fa-redact` provides an experimental, strictly opt-in detector `PersianNERDetector` for local Persian personal name (`PERSON`) named-entity recognition using offline Hugging Face-compatible token-classification model checkpoints.
+
+##### Installation Extra
+
+To enable the optional ML backend dependencies without inflating base package size:
+
+```bash
+pip install "fa-redact[ner]"
+```
+
+##### Usage Concept
+
+```python
+from fa_redact import PersianNERDetector, detect, redact
+
+# Point strictly to a trusted local model directory (offline only)
+ner = PersianNERDetector("/path/to/trusted/local/model")
+
+text = "بیمار علی رضایی به درمانگاه مراجعه کرد."
+
+# Explicit detectors list replaces default detectors:
+detections = detect(text, detectors=[ner])
+# Illustrative output (with a compatible tested model):
+# Type: PERSON | Value: علی رضایی | Span: [6:15]
+
+# Redaction with standard typed placeholder:
+redacted = redact(text, detectors=[ner])
+print(redacted)
+# Illustrative output (with a compatible tested model):
+# "بیمار [PERSON_1] به درمانگاه مراجعه کرد."
+```
+
+##### Combining NER with Built-in Direct Identifiers
+
+Because explicit `detectors=[...]` **replaces** defaults, if you wish to run both Persian personal name NER and standard Iranian direct identifiers (National ID, Mobile, IBAN), explicitly include all desired detectors:
+
+```python
+from fa_redact import (
+    IranianIBANDetector,
+    IranianMobileNumberDetector,
+    IranianNationalIDDetector,
+    PersianNERDetector,
+    redact,
+)
+
+ner = PersianNERDetector("/path/to/trusted/local/model")
+all_detectors = [
+    IranianNationalIDDetector(),
+    IranianMobileNumberDetector(),
+    IranianIBANDetector(),
+    ner,
+]
+
+text = "بیمار علی رضایی با کد ملی 0012345679 مراجعه کرد."
+redacted = redact(text, detectors=all_detectors)
+print(redacted)
+# Illustrative output (with a compatible tested model):
+# "بیمار [PERSON_1] با کد ملی [IR_NATIONAL_ID_1] مراجعه کرد."
+```
+
+> [!WARNING]
+> - **Strictly Opt-in & Offline**: `PersianNERDetector` is not included in default detectors (`_DEFAULT_DETECTORS`). It requires an explicitly supplied local directory path (`local_files_only=True`, `trust_remote_code=False`) and never downloads models automatically.
+> - **Model Trust Boundary**: Local model checkpoints are executable/deserialization-adjacent assets. Only load models from trusted sources.
+> - **PERSON Entity Type**: The detector emits `PERSON` entities and makes no assumptions regarding clinical roles (patient, physician, relative, or other individual).
+> - **Fail-Loud Long-Text Policy**: Documents exceeding the model's configured sequence length (`max_length`) fail loudly with a privacy-safe `ValueError` without silent truncation.
+> - **No Universal Accuracy or Clinical Guarantee**: PEYMA benchmark results (99.19% exact-span F1 on news domain) do not guarantee universal accuracy or clinical de-identification.
+
+---
+
 ### Custom Detectors
 
 `fa-redact` uses Python's structural typing (protocols). Any class implementing the two-argument `detect(self, original_text: str, normalized_text: str) -> Sequence[Detection]` method can be passed to `detect()`, `redact()`, or `session.pseudonymize()`:
@@ -879,7 +951,7 @@ Local Hospital / Trusted Boundary
 | **16-digit Bank Card (PAN)** | ❌ Not Supported | 🧪 Opt-in | 16-digit compact PAN + Luhn checksum validation (`detectors=[BankCardDetector()]`) |
 | **Institutional / Healthcare IDs (MRN, Patient ID)** | ❌ Not Supported | 🧪 Opt-in | Configurable via user-defined `PatternRule` / `PatternDetector` |
 | **Explicit Conflict Resolution** | ❌ Not Supported | 🧪 Opt-in Policy | Resolves overlaps/duplicates via `"longest"` or `"priority"` policy |
-| **Personal Names** | ❌ Not Supported | 🔬 Research | Under empirical evaluation (Phase 21); not yet in stable detector set |
+| **Personal Names** | ❌ Not Supported | 🔬 Research | 🧪 Opt-in (Unreleased: `PersianNERDetector` with local ML model) |
 | **Postal Addresses** | ❌ Not Supported | ❌ Not Supported | Unstructured spatial entities |
 | **Dates of Birth / Timestamps** | ❌ Not Supported | ❌ Not Supported | Planned for future versions |
 | **Health Insurance Numbers** | ❌ Not Supported | ❌ Not Supported | Institution-specific |
@@ -980,6 +1052,7 @@ This project is licensed under the [MIT License](LICENSE).
   - [۱۲. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۱۲-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
   - [۱۳. رابط خط فرمان (CLI) (در حال توسعه / منتشرنشده)](#۱۳-رابط-خط-فرمان-cli-در-حال-توسعه--منتشرنشده)
   - [۱۴. پردازش داده‌های ساخت‌یافته (در حال توسعه / منتشرنشده)](#۱۴-پردازش-داده‌های-ساخت‌یافته-در-حال-توسعه--منتشرنشده)
+  - [۱۵. تشخیص اختیاری نام اشخاص فارسی (NER) (در حال توسعه / منتشرنشده)](#۱۵-تشخیص-اختیاری-نام-اشخاص-فارسی-ner-در-حال-توسعه--منتشرنشده)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
 - [جدول پوشش و قابلیت‌ها](#جدول-پوشش-و-قابلیت‌ها)
@@ -1699,6 +1772,77 @@ print(reports["note"].counts)
 
 ---
 
+#### ۱۵. تشخیص اختیاری نام اشخاص فارسی (NER) (در حال توسعه / منتشرنشده)
+
+کتابخانهٔ `fa-redact` تشخیص‌دهندهٔ آزمایشی و کاملاً اختیاری `PersianNERDetector` را برای تشخیص موجودیت‌های نام اشخاص (`PERSON`) با استفاده از مدل‌های آفلاین سازگار با Hugging Face فراهم می‌کند.
+
+##### نصب وابستگی‌های اختیاری
+
+برای فعال‌سازی بک‌اند هوش مصنوعی بدون سنگین کردن بستهٔ پایه:
+
+```bash
+pip install "fa-redact[ner]"
+```
+
+##### نمونه استفاده
+
+```python
+from fa_redact import PersianNERDetector, detect, redact
+
+# مشخص کردن مسیر پوشهٔ محلی مدل (صرفاً آفلاین و محلی)
+ner = PersianNERDetector("/path/to/trusted/local/model")
+
+text = "بیمار علی رضایی به درمانگاه مراجعه کرد."
+
+# پاس دادن صریح تشخیص‌دهنده (جایگزین پیش‌فرض‌ها می‌شود):
+detections = detect(text, detectors=[ner])
+# خروجی نمونه (با یک مدل سازگارِ آزموده‌شده):
+# نوع: PERSON | مقدار: علی رضایی | موقعیت: [6:15]
+
+# پنهان‌سازی با جانگهدار استاندارد:
+redacted = redact(text, detectors=[ner])
+print(redacted)
+# خروجی نمونه (با یک مدل سازگارِ آزموده‌شده):
+# "بیمار [PERSON_1] به درمانگاه مراجعه کرد."
+```
+
+##### ترکیب NER با شناسه‌های مستقیم پیش‌فرض
+
+از آنجا که پاس دادن `detectors=[...]` جایگزین تشخیص‌دهنده‌های پیش‌فرض می‌شود، در صورت تمایل به اجرای هم‌زمان تشخیص نام و شناسه‌های پیش‌فرض (کد ملی، موبایل، شبا)، همهٔ آن‌ها را صریحاً در لیست قرار دهید:
+
+```python
+from fa_redact import (
+    IranianIBANDetector,
+    IranianMobileNumberDetector,
+    IranianNationalIDDetector,
+    PersianNERDetector,
+    redact,
+)
+
+ner = PersianNERDetector("/path/to/trusted/local/model")
+all_detectors = [
+    IranianNationalIDDetector(),
+    IranianMobileNumberDetector(),
+    IranianIBANDetector(),
+    ner,
+]
+
+text = "بیمار علی رضایی با کد ملی 0012345679 مراجعه کرد."
+redacted = redact(text, detectors=all_detectors)
+print(redacted)
+# خروجی نمونه (با یک مدل سازگارِ آزموده‌شده):
+# "بیمار [PERSON_1] با کد ملی [IR_NATIONAL_ID_1] مراجعه کرد."
+```
+
+> [!WARNING]
+> - **صرفاً اختیاری و محلی**: تشخیص‌دهندهٔ `PersianNERDetector` در پیش‌فرض‌ها قرار ندارد و هیچ مدلی را به صورت خودکار از اینترنت دانلود نمی‌کند؛ کاربر باید پوشهٔ محلی مدل معتبر را ارائه دهد.
+> - **مرز اعتماد مدل**: فایل‌های مدل محلی کدهای اجرایی/محاسباتی هستند؛ فقط مدل‌های منابع کاملاً معتبر را بارگذاری کنید.
+> - **برچسب عمومی PERSON**: این مدل نوع موجودیت `PERSON` را برمی‌گرداند و نقشی (بیمار، پزشک، همراه و...) استنتاج نمی‌کند.
+> - **سیاست عدم کوتاه کردن متن‌های طولانی (Fail-Loud)**: در متون طولانی‌تر از ظرفیت مدل، خطا صادر می‌شود و متن به صورت خاموش کوتاه (Truncate) نمی‌شود.
+> - **عدم تضمین بالینی یا دقت جهانی**: نتایج بنچ‌مارک خبری PEYMA (F1 معادل ۹۹.۱۹٪) به معنی تضمین دقت در اسناد بالینی یا دی‌ایدنتیفیکیشن قطعی نیست.
+
+---
+
 ### تشخیص‌دهنده‌های سفارشی (Custom Detectors)
 
 معماری `fa-redact` مبتنی بر پروتکل‌های ساختاری پایتون (Duck Typing) است. شما می‌توانید کلاسی با متد دوآرگومانی پیاده‌سازی کنید:
@@ -1786,7 +1930,7 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 | **شماره کارت بانکی (PAN)** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | فرمت فشردهٔ ۱۶ رقمی + Luhn؛ بدون استعلام BIN/IIN یا صادرکننده (`detectors=[BankCardDetector()]`) |
 | **شناسه‌های سازمانی / درمانی (MRN و بیمار)** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | قابل پیکربندی اختصاصی توسط کاربر با `PatternRule` و `PatternDetector` |
 | **حل صریح تعارض تشخیص‌ها** | ❌ پشتیبانی نمی‌شود | 🧪 سیاست اختیاری | حل همپوشانی‌ها و تکرارها با سیاست `"longest"` یا `"priority"` |
-| **نام اشخاص** | ❌ پشتیبانی نمی‌شود | 🔬 ارزیابی پژوهشی | در حال ارزیابی تجربی در فاز ۲۱؛ هنوز جزو مجموعهٔ پایدار نیست |
+| **نام اشخاص** | ❌ پشتیبانی نمی‌شود | 🔬 ارزیابی پژوهشی | 🧪 اختیاری (در حال توسعه: `PersianNERDetector` با مدل محلی) |
 | **آدرس پستی و موقعیت مکانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | موجودیت‌های غیرساختاریافته |
 | **تاریخ تولد و زمان‌ها** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | برنامه‌ریزی‌شده برای نسخه‌های آتی |
 | **شماره بیمه درمانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی |

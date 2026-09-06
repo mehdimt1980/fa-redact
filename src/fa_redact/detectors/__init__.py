@@ -8,6 +8,7 @@ from fa_redact.detectors.iranian_iban import IranianIBANDetector
 from fa_redact.detectors.mobile import IranianMobileNumberDetector
 from fa_redact.detectors.national_id import IranianNationalIDDetector
 from fa_redact.detectors.pattern import PatternDetector, PatternRule
+from fa_redact.detectors.persian_ner import PersianNERDetector
 
 __all__ = [
     "BankCardDetector",
@@ -17,4 +18,5 @@ __all__ = [
     "IranianNationalIDDetector",
     "PatternDetector",
     "PatternRule",
+    "PersianNERDetector",
 ]
