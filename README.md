@@ -314,15 +314,68 @@ restored = session.restore("پیام به [EMAIL_1] ارسال شد.")
 - **Unsupported Complex/Obsolete Forms**: Quoted local parts (`"john doe"@example.com`), IP domain literals (`user@[192.168.1.1]`), comments, folding whitespace, single-label domains (`user@localhost`), and internationalized/Unicode email addresses (EAI / RFC 6530+) are rejected.
 - **Privacy & Verification Disclaimer**: `is_valid_email` performs purely local, offline syntactic validation. It performs no DNS queries, MX record lookups, mailbox verification, or network requests, and logs no PII. Syntactic validity does not verify that a mailbox exists or is deliverable.
 
-#### 7. Redaction Semantics
+#### 7. Bank Card / PAN Validation & Detection (Opt-in / Unreleased)
+
+> [!NOTE]
+> **Unreleased / Development Version (Phase 14)**: Bank card validation and detection are introduced in the unreleased development cycle and are not part of published PyPI release `0.1.0`.
+
+`fa-redact` provides an offline, deterministic 16-digit payment card (Primary Account Number / PAN) validator (`is_valid_bank_card_number`) and detector (`BankCardDetector`):
+
+```python
+from fa_redact import (
+    BankCardDetector,
+    PseudonymizationSession,
+    detect,
+    is_valid_bank_card_number,
+    redact,
+)
+
+# 1. Standalone Validation (Exact 16 digits, Luhn MOD-10 checksum)
+is_valid_bank_card_number("1234567890123452")  # True (valid synthetic card)
+is_valid_bank_card_number("۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲")  # True (Persian digits)
+is_valid_bank_card_number("١٢٣٤٥٦٧٨٩٠١٢٣٤٥٢")  # True (Arabic-Indic digits)
+is_valid_bank_card_number("1234 5678 9012 3452")  # False (spaces rejected)
+is_valid_bank_card_number("1234-5678-9012-3452")  # False (hyphens rejected)
+is_valid_bank_card_number("0000000000000000")  # False (all-identical rejected)
+is_valid_bank_card_number("1234567890123453")  # False (checksum mismatch)
+
+# 2. Opt-in Detection (Pass BankCardDetector explicitly)
+text = "شماره کارت: 1234567890123452"
+detections = detect(text, detectors=[BankCardDetector()])
+# Returns: [Detection(type='BANK_CARD', value='1234567890123452', ...)]
+
+# 3. Opt-in Redaction & Pseudonymization
+redacted_text = redact(text, detectors=[BankCardDetector()])
+# Output: "شماره کارت: [BANK_CARD_1]"
+
+session = PseudonymizationSession()
+pseudonymized = session.pseudonymize(
+    "واریز به کارت ۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲ انجام شد.",
+    detectors=[BankCardDetector()],
+)
+# Output: "واریز به کارت [BANK_CARD_1] انجام شد."
+
+restored = session.restore("تایید واریز به [BANK_CARD_1]")
+# Output: "تایید واریز به ۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲"
+```
+
+- **Opt-in Architecture**: `BankCardDetector` is intentionally **opt-in** in Phase 14 and is not included in the default detector set (`_DEFAULT_DETECTORS`).
+- **Standard Luhn MOD-10 Checksum**: Validates 16-digit payment card numbers using the standard Luhn algorithm (doubling digits at odd offsets from the right, subtracting 9 if the product exceeds 9, and verifying `sum % 10 == 0`).
+- **Position-Preserving Digit Normalization**: Accepts ASCII (`0-9`), Persian (`۰-۹`), and Arabic-Indic (`٠-٩`) digits. Preserves the exact surface script in `Detection.value` and normalizes to canonical ASCII in `Detection.normalized_value`.
+- **Defensive Sequence Filtering**: Trivial all-identical sequences (such as `0000000000000000` through `9999999999999999`) are defensively rejected regardless of their Luhn checksum status.
+- **Strict Electronic Compact Format**: Only compact 16-digit strings without spaces, hyphens, or formatting separators are accepted. The validator does not strip whitespace, remove hyphens, or clean up formatting.
+- **Issuer Neutrality**: `BankCardDetector` uses issuer-neutral terminology and entities (`BANK_CARD`). The library does not maintain an Iranian BIN/IIN registry and does not verify whether a card was issued by an Iranian bank or any specific card network.
+- **Privacy & Financial Disclaimer**: `is_valid_bank_card_number` performs purely local, offline mathematical checksum validation. It does not perform payment gateway verification, card activation status checks, CVV2/expiry checks, or account balance lookups. Checksum validity does not prove that a payment card exists, is active, or belongs to a specific cardholder.
+
+#### 8. Redaction Semantics
 
 - **Exact Span Reconstruction**: `redact()` rebuilds the output from the original Detection spans, preserving untouched source slices exactly and replacing only detected spans. It does not perform global value-based `str.replace()`.
-- **Typed Placeholders**: Placeholders follow the format `[<TYPE>_<INDEX>]` (e.g., `[IR_NATIONAL_ID_1]`, `[IR_MOBILE_1]`, `[IR_IBAN_1]`, `[EMAIL_1]`).
+- **Typed Placeholders**: Placeholders follow the format `[<TYPE>_<INDEX>]` (e.g., `[IR_NATIONAL_ID_1]`, `[IR_MOBILE_1]`, `[IR_IBAN_1]`, `[EMAIL_1]`, `[BANK_CARD_1]`).
 - **Deterministic Numbering**: Identifiers receive sequential numbering based on their order of first appearance.
 - **Collision Avoidance**: If an input already contains a literal string matching the placeholder syntax, newly generated placeholders increment past the colliding index.
 - **Fail-Loud on Overlap**: If overlapping or duplicate spans are passed to `redact()`, it raises a `ValueError`.
 
-#### 8. Stateful Pseudonymization Sessions
+#### 9. Stateful Pseudonymization Sessions
 
 `PseudonymizationSession` manages persistent mappings across multi-turn AI interactions:
 
@@ -422,7 +475,7 @@ Local Hospital / Trusted Boundary
 | **Postal Addresses** | ❌ Not Supported | ❌ Not Supported | Unstructured spatial entities |
 | **Medical Record Numbers (MRN)** | ❌ Not Supported | ❌ Not Supported | Institution-specific (use custom detectors) |
 | **Health Insurance Numbers** | ❌ Not Supported | ❌ Not Supported | Institution-specific |
-| **Bank Card Numbers (PAN)** | ❌ Not Supported | ❌ Not Supported | Planned for future release |
+| **16-digit Bank Card (PAN)** | ❌ Not Supported | 🧪 Supported (Opt-in) | 16-digit compact PAN + Luhn; no BIN/IIN or issuer verification (`detectors=[BankCardDetector()]`) |
 | **Dates of Birth** | ❌ Not Supported | ❌ Not Supported | Planned for future release |
 
 ---
@@ -512,8 +565,9 @@ This project is licensed under the [MIT License](LICENSE).
   - [۴. اعتبارسنجی و تشخیص شماره موبایل ایران](#۴-اعتبارسنجی-و-تشخیص-شماره-موبایل-ایران)
   - [۵. اعتبارسنجی و تشخیص شماره شبا / IBAN ایران (در حال توسعه)](#۵-اعتبارسنجی-و-تشخیص-شماره-شبا--iban-ایران-در-حال-توسعه)
   - [۶. اعتبارسنجی و تشخیص آدرس ایمیل اسکی (اختیاری / در حال توسعه)](#۶-اعتبارسنجی-و-تشخیص-آدرس-ایمیل-اسکی-اختیاری--در-حال-توسعه)
-  - [۷. بازسازی دقیق بر اساس span در پنهان‌سازی](#۷-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
-  - [۸. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۸-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
+  - [۷. اعتبارسنجی و تشخیص شماره کارت بانکی / PAN (اختیاری / در حال توسعه)](#۷-اعتبارسنجی-و-تشخیص-شماره-کارت-بانکی--pan-اختیاری--در-حال-توسعه)
+  - [۸. بازسازی دقیق بر اساس span در پنهان‌سازی](#۸-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
+  - [۹. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۹-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
 - [جدول پوشش و محدودیت‌ها در نسخه v0.1.0](#جدول-پوشش-و-محدودیت‌ها-در-نسخه-v010)
@@ -800,11 +854,64 @@ restored = session.restore("پیام به [EMAIL_1] ارسال شد.")
 - **قالب‌های پشتیبانی‌نشده**: ساختارهای پیچیده یا منسوخ مانند رشته‌های کوتیشن‌دار (`"john doe"@example.com`)، دامنه‌های لیترال IP (`user@[192.168.1.1]`)، کامنت‌ها، فاصله‌های شکسته‌شده (folding whitespace)، دامنه‌های تک‌بخشی (`user@localhost`) و ایمیل‌های بین‌المللی غیر اسکی (EAI / RFC 6530+) پذیرفته نمی‌شوند.
 - **سلب مسئولیت و حریم خصوصی**: تابع `is_valid_email` صرفاً ساختار نگارشی را به صورت محلی و آفلاین بررسی می‌کند. این تابع هیچ‌گونه درخواست شبکه، استعلام DNS یا بررسی وجود صندوق پستی (Mailbox) انجام نمی‌دهد و هیچ داده‌ای را لاگ نمی‌کند. صحت ساختاری به منزلهٔ وجود واقعی آدرس ایمیل نیست.
 
-#### ۷. بازسازی دقیق بر اساس span در پنهان‌سازی
+#### ۷. اعتبارسنجی و تشخیص شماره کارت بانکی / PAN (اختیاری / در حال توسعه)
+
+> [!NOTE]
+> **نسخهٔ در حال توسعه (Phase 14)**: این قابلیت بخشی از نسخهٔ توسعه است و در PyPI `0.1.0` وجود ندارد.
+
+کتابخانهٔ `fa-redact` تابع اعتبارسنجی مستقل `is_valid_bank_card_number` و تشخیص‌دهندهٔ `BankCardDetector` را برای شماره‌های ۱۶ رقمی کارت‌های پرداخت بانکی (Primary Account Number / PAN) به صورت کاملاً آفلاین و قطعی ارائه می‌دهد:
+
+```python
+from fa_redact import (
+    BankCardDetector,
+    PseudonymizationSession,
+    detect,
+    is_valid_bank_card_number,
+    redact,
+)
+
+# ۱. اعتبارسنجی مستقل (دقیقاً ۱۶ رقم، الگوریتم چکسام Luhn):
+is_valid_bank_card_number("1234567890123452")  # True (کارت معتبر آزمایشی)
+is_valid_bank_card_number("۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲")  # True (پشتیبانی از ارقام فارسی)
+is_valid_bank_card_number("١٢٣٤٥٦٧٨٩٠١٢٣٤٥٢")  # True (پشتیبانی از ارقام عربی)
+is_valid_bank_card_number("1234 5678 9012 3452")  # False (رد فاصله)
+is_valid_bank_card_number("1234-5678-9012-3452")  # False (رد خط تیره)
+is_valid_bank_card_number("0000000000000000")  # False (رد رشته‌های تماماً یکسان)
+is_valid_bank_card_number("1234567890123453")  # False (عدم تطابق چکسام)
+
+# ۲. تشخیص با فعال‌سازی اختیاری (Opt-in):
+text = "شماره کارت: 1234567890123452"
+detections = detect(text, detectors=[BankCardDetector()])
+# خروجی: [Detection(type='BANK_CARD', value='1234567890123452', ...)]
+
+# ۳. پنهان‌سازی و نام‌مستعارسازی اختیاری:
+redacted_text = redact(text, detectors=[BankCardDetector()])
+# خروجی: "شماره کارت: [BANK_CARD_1]"
+
+session = PseudonymizationSession()
+pseudonymized = session.pseudonymize(
+    "واریز به کارت ۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲ انجام شد.",
+    detectors=[BankCardDetector()],
+)
+# خروجی: "واریز به کارت [BANK_CARD_1] انجام شد."
+
+restored = session.restore("تایید واریز به [BANK_CARD_1]")
+# خروجی: "تایید واریز به ۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲"
+```
+
+- **معماری اختیاری (Opt-in)**: کلاس `BankCardDetector` به صورت اختیاری ارائه شده و در مجموعهٔ پیش‌فرض (`_DEFAULT_DETECTORS`) قرار ندارد.
+- **الگوریتم چکسام Luhn (MOD-10)**: بررسی صحت شماره‌های ۱۶ رقمی کارت با الگوریتم استاندارد Luhn (دوبرابر کردن ارقام در جایگاه‌های فرد از راست، کسر ۹ در صورت بزرگ‌تر شدن از ۹ و بررسی `sum % 10 == 0`).
+- **نرم‌سازی با حفظ موقعیت کاراکتری**: پشتیبانی از ارقام لاتین (`0-9`)، فارسی (`۰-۹`) و عربی (`٠-٩`). حفظ شکل ظاهری در `Detection.value` و تبدیل به ارقام استاندارد اسکی در `Detection.normalized_value`.
+- **فیلتر دفاعی رشته‌های تکراری**: رشته‌های ۱۶ رقمی تماماً تکراری (`0000000000000000` تا `9999999999999999`) حتی در صورت تطابق ریاضی چکسام، رد می‌شوند.
+- **قالب فشردهٔ الکترونیکی**: صرفاً رشته‌های ۱۶ رقمی پیوسته بدون فاصله، خط تیره یا جداکننده پذیرفته می‌شوند.
+- **بی‌طرفی نسبت به صادرکننده (Issuer Neutrality)**: شناسه‌ها و نام‌گذاری‌ها به صورت خنثی (`BANK_CARD`) طراحی شده‌اند. این کتابخانه پایگاه داده BIN/IIN بانکی نگهداری نمی‌کند و تعلقی به یک بانک ایرانی یا شبکهٔ خاص را تایید نمی‌کند.
+- **سلب مسئولیت بانکی و امنیتی**: معتبر بودن الگوریتم Luhn به معنی واقعی بودن کارت، فعال بودن آن، تعلق آن به بانک ایرانی، مالکیت آن توسط شخص مشخص یا وجود حساب مرتبط با آن نیست. این تابع صرفاً اعتبارسنجی محلی و آفلاین ریاضی انجام می‌دهد و هیچ‌گونه اتصال به درگاه پرداخت، استعلام CVV2 یا بررسی وضعیت حساب انجام نمی‌دهد.
+
+#### ۸. بازسازی دقیق بر اساس span در پنهان‌سازی
 
 خروجی بر اساس بازه‌های دقیق `Detection` از متن اصلی ساخته می‌شود؛ فقط همان spanهای تشخیص‌داده‌شده جایگزین می‌شوند و بخش‌های دیگر متن بدون تغییر کپی می‌شوند. پیاده‌سازی از `str.replace()` سراسری بر اساس مقدار استفاده نمی‌کند.
 
-#### ۸. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی
+#### ۹. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی
 
 کلاس `PseudonymizationSession` رفتارهای امنیتی زیر را تضمین می‌کند:
 
@@ -907,7 +1014,7 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 | **آدرس پستی و موقعیت مکانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | موجودیت‌های غیرساختاریافته |
 | **شماره پرونده پزشکی (MRN)** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی (قابل تعریف با Custom Detector) |
 | **شماره بیمه درمانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی |
-| **شماره کارت بانکی (PAN)** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | برنامه‌ریزی‌شده برای نسخه‌های آتی |
+| **شماره کارت بانکی (PAN)** | ❌ پشتیبانی نمی‌شود | 🧪 پشتیبانی می‌شود (اختیاری) | فرمت فشردهٔ ۱۶ رقمی + Luhn؛ بدون استعلام BIN/IIN یا صادرکننده (`detectors=[BankCardDetector()]`) |
 | **تاریخ تولد و زمان‌ها** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | برنامه‌ریزی‌شده برای نسخه‌های آتی |
 
 ---

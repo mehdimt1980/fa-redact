@@ -103,13 +103,27 @@ class TestBankCardDetectorUnit:
             assert text[detections[0].start : detections[0].end] == expected
 
     def test_embedded_tokens_rejected(self) -> None:
-        """Verify candidates embedded in larger numeric tokens are ignored."""
+        """Verify candidates embedded in larger alphanumeric/word tokens are ignored."""
         detector = BankCardDetector()
         cases = [
+            # Longer numeric sequences
             f"0{_VALID_ASCII}",  # 17 digits, preceded by digit
             f"{_VALID_ASCII}0",  # 17 digits, followed by digit
             f"9{_VALID_ASCII}9",  # 18 digits, surrounded by digits
             f"1{_VALID_ASCII}1",  # 18 digits, surrounded by digits
+            # ASCII alphanumeric prefixes / suffixes
+            f"ABC{_VALID_ASCII}",
+            f"{_VALID_ASCII}XYZ",
+            f"ABC{_VALID_ASCII}XYZ",
+            # Underscore identifiers
+            f"_{_VALID_ASCII}",
+            f"{_VALID_ASCII}_",
+            f"REF_{_VALID_ASCII}_ARCHIVE",
+            # Persian word adjacent tokens
+            f"شناسه{_VALID_ASCII}",
+            f"{_VALID_ASCII}بایگانی",
+            f"کد{_VALID_PERSIAN}",
+            f"{_VALID_PERSIAN}کد",
         ]
 
         for text in cases:
