@@ -26,20 +26,39 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install build twine
 
-      - name: Verify release tag matches package version
+      - name: Verify release tag matches package and pyproject versions
         run: |
           TAG="${{ github.event.release.tag_name }}"
           EXPECTED_VERSION="${TAG#v}"
           python -c "
           import sys
+          import tomllib
+          from pathlib import Path
+
           sys.path.insert(0, 'src')
           import fa_redact
-          pkg_ver = fa_redact.__version__
+
           expected_ver = sys.argv[1]
-          print(f'Release tag: {sys.argv[2]} (expected: {expected_ver}), Package version: {pkg_ver}')
+          tag_name = sys.argv[2]
+          pkg_ver = fa_redact.__version__
+
+          with Path('pyproject.toml').open('rb') as f:
+              pyproject_data = tomllib.load(f)
+          pyproject_ver = pyproject_data.get('project', {}).get('version')
+
+          print(f'Release tag: {tag_name} -> Expected version: {expected_ver}')
+          print(f'pyproject.toml version: {pyproject_ver}')
+          print(f'fa_redact.__version__: {pkg_ver}')
+
+          if pyproject_ver != expected_ver:
+              raise ValueError(
+                  f'Version mismatch: tag specifies {expected_ver} but pyproject.toml has {pyproject_ver}'
+              )
           if pkg_ver != expected_ver:
-              raise ValueError(f'Version mismatch: tag specifies {expected_ver} but package has {pkg_ver}')
-          print('Version consistency check passed.')
+              raise ValueError(
+                  f'Version mismatch: tag specifies {expected_ver} but fa_redact.__version__ is {pkg_ver}'
+              )
+          print('Three-way pre-build version consistency check passed.')
           " "$EXPECTED_VERSION" "$TAG"
 
       - name: Build sdist and wheel
@@ -64,24 +83,98 @@ jobs:
 
           ./smoke_venv/bin/python - "$EXPECTED_VERSION" <<'PY'
           import sys
+          from importlib.metadata import version
           import fa_redact
 
           expected_ver = sys.argv[1]
           print(f"Imported fa_redact from: {fa_redact.__file__}")
 
+          # 1. Four-way distribution metadata and import path consistency
           assert "site-packages" in fa_redact.__file__, "Not imported from site-packages!"
-          assert fa_redact.__version__ == expected_ver, f"Expected version {expected_ver}, got {fa_redact.__version__}"
+          assert fa_redact.__version__ == expected_ver, f"Expected runtime version {expected_ver}, got {fa_redact.__version__}"
+          dist_ver = version("fa-redact")
+          assert dist_ver == expected_ver, f"Expected distribution metadata version {expected_ver}, got {dist_ver}"
 
-          assert callable(fa_redact.detect)
-          assert callable(fa_redact.redact)
+          # 2. Existing core (National ID, Mobile, detect, redact, PseudonymizationSession)
           assert callable(fa_redact.is_valid_national_id)
           assert callable(fa_redact.is_valid_mobile_number)
-          assert fa_redact.PseudonymizationSession is not None
+          assert fa_redact.is_valid_national_id("1234567891")
+          assert fa_redact.is_valid_mobile_number("09123456789")
+          core_redacted = fa_redact.redact("کد ملی: ۱۲۳۴۵۶۷۸۹۱، همراه: ۰۹۱۲۳۴۵۶۷۸۹")
+          assert "[IR_NATIONAL_ID_1]" in core_redacted
+          assert "[IR_MOBILE_1]" in core_redacted
 
-          result = fa_redact.redact("کد ملی: ۱۲۳۴۵۶۷۸۹۱")
-          assert "[IR_NATIONAL_ID_1]" in result
+          session = fa_redact.PseudonymizationSession()
+          pseudonymized = session.pseudonymize("کد ملی ۱۲۳۴۵۶۷۸۹۱")
+          assert "[IR_NATIONAL_ID_1]" in pseudonymized
+          restored = session.restore(pseudonymized)
+          assert "۱۲۳۴۵۶۷۸۹۱" in restored
 
-          print("Release wheel smoke test passed.")
+          # 3. Phase 13: Iranian IBAN / Sheba (is_valid_iranian_iban and default detection/redaction)
+          assert callable(fa_redact.is_valid_iranian_iban)
+          assert fa_redact.is_valid_iranian_iban("IR641234567890123456789012")
+          iban_redacted = fa_redact.redact("واریز به شبا IR641234567890123456789012")
+          assert "[IR_IBAN_1]" in iban_redacted
+
+          # 4. Phase 12: Email (opt-in behavior)
+          assert callable(fa_redact.is_valid_email)
+          assert fa_redact.is_valid_email("test@example.com")
+          email_detector = fa_redact.EmailDetector()
+          email_detections = fa_redact.detect("contact: test@example.com", detectors=[email_detector])
+          assert len(email_detections) == 1
+          assert email_detections[0].type == "EMAIL"
+          # Explicit detector replacement semantics: default detectors not run when explicit list provided
+          non_email = fa_redact.detect("کد ملی ۱۲۳۴۵۶۷۸۹۱", detectors=[email_detector])
+          assert len(non_email) == 0
+
+          # 5. Phase 14: Bank Card (opt-in behavior, synthetic Luhn-valid 1234567890123452)
+          assert callable(fa_redact.is_valid_bank_card_number)
+          assert fa_redact.is_valid_bank_card_number("1234567890123452")
+          card_detector = fa_redact.BankCardDetector()
+          card_detections = fa_redact.detect("کارت 1234567890123452", detectors=[card_detector])
+          assert len(card_detections) == 1
+          assert card_detections[0].type == "BANK_CARD"
+
+          # 6. Phase 15: PatternDetector / PatternRule
+          hospital_detector = fa_redact.PatternDetector(
+              [
+                  fa_redact.PatternRule(
+                      type="MRN",
+                      pattern=r"(?<!\w)MRN-[0-9]{6}(?!\w)",
+                  )
+              ]
+          )
+          mrn_detections = fa_redact.detect("پرونده: MRN-۱۲۳۴۵۶", detectors=[hospital_detector])
+          assert len(mrn_detections) == 1
+          assert mrn_detections[0].type == "MRN"
+          assert mrn_detections[0].normalized_value == "MRN-123456"
+          mrn_redacted = fa_redact.redact("پرونده: MRN-۱۲۳۴۵۶", detectors=[hospital_detector])
+          assert "[MRN_1]" in mrn_redacted
+
+          # 7. Phase 16: Conflict Resolution
+          assert fa_redact.ConflictPolicy is not None
+          assert callable(fa_redact.resolve_detection_conflicts)
+          overlap_text = "1234567890123452@example.com"
+          dual_detectors = [fa_redact.EmailDetector(), fa_redact.BankCardDetector()]
+          raw_conflicts = fa_redact.detect(overlap_text, detectors=dual_detectors)
+          assert len(raw_conflicts) == 2  # raw detect preserves overlapping evidence
+
+          # Default reject policy raises ValueError
+          try:
+              fa_redact.redact(overlap_text, detectors=dual_detectors)
+              assert False, "Expected ValueError on unhandled conflict under default reject policy"
+          except ValueError:
+              pass
+
+          # Longest policy resolves to EMAIL
+          resolved_redacted = fa_redact.redact(
+              overlap_text,
+              detectors=dual_detectors,
+              conflict_policy="longest",
+          )
+          assert resolved_redacted == "[EMAIL_1]"
+
+          print("Release wheel smoke test passed on all v0.2.0 features.")
           PY
 
       - name: Upload distribution artifacts

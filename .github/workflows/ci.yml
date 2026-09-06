@@ -88,18 +88,37 @@ jobs:
           ./smoke_venv/bin/python -m pip install "$GITHUB_WORKSPACE"/dist/*.whl
 
           ./smoke_venv/bin/python - <<'PY'
+          from importlib.metadata import version
           import fa_redact
 
           print(f"Imported fa_redact from: {fa_redact.__file__}")
 
-          assert "site-packages" in fa_redact.__file__
-          assert fa_redact.__version__ == "0.1.0"
+          assert "site-packages" in fa_redact.__file__, "Package was not imported from site-packages"
+          installed_version = version("fa-redact")
+          assert fa_redact.__version__ == installed_version, (
+              f"Version mismatch: __version__ ({fa_redact.__version__}) != installed metadata ({installed_version})"
+          )
 
+          # Verify callable validators and functions
           assert callable(fa_redact.detect)
           assert callable(fa_redact.redact)
           assert callable(fa_redact.is_valid_national_id)
           assert callable(fa_redact.is_valid_mobile_number)
+          assert callable(fa_redact.is_valid_iranian_iban)
+          assert callable(fa_redact.is_valid_email)
+          assert callable(fa_redact.is_valid_bank_card_number)
+          assert callable(fa_redact.resolve_detection_conflicts)
+
+          # Verify detector and configuration classes
           assert fa_redact.PseudonymizationSession is not None
+          assert fa_redact.IranianNationalIDDetector is not None
+          assert fa_redact.IranianMobileNumberDetector is not None
+          assert fa_redact.IranianIBANDetector is not None
+          assert fa_redact.EmailDetector is not None
+          assert fa_redact.BankCardDetector is not None
+          assert fa_redact.PatternDetector is not None
+          assert fa_redact.PatternRule is not None
+          assert fa_redact.ConflictPolicy is not None
 
           result = fa_redact.redact("کد ملی: ۱۲۳۴۵۶۷۸۹۱")
           assert "[IR_NATIONAL_ID_1]" in result
