@@ -131,6 +131,21 @@ class TestBioTokensToSpans:
         with pytest.raises(ValueError, match="Tokens and tags length mismatch"):
             bio_tokens_to_spans(["علی"], ["B_PER", "I_PER"])
 
+    def test_strict_gold_span_path_rejects_malformed_label(self) -> None:
+        tokens = ["نامه", "از", "سهراب", "رسید"]
+        tags = ["O", "O", "INVALID_TAG", "O"]
+        with pytest.raises(ValueError, match="Invalid BIO prefix"):
+            bio_tokens_to_spans(tokens, tags, strict=True)
+
+        with pytest.raises(ValueError, match="Invalid BIO prefix"):
+            bio_tokens_to_spans_with_stats(tokens, tags, strict=True)
+
+    def test_strict_gold_span_path_rejects_empty_tag(self) -> None:
+        tokens = ["نامه", "رسید"]
+        tags = ["O", ""]
+        with pytest.raises(ValueError, match="Empty or whitespace BIO label"):
+            bio_tokens_to_spans_with_stats(tokens, tags, strict=True)
+
 
 class TestSubwordsToEntitySpans:
     """Test mapping of fast tokenizer offsets and subword predictions to spans."""
@@ -212,6 +227,13 @@ class TestParseConllData:
         assert sentences[1][0] == ["امروز", "هوا", "خوب", "است"]
         assert sentences[1][1] == ["B_DAT", "O", "O", "O"]
 
+    def test_parse_conll_whitespace_format(self) -> None:
+        data = "علی B_PER\nرضایی I_PER\nآمد O\n"
+        sentences = parse_conll_data(data, strict=True)
+        assert len(sentences) == 1
+        assert sentences[0][0] == ["علی", "رضایی", "آمد"]
+        assert sentences[0][1] == ["B_PER", "I_PER", "O"]
+
     def test_parse_pipe_character_as_token(self) -> None:
         data = "بخش|O\n||O\nاول|O\n"
         sentences = parse_conll_data(data, strict=True)
@@ -223,6 +245,47 @@ class TestParseConllData:
         data = "علی|B_PER\nتنها_بدون_تگ\n"
         with pytest.raises(ValueError, match="Malformed CoNLL line"):
             parse_conll_data(data, strict=True)
+
+    def test_parse_strict_extra_whitespace_columns_raises(self) -> None:
+        data = "علی B_PER EXTRA_COLUMN\n"
+        with pytest.raises(
+            ValueError, match="expected exactly 2 space-separated fields"
+        ):
+            parse_conll_data(data, strict=True)
+
+
+class TestRunnerHardGates:
+    """Test hard-gating of model ID, revision, and dataset SHA-256 in run_benchmark."""
+
+    def test_rejects_unsupported_model_id(self) -> None:
+        from research.persian_ner_benchmark import run_benchmark
+
+        with pytest.raises(ValueError, match="Unsupported model 'other/model'"):
+            run_benchmark("dummy.txt", model_name_or_path="other/model")
+
+    def test_rejects_unsupported_model_revision(self) -> None:
+        from research.persian_ner_benchmark import run_benchmark
+
+        with pytest.raises(ValueError, match="Unsupported revision 'wrong_rev'"):
+            run_benchmark("dummy.txt", model_revision="wrong_rev")
+
+    def test_rejects_dataset_sha256_mismatch_without_leaking_content(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        from pathlib import Path
+
+        from research.persian_ner_benchmark import run_benchmark
+
+        secret_text = "SECRET_NON_DATASET_CONTENT_STRING"
+        test_file = Path(str(tmp_path)) / "fake_dataset.txt"
+        test_file.write_text(secret_text, encoding="utf-8")
+
+        with pytest.raises(ValueError) as exc_info:
+            run_benchmark(test_file)
+
+        err_msg = str(exc_info.value)
+        assert "Dataset SHA-256 mismatch" in err_msg
+        assert secret_text not in err_msg
 
 
 class TestBenchmarkSerializationAndPrivacy:

@@ -33,6 +33,13 @@ from typing import Any
 
 from research.evaluation import EntitySpan, analyze_errors, evaluate_exact_spans
 
+# Canonical benchmark constants
+CANONICAL_MODEL_ID: str = "HooshvareLab/bert-fa-base-uncased-ner-peyma"
+CANONICAL_MODEL_REVISION: str = "8b7b63371aa8f1fdad62c0f82d462a22b91b37ab"
+CANONICAL_DATASET_SHA256: str = (
+    "59a5f7f2bc2f6d89965a8b832a371293df23976eb7552a41916976d3a7dd7c96"
+)
+
 # Standard PERSON label identifiers
 PERSON_LABEL_SET: frozenset[str] = frozenset(
     {"PER", "PERS", "PERSON", "Person", "person"}
@@ -129,6 +136,7 @@ def bio_tokens_to_spans(
     tags: Sequence[str],
     *,
     target_type: str = "PERSON",
+    strict: bool = True,
 ) -> tuple[str, list[EntitySpan]]:
     """Reconstruct sentence text and exact gold entity spans from tokens and BIO tags.
 
@@ -147,6 +155,7 @@ def bio_tokens_to_spans(
         tokens: Sequence of token strings.
         tags: Sequence of BIO tag strings (e.g. 'B_PER', 'I_PER', 'O').
         target_type: Entity type to isolate (defaults to 'PERSON').
+        strict: If True, reject malformed BIO labels with ValueError.
 
     Returns:
         Tuple of (reconstructed_text, entity_spans).
@@ -155,7 +164,7 @@ def bio_tokens_to_spans(
         ValueError: If len(tokens) != len(tags) or if extracted span slices are invalid.
     """
     text, spans, _ = bio_tokens_to_spans_with_stats(
-        tokens, tags, target_type=target_type
+        tokens, tags, target_type=target_type, strict=strict
     )
     return text, spans
 
@@ -165,6 +174,7 @@ def bio_tokens_to_spans_with_stats(
     tags: Sequence[str],
     *,
     target_type: str = "PERSON",
+    strict: bool = True,
 ) -> tuple[str, list[EntitySpan], int]:
     """Reconstruct text, exact gold spans, and count leading-I tag recoveries."""
     if len(tokens) != len(tags):
@@ -197,7 +207,7 @@ def bio_tokens_to_spans_with_stats(
     leading_i_recoveries = 0
 
     for i, tag in enumerate(tags):
-        prefix, entity_type = parse_bio_label(tag)
+        prefix, entity_type = parse_bio_label(tag, strict=strict)
         tok_start, tok_end = token_offsets[i]
 
         if prefix == "B":
@@ -466,14 +476,12 @@ def parse_conll_data(
             if len(parts) == 2:
                 current_tokens.append(parts[0])
                 current_tags.append(parts[1])
-            elif len(parts) > 2:
-                current_tokens.append(parts[0])
-                current_tags.append(parts[-1])
             else:
                 if strict:
                     raise ValueError(
                         f"Malformed CoNLL line at line {line_idx}: "
-                        f"unsupported shape in '{line}'"
+                        f"expected exactly 2 space-separated fields, "
+                        f"got {len(parts)} in '{line}'"
                     )
 
     if current_tokens and current_tags:
@@ -625,8 +633,8 @@ def serialize_benchmark_result(
 
 def run_benchmark(
     dataset_file: str | Path,
-    model_name_or_path: str = "HooshvareLab/bert-fa-base-uncased-ner-peyma",
-    model_revision: str | None = "8b7b63371aa8f1fdad62c0f82d462a22b91b37ab",
+    model_name_or_path: str = CANONICAL_MODEL_ID,
+    model_revision: str | None = CANONICAL_MODEL_REVISION,
     output_path: str | Path | None = None,
     *,
     offline: bool = True,
@@ -635,13 +643,14 @@ def run_benchmark(
     """Execute the Persian NER benchmark reproducing exact PERSON span metrics.
 
     Lazy imports torch and transformers to keep base fa-redact dependency-free.
+    Enforces hard gates on canonical model ID, pinned revision, and dataset SHA-256.
 
     Args:
         dataset_file: Path to local CoNLL test file.
         model_name_or_path: Hugging Face model identifier or local directory.
         model_revision: Pinned model commit hash.
         output_path: Optional path to write serialized aggregate JSON.
-        offline: If True, require all assets to be present locally offline.
+        offline: Must remain True; online downloads are not permitted.
         max_length: Max sequence length for tokenizer auditing.
 
     Returns:
@@ -649,8 +658,39 @@ def run_benchmark(
 
     Raises:
         FileNotFoundError: If dataset file or model is not found.
-        ValueError: If model configuration is missing required PERSON labels.
+        ValueError: If model/revision/dataset SHA-256 is not canonical or labels
+            missing.
     """
+    if model_name_or_path != CANONICAL_MODEL_ID:
+        raise ValueError(
+            f"Unsupported model '{model_name_or_path}' for Phase 21.1 "
+            f"canonical benchmark; expected '{CANONICAL_MODEL_ID}'"
+        )
+    if model_revision != CANONICAL_MODEL_REVISION:
+        raise ValueError(
+            f"Unsupported revision '{model_revision}' for Phase 21.1 "
+            f"canonical benchmark; expected '{CANONICAL_MODEL_REVISION}'"
+        )
+
+    dataset_path = Path(dataset_file).expanduser().resolve()
+    if not dataset_path.is_file():
+        raise FileNotFoundError(f"Dataset file not found: {dataset_path}")
+
+    with open(dataset_path, "rb") as f:
+        raw_bytes = f.read()
+    dataset_sha256 = hashlib.sha256(raw_bytes).hexdigest()
+
+    if dataset_sha256 != CANONICAL_DATASET_SHA256:
+        raise ValueError(
+            f"Dataset SHA-256 mismatch: got '{dataset_sha256}', "
+            f"expected canonical PEYMA test SHA-256 '{CANONICAL_DATASET_SHA256}'"
+        )
+
+    content = raw_bytes.decode("utf-8")
+    sentences = parse_conll_data(content, strict=True)
+    if not sentences:
+        raise ValueError(f"No sentences parsed from {dataset_path}")
+
     # Lazy dynamic imports to support environments without optional ML packages
     try:
         tokenizers = importlib.import_module("tokenizers")
@@ -664,29 +704,16 @@ def run_benchmark(
             "Please install optional research dependencies."
         ) from e
 
-    dataset_path = Path(dataset_file).expanduser().resolve()
-    if not dataset_path.is_file():
-        raise FileNotFoundError(f"Dataset file not found: {dataset_path}")
-
-    with open(dataset_path, "rb") as f:
-        raw_bytes = f.read()
-    dataset_sha256 = hashlib.sha256(raw_bytes).hexdigest()
-    content = raw_bytes.decode("utf-8")
-
-    sentences = parse_conll_data(content, strict=True)
-    if not sentences:
-        raise ValueError(f"No sentences parsed from {dataset_path}")
-
     # Load tokenizer and model
     tokenizer = AutoTokenizer.from_pretrained(
         model_name_or_path,
         revision=model_revision,
-        local_files_only=offline,
+        local_files_only=True,
     )
     model = AutoModelForTokenClassification.from_pretrained(
         model_name_or_path,
         revision=model_revision,
-        local_files_only=offline,
+        local_files_only=True,
     )
     model.eval()
 
@@ -736,7 +763,7 @@ def run_benchmark(
     with torch.no_grad():
         for tokens, tags in sentences:
             text, gold_spans, leading_i = bio_tokens_to_spans_with_stats(
-                tokens, tags, target_type="PERSON"
+                tokens, tags, target_type="PERSON", strict=True
             )
             total_leading_i_recoveries += leading_i
             total_gold_person += len(gold_spans)
@@ -796,6 +823,10 @@ def run_benchmark(
             )
             total_basic_offset_failures += basic_fails
             total_pred_person += len(pred_spans)
+
+            # Count duplicate predictions in this sentence
+            sentence_dups = len(pred_spans) - len(set(pred_spans))
+            total_duplicate_preds += sentence_dups
 
             # Evaluate sentence exact spans
             metrics = evaluate_exact_spans(gold_spans, pred_spans)
@@ -885,13 +916,13 @@ def main() -> None:
     )
     parser.add_argument(
         "--model",
-        default="HooshvareLab/bert-fa-base-uncased-ner-peyma",
-        help="Hugging Face model ID or local directory path",
+        default=CANONICAL_MODEL_ID,
+        help="Canonical model ID",
     )
     parser.add_argument(
         "--model-revision",
-        default="8b7b63371aa8f1fdad62c0f82d462a22b91b37ab",
-        help="Pinned commit hash of the model",
+        default=CANONICAL_MODEL_REVISION,
+        help="Canonical model commit hash",
     )
     parser.add_argument(
         "--output",
@@ -903,12 +934,6 @@ def main() -> None:
         action="store_true",
         default=True,
         help="Enforce local files only without network requests (default: True)",
-    )
-    parser.add_argument(
-        "--online",
-        dest="offline",
-        action="store_false",
-        help="Allow online downloads if assets are not cached",
     )
     parser.add_argument(
         "--max-length",

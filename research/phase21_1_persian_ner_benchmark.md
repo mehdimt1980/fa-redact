@@ -74,7 +74,7 @@ A strict legal and provenance distinction is maintained:
 
 ## 7. Investigation of the 7,145 vs 9,979 Example Count
 
-An analysis was conducted to investigate the discrepancy between canonical descriptions and mirror metadata:
+An analysis was conducted regarding the discrepancy between canonical descriptions and mirror metadata:
 - **Canonical PEYMA Description:** HooshvareLab ParsBERT documentation and original papers describe PEYMA as containing **7,145 sentences** and 302,530 tokens.
 - **ParsiAI Metadata Description:** The Hugging Face dataset card for `ParsiAI/PEYMA` reports:
   - `train`: 8,028 examples
@@ -83,9 +83,9 @@ An analysis was conducted to investigate the discrepancy between canonical descr
   - Total: **9,979 examples**
 - **Findings:**
   - In the pinned CoNLL file `data/test.txt`, sentences are demarcated by empty lines, totaling exactly 1,026 sentences and 33,202 tokens.
-  - The discrepancy between 7,145 total canonical sentences and 9,979 mirror examples arises from differing sentence segmentation/chunking heuristics applied during conversion from raw text into CoNLL format, document-level re-splitting, or differing sentence boundary definitions.
-  - Because original 2018 raw annotation logs are not embedded in the mirror, this discrepancy cannot be definitively resolved from mirror metadata alone.
-  - Therefore, this benchmark is conservatively designated as an **"evaluation on the pinned ParsiAI/PEYMA test redistribution"** (1,026 sentences) rather than a proven identical reproduction of the 2018 canonical split.
+  - The reason for the 7,145-vs-9,979 discrepancy was not established in Phase 21.1.
+  - *Hypotheses (unproven):* Possible explanations include different preprocessing, sentence segmentation, split construction, or mirror metadata differences.
+  - Therefore, this benchmark scope remains strictly designated as an **"evaluation on the pinned ParsiAI/PEYMA test redistribution"** (1,026 sentences) rather than a proven identical reproduction of the 2018 canonical split.
 
 ---
 
@@ -99,7 +99,7 @@ The Phase 21.1 evaluated test file similarly contains:
 - **Test sentences:** 1,026
 - **Gold PERSON entities:** 434 (with 297 $I\_\text{PER}$ continuations)
 
-This provides independent corroborating evidence that the pinned `ParsiAI/PEYMA` test split corresponds directly to the standard PEYMA test benchmark used across the Persian NLP community.
+This provides evidence that the pinned `ParsiAI/PEYMA` test split is strongly consistent with a commonly used PEYMA test split based on matching sentence and PERSON-tag counts. Matching aggregate counts do not prove byte-for-byte corpus identity.
 
 ---
 
@@ -140,11 +140,10 @@ The acquisition phase was executed as an explicit setup step completely separate
 
 ## 12. Offline Inference Procedure
 
-Inference-time network isolation was strictly enforced:
-- Environment variable `HF_HUB_OFFLINE=1` was set.
-- Hugging Face loading calls explicitly set `local_files_only=True`.
+Inference-time local execution was configured as follows:
+- The environment variable `HF_HUB_OFFLINE=1` was set during execution.
+- The benchmark runner uses `local_files_only=True` and contains no explicit inference-time network request path.
 - The model operated in `eval()` mode with `torch.no_grad()`.
-- Zero outbound network requests, cloud APIs, telemetry, or remote lookups occurred during execution.
 
 ---
 
@@ -154,20 +153,20 @@ The PEYMA test split is distributed in CoNLL format (`token|tag` lines separated
 1. **Canonical Evaluation String Reconstruction:** Tokens are joined with single spaces:
    $$\text{reconstructed\_text} = \text{" ".join}(\text{tokens})$$
 2. **Offset Tracking:** Each token is mapped to Unicode code-point character start/end offsets in `reconstructed_text`.
-3. **Gold Span Assembly:** Contiguous sequences tagged with `B_PER` / `I_PER` are assembled into exact `EntitySpan(start, end, type="PERSON")` objects.
-4. **Scope Note:** All reported character offsets represent exact spans on the deterministically reconstructed PEYMA evaluation string, rather than byte-for-byte positions in original raw news feeds.
+3. **Gold Span Assembly:** Contiguous sequences tagged with `B_PER` / `I_PER` are assembled into exact `EntitySpan(start, end, type="PERSON")` objects using strict BIO parsing.
+4. **Scope Note:** All reported character offsets represent exact spans on the deterministically reconstructed PEYMA evaluation string (`" ".join(tokens)`), rather than byte-for-byte positions in original raw news feeds.
 
 ---
 
-## 14. Token/Subword-to-Span Mapping & Alignment Audit
+## 14. Token/Subword-to-Span Mapping & Structural Fast-Tokenizer Offset Audit
 
-The benchmark runner implements strict subword-to-span mapping and deep alignment auditing:
+The benchmark runner implements strict subword-to-span mapping and a structural fast-tokenizer offset audit:
 1. Fast tokenizer extracts character offsets using `return_offsets_mapping=True`.
 2. Special tokens (`[CLS]`, `[SEP]`, padding) with `(0, 0)` offsets are filtered.
 3. Every non-special token offset is checked for:
    - Bounds validity: $0 \le \text{start} \le \text{end} \le \text{len}(\text{text})$
    - Monotonicity: $\text{start} \ge \text{previous\_end}$
-   - Character slice validity: $\text{text}[\text{start}:\text{end}]$ matches expected length.
+   - Character slice validity: $\text{text}[\text{start}:\text{end}]$ matches expected non-empty length.
 4. `B_PER` triggers a new active entity span `[start, end]`.
 5. Subsequent `I_PER` subwords extend `end = token_offset[1]`.
 6. Leading `I_PER` tokens without preceding `B_PER` are counted and recovered.
@@ -175,14 +174,14 @@ The benchmark runner implements strict subword-to-span mapping and deep alignmen
 
 ---
 
-## 15. Truncation & Offset Audit Results
+## 15. Truncation & Structural Offset Audit Results
 
-- **Basic Offset Validation Failures:** **0**
-- **Tokenizer Alignment Failures:** **0**
+- **Basic Offset Validation Failures:** **0** (verifies non-empty string slices within text bounds)
+- **Tokenizer Alignment Failures:** **0** (verifies monotonic, non-overlapping subword offset sequences; zero structural offset violations observed)
 - **Maximum Tokenized Sequence Length:** **153 tokens** (well below the 512 max length limit)
 - **Truncated Sentences:** **0** (100% of corpus tokens were presented to the model without truncation)
 - **Leading-I Recoveries:** **0**
-- **Duplicate Predictions:** **0**
+- **Duplicate Predictions:** **0** (measured by counting exact $(s, e, t)$ duplicate predictions per sentence)
 
 ---
 
@@ -223,16 +222,16 @@ The empirical benchmark produced the following exact results on the held-out PEY
 
 ## 18. Metric Separation: Published vs. Mofid vs. Phase 21.1
 
-It is critical to distinguish non-comparable evaluation protocols:
+It is critical to clearly separate the three distinct result families:
 
 | Benchmark / Source | Evaluation Protocol | Scope | Reported F1 |
 | :--- | :--- | :--- | :--- |
-| **Published Model Card** (`HooshvareLab`) | Multi-class token classification aggregation | All 7 entity classes on PEYMA test | **93.40%** |
-| **Published Model Card** (`HooshvareLab`) | Isolated PERSON class | *Not reported separately* | *N/A* |
-| **Mofid-AI Benchmark** | Multi-class token classification aggregation | Macro/Micro F1 across all tokens | **75.83% - 77.60%** |
-| **Phase 21.1 Empirical Benchmark** | **PERSON-only exact-span entity matching** | Exact $(s, e, \text{PERSON})$ triples | **99.19%** |
+| **Published HooshvareLab Model Card** | Published HooshvareLab overall PEYMA F1 | Overall PEYMA test split | **93.40%** |
+| **Published HooshvareLab Model Card** | Isolated PERSON class | *Not reported in table* | *N/A* |
+| **Mofid-AI Benchmark** | Multi-class token classification metrics (accuracy, weighted/micro/macro P/R/F1) | Token-level classification across all classes | **75.83% - 77.60%** |
+| **Phase 21.1 Empirical Benchmark** | **PERSON-only exact-span entity matching** | Exact $(s, e, \text{PERSON})$ triples on reconstructed text | **99.19%** |
 
-*Methodological Note:* These metrics cannot be directly compared against one another. Token classification metrics average across all tokens (including dense non-name classes), whereas Phase 21.1 evaluates strict entity-level exact boundary matching specifically for personal names.
+*Protocol Note:* Published HooshvareLab overall PEYMA F1: 93.40%. Exact scoring protocol is not fully specified in the model-card result table, so it must not be treated as directly comparable with Phase 21.1's PERSON-only exact-span entity metric. Token classification metrics (such as Mofid-AI's) evaluate individual token label predictions, whereas Phase 21.1 evaluates strict entity-level exact boundary matching specifically for personal names.
 
 ---
 
