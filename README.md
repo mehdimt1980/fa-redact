@@ -37,8 +37,9 @@
   - [6. Conservative ASCII Email Validation & Detection (Opt-in / Unreleased)](#6-conservative-ascii-email-validation--detection-opt-in--unreleased)
   - [7. Bank Card / PAN Validation & Detection (Opt-in / Unreleased)](#7-bank-card--pan-validation--detection-opt-in--unreleased)
   - [8. Configurable Institutional / Healthcare Identifiers (Opt-in / Unreleased)](#8-configurable-institutional--healthcare-identifiers-opt-in--unreleased)
-  - [9. Redaction Semantics](#9-redaction-semantics)
-  - [10. Stateful Pseudonymization Sessions](#10-stateful-pseudonymization-sessions)
+  - [9. Explicit Detection Conflict Resolution (Opt-in / Unreleased)](#9-explicit-detection-conflict-resolution-opt-in--unreleased)
+  - [10. Redaction Semantics](#10-redaction-semantics)
+  - [11. Stateful Pseudonymization Sessions](#11-stateful-pseudonymization-sessions)
 - [Custom Detectors](#custom-detectors)
 - [Healthcare & AI/LLM Usage Pattern](#healthcare--aillm-usage-pattern)
 - [Current Coverage & Limitations](#current-coverage--limitations)
@@ -115,8 +116,8 @@ Sanitize text by replacing detected spans with deterministic, typed placeholders
 from fa_redact import redact
 
 text = "کد ملی: ۱۲۳۴۵۶۷۸۹۱، تماس: ۰۹۱۲۳۴۵۶۷۸۹، تماس مجدد: 09123456789"
-safe_text = redact(text)
-print(safe_text)
+redacted_text = redact(text)
+print(redacted_text)
 # Output: "کد ملی: [IR_NATIONAL_ID_1]، تماس: [IR_MOBILE_1]، تماس مجدد: [IR_MOBILE_1]"
 ```
 
@@ -249,7 +250,7 @@ detections = detect(text)
 # Returns: [Detection(type='IR_IBAN', value='IR641234567890123456789012', ...), Detection(type='IR_MOBILE', ...)]
 
 # 3. Default Redaction & Pseudonymization
-safe_text = redact(text)
+redacted_text = redact(text)
 # Output: "شماره شبا واریز: [IR_IBAN_1] و تماس [IR_MOBILE_1]"
 
 session = PseudonymizationSession()
@@ -295,7 +296,7 @@ detections = detect(text, detectors=[EmailDetector()])
 # Returns: [Detection(type='EMAIL', value='dr.ahmadi@hospital.ir', ...)]
 
 # 3. Opt-in Redaction & Pseudonymization
-safe_text = redact(text, detectors=[EmailDetector()])
+redacted_text = redact(text, detectors=[EmailDetector()])
 # Output: "مکاتبه با دکتر احمدی: [EMAIL_1] و تماس 09123456789"
 
 session = PseudonymizationSession()
@@ -480,7 +481,7 @@ Greedily selects the longest matching span and discards shorter overlapping cand
 
 ```python
 # Longest policy selects the full EMAIL span (length 28) over BANK_CARD (length 16)
-safe_text = redact(text, detectors=detectors, conflict_policy="longest")
+redacted_longest = redact(text, detectors=detectors, conflict_policy="longest")
 # Output: "ایمیل: [EMAIL_1]"
 ```
 
@@ -731,8 +732,9 @@ This project is licensed under the [MIT License](LICENSE).
   - [۶. اعتبارسنجی و تشخیص آدرس ایمیل اسکی (اختیاری / در حال توسعه)](#۶-اعتبارسنجی-و-تشخیص-آدرس-ایمیل-اسکی-اختیاری--در-حال-توسعه)
   - [۷. اعتبارسنجی و تشخیص شماره کارت بانکی / PAN (اختیاری / در حال توسعه)](#۷-اعتبارسنجی-و-تشخیص-شماره-کارت-بانکی--pan-اختیاری--در-حال-توسعه)
   - [۸. شناسه‌های سازمانی / درمانی قابل پیکربندی (اختیاری / در حال توسعه)](#۸-شناسه‌های-سازمانی--درمانی-قابل-پیکربندی-اختیاری--در-حال-توسعه)
-  - [۹. بازسازی دقیق بر اساس span در پنهان‌سازی](#۹-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
-  - [۱۰. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۱۰-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
+  - [۹. حل صریح تعارض تشخیص‌ها (اختیاری / در حال توسعه)](#۹-حل-صریح-تعارض-تشخیص‌ها-اختیاری--در-حال-توسعه)
+  - [۱۰. بازسازی دقیق بر اساس span در پنهان‌سازی](#۱۰-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
+  - [۱۱. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۱۱-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
 - [جدول پوشش و محدودیت‌ها در نسخه v0.1.0](#جدول-پوشش-و-محدودیت‌ها-در-نسخه-v010)
@@ -817,8 +819,8 @@ for item in detections:
 from fa_redact import redact
 
 text = "کد ملی: ۱۲۳۴۵۶۷۸۹۱، تماس: ۰۹۱۲۳۴۵۶۷۸۹، تماس مجدد: 09123456789"
-safe_text = redact(text)
-print(safe_text)
+redacted_text = redact(text)
+print(redacted_text)
 # خروجی: "کد ملی: [IR_NATIONAL_ID_1]، تماس: [IR_MOBILE_1]، تماس مجدد: [IR_MOBILE_1]"
 ```
 
@@ -953,7 +955,7 @@ detections = detect(text)
 # خروجی: [Detection(type='IR_IBAN', ...), Detection(type='IR_MOBILE', ...)]
 
 # ۳. پنهان‌سازی و نام‌مستعارسازی پیش‌فرض:
-safe_text = redact(text)
+redacted_text = redact(text)
 # خروجی: "شماره شبا واریز: [IR_IBAN_1] و تماس [IR_MOBILE_1]"
 
 session = PseudonymizationSession()
@@ -999,7 +1001,7 @@ detections = detect(text, detectors=[EmailDetector()])
 # خروجی: [Detection(type='EMAIL', value='dr.ahmadi@hospital.ir', ...)]
 
 # ۳. پنهان‌سازی و نام‌مستعارسازی اختیاری:
-safe_text = redact(text, detectors=[EmailDetector()])
+redacted_text = redact(text, detectors=[EmailDetector()])
 # خروجی: "مکاتبه با دکتر احمدی: [EMAIL_1] و تماس 09123456789"
 
 session = PseudonymizationSession()
