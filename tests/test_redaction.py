@@ -449,3 +449,29 @@ def test_redact_repeated_same_iban_referential_consistency() -> None:
     )
     expected = "شبا لاتین: [IR_IBAN_1]، شبا فارسی: [IR_IBAN_1]"
     assert redact(text) == expected
+
+
+def test_redact_single_bank_card_opt_in() -> None:
+    """Verify explicit redact() replaces 16-digit card with [BANK_CARD_1]."""
+    from fa_redact import BankCardDetector
+
+    text = "شماره کارت: 1234567890123452"
+    assert redact(text, detectors=[BankCardDetector()]) == "شماره کارت: [BANK_CARD_1]"
+
+
+def test_redact_multiple_distinct_bank_cards() -> None:
+    """Verify multiple distinct bank cards receive sequential placeholders."""
+    from fa_redact import BankCardDetector
+
+    text = "کارت اول: 1234567890123452، کارت دوم: 5022291234567897"
+    expected = "کارت اول: [BANK_CARD_1]، کارت دوم: [BANK_CARD_2]"
+    assert redact(text, detectors=[BankCardDetector()]) == expected
+
+
+def test_redact_repeated_same_bank_card_referential_consistency() -> None:
+    """Verify repeated ASCII and Persian representations share [BANK_CARD_1]."""
+    from fa_redact import BankCardDetector
+
+    text = "کارت لاتین: 1234567890123452، کارت فارسی: ۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲"
+    expected = "کارت لاتین: [BANK_CARD_1]، کارت فارسی: [BANK_CARD_1]"
+    assert redact(text, detectors=[BankCardDetector()]) == expected

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- 16-digit payment card (PAN) validator (`is_valid_bank_card_number`) supporting compact 16-digit electronic format with standard Luhn checksum validation and defensive all-identical digit sequence rejection (Phase 14).
+- `BankCardDetector` scanning position-preserving normalized text for 16-digit candidate sequences and producing `BANK_CARD` detections with Persian and Arabic-Indic digit support (Phase 14).
+- Opt-in bank card detection support in `detect()`, `redact()`, and `PseudonymizationSession.pseudonymize()` via explicit `detectors=[BankCardDetector()]` usage (Phase 14).
+- Typed `[BANK_CARD_<INDEX>]` placeholder generation during redaction and pseudonymization when `BankCardDetector` is explicitly enabled (Phase 14).
+- Public root exports `BankCardDetector` and `is_valid_bank_card_number` from the `fa_redact` package namespace (Phase 14).
 - Iranian IBAN (Sheba) validator (`is_valid_iranian_iban`) supporting compact electronic format (`IR` + 24 digits = 26 characters) with streaming MOD-97 checksum validation (Phase 13).
 - `IranianIBANDetector` scanning position-preserving normalized text for Iranian IBAN candidates and producing `IR_IBAN` detections with Persian and Arabic-Indic digit support (Phase 13).
 - Inclusion of `IranianIBANDetector` in the default detector set across `detect()`, `redact()`, and `PseudonymizationSession` (Phase 13).
@@ -20,8 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public root exports `EmailDetector` and `is_valid_email` from the `fa_redact` package namespace (Phase 12).
 
 ### Changed
-- `_DEFAULT_DETECTORS` pipeline set updated to include `IranianIBANDetector` alongside `IranianNationalIDDetector` and `IranianMobileNumberDetector` (Phase 13).
-- Note: `EmailDetector` remains strictly opt-in in Phase 12/13 and is not included in the default detector set to prevent unhandled overlaps with numeric-local-part email addresses prior to general conflict resolution (Phase 12).
+- Note: `BankCardDetector` and `EmailDetector` remain strictly opt-in in Phase 14 and are not included in the default detector set to prevent unhandled overlaps and avoid false positives on generic numeric sequences without BIN/issuer context (Phase 14).
+- No BIN/IIN lookup or issuer verification is performed; validation confirms structural 16-digit format and Luhn checksum only (Phase 14).
+- `_DEFAULT_DETECTORS` pipeline set remains `(IranianNationalIDDetector, IranianMobileNumberDetector, IranianIBANDetector)` (Phase 13/14).
 
 ## [0.1.0] - 2026-09-05
 
