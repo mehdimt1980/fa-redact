@@ -475,3 +475,18 @@ def test_redact_repeated_same_bank_card_referential_consistency() -> None:
     text = "کارت لاتین: 1234567890123452، کارت فارسی: ۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲"
     expected = "کارت لاتین: [BANK_CARD_1]، کارت فارسی: [BANK_CARD_1]"
     assert redact(text, detectors=[BankCardDetector()]) == expected
+
+
+def test_redact_with_pattern_detector_opt_in() -> None:
+    """Verify redact() with custom PatternDetector produces typed placeholders."""
+    from fa_redact import PatternDetector, PatternRule
+
+    detector = PatternDetector(
+        [
+            PatternRule(type="MRN", pattern=r"(?<!\w)MRN-[0-9]{6}(?!\w)"),
+            PatternRule(type="PATIENT_ID", pattern=r"(?<!\w)PAT-[0-9]{8}(?!\w)"),
+        ]
+    )
+    text = "پرونده: MRN-123456 و بیمار: PAT-12345678"
+    expected = "پرونده: [MRN_1] و بیمار: [PATIENT_ID_1]"
+    assert redact(text, detectors=[detector]) == expected

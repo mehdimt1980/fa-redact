@@ -21,6 +21,8 @@ def test_package_all_export() -> None:
         "IranianIBANDetector",
         "IranianMobileNumberDetector",
         "IranianNationalIDDetector",
+        "PatternDetector",
+        "PatternRule",
         "PseudonymizationSession",
         "detect",
         "is_valid_bank_card_number",
@@ -70,6 +72,12 @@ def test_subpackage_imports() -> None:
     from fa_redact.detectors import (
         IranianNationalIDDetector as SubNidDetector,
     )
+    from fa_redact.detectors import (
+        PatternDetector as SubPatternDetector,
+    )
+    from fa_redact.detectors import (
+        PatternRule as SubPatternRule,
+    )
     from fa_redact.validators import (
         is_valid_bank_card_number as sub_card_val,
     )
@@ -96,3 +104,5 @@ def test_subpackage_imports() -> None:
     assert SubIbanDetector is not None
     assert SubMobileDetector is not None
     assert SubNidDetector is not None
+    assert SubPatternDetector is not None
+    assert SubPatternRule is not None

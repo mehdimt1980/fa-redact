@@ -667,3 +667,24 @@ def test_pseudonymize_bank_card_and_email_overlap_fails_and_rolls_back() -> None
     assert session._identity_to_placeholder == {}
     assert session._counters_by_type == {}
     assert session._reserved_placeholders == set()
+
+
+def test_pseudonymize_pattern_detector_cross_turn_and_restore() -> None:
+    """Verify PatternDetector supports multi-turn pseudonymization and restoration."""
+    from fa_redact import PatternDetector, PatternRule
+
+    detector = PatternDetector(
+        [
+            PatternRule(type="MRN", pattern=r"(?<!\w)MRN-[0-9]{6}(?!\w)"),
+        ]
+    )
+    session = PseudonymizationSession()
+
+    turn1 = session.pseudonymize("پرونده اولیه: MRN-۱۲۳۴۵۶", detectors=[detector])
+    assert turn1 == "پرونده اولیه: [MRN_1]"
+
+    turn2 = session.pseudonymize("پرونده مجدد: MRN-123456", detectors=[detector])
+    assert turn2 == "پرونده مجدد: [MRN_1]"
+
+    restored = session.restore("نتیجه آزمایش [MRN_1]")
+    assert restored == "نتیجه آزمایش MRN-۱۲۳۴۵۶"
