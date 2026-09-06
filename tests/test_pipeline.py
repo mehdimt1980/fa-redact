@@ -407,3 +407,38 @@ def test_bank_card_and_email_overlap_behavior() -> None:
     # redact() fails loudly on overlaps
     with pytest.raises(ValueError, match=r"[Oo]verlap"):
         redact(text, detectors=detectors)
+
+
+def test_pattern_detector_remains_absent_from_defaults() -> None:
+    """Verify PatternDetector remains opt-in and is not run by default in detect()."""
+    text = "پرونده: MRN-123456 و شبا: IR641234567890123456789012"
+    results = detect(text)
+    # Only IBAN should be detected by default
+    assert len(results) == 1
+    assert results[0].type == "IR_IBAN"
+
+
+def test_pattern_detector_pipeline_explicit_combination() -> None:
+    """Verify explicit combination of built-ins and PatternDetector in detect()."""
+    from fa_redact import (
+        IranianIBANDetector,
+        IranianMobileNumberDetector,
+        IranianNationalIDDetector,
+        PatternDetector,
+        PatternRule,
+    )
+
+    text = "کد ملی: ۱۲۳۴۵۶۷۸۹۱، پرونده: MRN-123456"
+    custom_detector = PatternDetector(
+        [PatternRule(type="MRN", pattern=r"(?<!\w)MRN-[0-9]{6}(?!\w)")]
+    )
+    detectors: list[Detector] = [
+        IranianNationalIDDetector(),
+        IranianMobileNumberDetector(),
+        IranianIBANDetector(),
+        custom_detector,
+    ]
+    results = detect(text, detectors=detectors)
+    assert len(results) == 2
+    assert results[0].type == "IR_NATIONAL_ID"
+    assert results[1].type == "MRN"

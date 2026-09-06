@@ -36,8 +36,9 @@
   - [5. Iranian IBAN / Sheba Validation & Detection (Unreleased)](#5-iranian-iban--sheba-validation--detection-unreleased)
   - [6. Conservative ASCII Email Validation & Detection (Opt-in / Unreleased)](#6-conservative-ascii-email-validation--detection-opt-in--unreleased)
   - [7. Bank Card / PAN Validation & Detection (Opt-in / Unreleased)](#7-bank-card--pan-validation--detection-opt-in--unreleased)
-  - [8. Redaction Semantics](#8-redaction-semantics)
-  - [9. Stateful Pseudonymization Sessions](#9-stateful-pseudonymization-sessions)
+  - [8. Configurable Institutional / Healthcare Identifiers (Opt-in / Unreleased)](#8-configurable-institutional--healthcare-identifiers-opt-in--unreleased)
+  - [9. Redaction Semantics](#9-redaction-semantics)
+  - [10. Stateful Pseudonymization Sessions](#10-stateful-pseudonymization-sessions)
 - [Custom Detectors](#custom-detectors)
 - [Healthcare & AI/LLM Usage Pattern](#healthcare--aillm-usage-pattern)
 - [Current Coverage & Limitations](#current-coverage--limitations)
@@ -367,15 +368,100 @@ restored = session.restore("تایید واریز به [BANK_CARD_1]")
 - **Issuer Neutrality**: `BankCardDetector` uses issuer-neutral terminology and entities (`BANK_CARD`). The library does not maintain an Iranian BIN/IIN registry and does not verify whether a card was issued by an Iranian bank or any specific card network.
 - **Privacy & Financial Disclaimer**: `is_valid_bank_card_number` performs purely local, offline mathematical checksum validation. It does not perform payment gateway verification, card activation status checks, CVV2/expiry checks, or account balance lookups. Checksum validity does not prove that a payment card exists, is active, or belongs to a specific cardholder.
 
-#### 8. Redaction Semantics
+#### 8. Configurable Institutional / Healthcare Identifiers (Opt-in / Unreleased)
+
+> [!NOTE]
+> **Unreleased / Development Version (Phase 15)**: Configurable institutional identifier detection (`PatternRule` and `PatternDetector`) is introduced in the unreleased development cycle and is not part of published PyPI release `0.1.0`.
+
+MRNs (Medical Record Numbers), Patient IDs, Admission IDs, Encounter IDs, Case IDs, and similar clinical/enterprise identifiers are institution-specific. `fa-redact` does not pretend there is one universal regex for them, nor does it hardcode synthetic assumptions into package defaults.
+
+Instead, `fa-redact` provides a lightweight, immutable configuration layer (`PatternRule` and `PatternDetector`) allowing hospitals and applications to supply their own identifier patterns:
+
+```python
+import re
+from fa_redact import (
+    PatternDetector,
+    PatternRule,
+    PseudonymizationSession,
+    detect,
+    redact,
+)
+
+# 1. Define institution-specific identifier rules
+hospital_detector = PatternDetector(
+    [
+        # Standard full-match identifier (MRN)
+        PatternRule(
+            type="MRN",
+            pattern=r"(?<!\w)MRN-[0-9]{6}(?!\w)",
+        ),
+        # Context-aware rule extracting only the ID using a capture group
+        PatternRule(
+            type="PATIENT_ID",
+            pattern=r"Patient\s*ID\s*:\s*(?P<id>PAT-[A-Z]{2}-[0-9]{8})",
+            group="id",
+            flags=re.IGNORECASE,
+        ),
+        # Admission ID
+        PatternRule(
+            type="ADMISSION_ID",
+            pattern=r"(?<!\w)ADM-20[0-9]{2}-[0-9]{6}(?!\w)",
+        ),
+        # Encounter ID
+        PatternRule(
+            type="ENCOUNTER_ID",
+            pattern=r"(?<!\w)ENC-[0-9]{10}(?!\w)",
+        ),
+    ]
+)
+
+# 2. Detect with normalized Persian digits matching ASCII regexes
+text = "پرونده: MRN-۱۲۳۴۵۶ و Patient ID: PAT-TE-12345678"
+detections = detect(text, detectors=[hospital_detector])
+# Returns:
+# - Detection(type='MRN', value='MRN-۱۲۳۴۵۶', normalized_value='MRN-123456', span=[8:18])
+# - Detection(type='PATIENT_ID', value='PAT-TE-12345678', normalized_value='PAT-TE-12345678', span=[33:48])
+
+# 3. Redact (leaving context labels like 'Patient ID: ' untouched)
+redacted = redact(text, detectors=[hospital_detector])
+# Output: "پرونده: [MRN_1] و Patient ID: [PATIENT_ID_1]"
+
+# 4. Stateful Pseudonymization across mixed scripts
+session = PseudonymizationSession()
+# Turn 1: Persian digits
+turn1 = session.pseudonymize("پرونده: MRN-۱۲۳۴۵۶", detectors=[hospital_detector])
+# Output: "پرونده: [MRN_1]"
+
+# Turn 2: ASCII digits (resolves to same [MRN_1] identity)
+turn2 = session.pseudonymize("پیگیری پرونده MRN-123456", detectors=[hospital_detector])
+# Output: "پیگیری پرونده [MRN_1]"
+
+# Restore recovers first-observed Persian representation locally
+restored = session.restore("پاسخ به [MRN_1]")
+# Output: "پاسخ به MRN-۱۲۳۴۵۶"
+```
+
+- **Opt-in Architecture**: `PatternDetector` is strictly **opt-in** and is not included in `_DEFAULT_DETECTORS`. Explicit `detectors=[hospital_detector]` replaces default detectors for that call.
+- **Position-Preserving Digit Normalization**: By default (`source="normalized"`), patterns match against position-preserving normalized text. A single ASCII regex such as `MRN-[0-9]{6}` matches Persian (`MRN-۱۲۳۴۵۶`), Arabic-Indic (`MRN-١٢٣٤٥٦`), and ASCII (`MRN-123456`) forms, preserving surface script in `Detection.value` and mapping to identical `(type, normalized_value)` pseudonym identities.
+- **Raw Matching Mode**: For institutions requiring candidate matching strictly on unnormalized text, `source="original"` is supported.
+- **Context-Aware Capture Groups**: Supports integer indices (`group=1`) and named capture groups (`group="id"`), allowing the detector to match context prefixes (e.g. `Patient ID: `) while extracting only the identifier into the detection span. Nonparticipating capture groups fail loud with a `ValueError`.
+- **Regex Boundary Ownership**: `PatternDetector` does not wrap configured patterns with word boundaries (`\b` or `(?<!\w)`). Institutions own full regex semantics.
+- **Pre-Compiled & Immutable**: `PatternRule` is an immutable frozen dataclass. Rules are compiled once during `PatternDetector` construction and safely snapshot caller lists against external mutation.
+
+> [!WARNING]
+> - **Synthetic Demonstration Patterns Only**: The example patterns shown above (`MRN-[0-9]{6}`, `PAT-AB-...`) are purely synthetic demonstration examples. They are **not** healthcare standards.
+> - **Trusted Configuration Security Notice**: Pattern rules are trusted application configuration. Python's standard `re` engine does not provide a built-in match timeout. Do not execute arbitrary unreviewed regexes supplied by untrusted users, tenants, LLMs, or external configuration sources.
+> - **Offline Syntactic Matching Only**: A regex match proves only that configured syntax matched. It does not perform HIS/FHIR lookups, database queries, or network requests, and does not verify that a patient, encounter, admission, or hospital record exists.
+
+#### 9. Redaction Semantics
 
 - **Exact Span Reconstruction**: `redact()` rebuilds the output from the original Detection spans, preserving untouched source slices exactly and replacing only detected spans. It does not perform global value-based `str.replace()`.
-- **Typed Placeholders**: Placeholders follow the format `[<TYPE>_<INDEX>]` (e.g., `[IR_NATIONAL_ID_1]`, `[IR_MOBILE_1]`, `[IR_IBAN_1]`, `[EMAIL_1]`, `[BANK_CARD_1]`).
+- **Typed Placeholders**: Placeholders follow the format `[<TYPE>_<INDEX>]` (e.g., `[IR_NATIONAL_ID_1]`, `[IR_MOBILE_1]`, `[IR_IBAN_1]`, `[EMAIL_1]`, `[BANK_CARD_1]`, `[MRN_1]`).
 - **Deterministic Numbering**: Identifiers receive sequential numbering based on their order of first appearance.
 - **Collision Avoidance**: If an input already contains a literal string matching the placeholder syntax, newly generated placeholders increment past the colliding index.
 - **Fail-Loud on Overlap**: If overlapping or duplicate spans are passed to `redact()`, it raises a `ValueError`.
 
-#### 9. Stateful Pseudonymization Sessions
+#### 10. Stateful Pseudonymization Sessions
 
 `PseudonymizationSession` manages persistent mappings across multi-turn AI interactions:
 
@@ -473,7 +559,8 @@ Local Hospital / Trusted Boundary
 | **Email Addresses** | ❌ Not Supported | 🧪 Supported (Opt-in) | Conservative ASCII email validation and detection (`detectors=[EmailDetector()]`) |
 | **Personal Names** | ❌ Not Supported | ❌ Not Supported | Planned for future versions (requires NER/contextual models) |
 | **Postal Addresses** | ❌ Not Supported | ❌ Not Supported | Unstructured spatial entities |
-| **Medical Record Numbers (MRN)** | ❌ Not Supported | ❌ Not Supported | Institution-specific (use custom detectors) |
+| **Medical Record Numbers (MRN)** | ❌ Not Supported | 🧪 Configurable (Opt-in) | User-defined `PatternRule`; no universal format |
+| **Patient / Admission / Encounter IDs** | ❌ Not Supported | 🧪 Configurable (Opt-in) | Institution-specific rules via `PatternDetector` |
 | **Health Insurance Numbers** | ❌ Not Supported | ❌ Not Supported | Institution-specific |
 | **16-digit Bank Card (PAN)** | ❌ Not Supported | 🧪 Supported (Opt-in) | 16-digit compact PAN + Luhn; no BIN/IIN or issuer verification (`detectors=[BankCardDetector()]`) |
 | **Dates of Birth** | ❌ Not Supported | ❌ Not Supported | Planned for future release |
@@ -566,8 +653,9 @@ This project is licensed under the [MIT License](LICENSE).
   - [۵. اعتبارسنجی و تشخیص شماره شبا / IBAN ایران (در حال توسعه)](#۵-اعتبارسنجی-و-تشخیص-شماره-شبا--iban-ایران-در-حال-توسعه)
   - [۶. اعتبارسنجی و تشخیص آدرس ایمیل اسکی (اختیاری / در حال توسعه)](#۶-اعتبارسنجی-و-تشخیص-آدرس-ایمیل-اسکی-اختیاری--در-حال-توسعه)
   - [۷. اعتبارسنجی و تشخیص شماره کارت بانکی / PAN (اختیاری / در حال توسعه)](#۷-اعتبارسنجی-و-تشخیص-شماره-کارت-بانکی--pan-اختیاری--در-حال-توسعه)
-  - [۸. بازسازی دقیق بر اساس span در پنهان‌سازی](#۸-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
-  - [۹. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۹-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
+  - [۸. شناسه‌های سازمانی / درمانی قابل پیکربندی (اختیاری / در حال توسعه)](#۸-شناسه‌های-سازمانی--درمانی-قابل-پیکربندی-اختیاری--در-حال-توسعه)
+  - [۹. بازسازی دقیق بر اساس span در پنهان‌سازی](#۹-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
+  - [۱۰. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۱۰-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
 - [جدول پوشش و محدودیت‌ها در نسخه v0.1.0](#جدول-پوشش-و-محدودیت‌ها-در-نسخه-v010)
@@ -907,11 +995,96 @@ restored = session.restore("تایید واریز به [BANK_CARD_1]")
 - **بی‌طرفی نسبت به صادرکننده (Issuer Neutrality)**: شناسه‌ها و نام‌گذاری‌ها به صورت خنثی (`BANK_CARD`) طراحی شده‌اند. این کتابخانه پایگاه داده BIN/IIN بانکی نگهداری نمی‌کند و تعلقی به یک بانک ایرانی یا شبکهٔ خاص را تایید نمی‌کند.
 - **سلب مسئولیت بانکی و امنیتی**: معتبر بودن الگوریتم Luhn به معنی واقعی بودن کارت، فعال بودن آن، تعلق آن به بانک ایرانی، مالکیت آن توسط شخص مشخص یا وجود حساب مرتبط با آن نیست. این تابع صرفاً اعتبارسنجی محلی و آفلاین ریاضی انجام می‌دهد و هیچ‌گونه اتصال به درگاه پرداخت، استعلام CVV2 یا بررسی وضعیت حساب انجام نمی‌دهد.
 
-#### ۸. بازسازی دقیق بر اساس span در پنهان‌سازی
+#### ۸. شناسه‌های سازمانی / درمانی قابل پیکربندی (اختیاری / در حال توسعه)
+
+> [!NOTE]
+> **نسخهٔ در حال توسعه (Phase 15)**: تشخیص شناسه‌های سازمانی و درمانی قابل پیکربندی (`PatternRule` و `PatternDetector`) در چرخهٔ توسعهٔ منتشرنشده اضافه شده و در نسخهٔ فعلی منتشرشده در PyPI (`0.1.0`) وجود ندارد.
+
+شماره پرونده پزشکی (MRN)، شناسه بیمار، شناسه پذیرش، شناسه مراجعه / Encounter، شناسه پرونده و سایر شناسه‌های درمانی و سازمانی کاملاً وابسته به سازمان یا بیمارستان مربوطه هستند. **برای این شناسه‌ها قالب واحد و جهانی وجود ندارد** و کتابخانهٔ `fa-redact` الگوهای حدسی یا پیش‌فرض برای آن‌ها تعریف نمی‌کند.
+
+به جای آن، لایهٔ پیکربندی سبک، تغییرناپذیر و مستقلی (`PatternRule` و `PatternDetector`) ارائه شده است تا سازمان یا بیمارستان بتواند الگوهای منظم (Regex) اختصاصی خود را تعریف کند:
+
+```python
+import re
+from fa_redact import (
+    PatternDetector,
+    PatternRule,
+    PseudonymizationSession,
+    detect,
+    redact,
+)
+
+# ۱. تعریف قواعد اختصاصی بیمارستان / سازمان
+hospital_detector = PatternDetector(
+    [
+        # شماره پرونده پزشکی (MRN)
+        PatternRule(
+            type="MRN",
+            pattern=r"(?<!\w)MRN-[0-9]{6}(?!\w)",
+        ),
+        # شناسه بیمار با استفاده از گروه نام‌دار جهت حفظ برچسب 'Patient ID: '
+        PatternRule(
+            type="PATIENT_ID",
+            pattern=r"Patient\s*ID\s*:\s*(?P<id>PAT-[A-Z]{2}-[0-9]{8})",
+            group="id",
+            flags=re.IGNORECASE,
+        ),
+        # شناسه پذیرش
+        PatternRule(
+            type="ADMISSION_ID",
+            pattern=r"(?<!\w)ADM-20[0-9]{2}-[0-9]{6}(?!\w)",
+        ),
+        # شناسه مراجعه / Encounter
+        PatternRule(
+            type="ENCOUNTER_ID",
+            pattern=r"(?<!\w)ENC-[0-9]{10}(?!\w)",
+        ),
+    ]
+)
+
+# ۲. تشخیص بر روی متن با پشتیبانی از ارقام فارسی در متن اصلی
+text = "پرونده: MRN-۱۲۳۴۵۶ و Patient ID: PAT-TE-12345678"
+detections = detect(text, detectors=[hospital_detector])
+# خروجی شامل:
+# - Detection(type='MRN', value='MRN-۱۲۳۴۵۶', normalized_value='MRN-123456', span=[8:18])
+# - Detection(type='PATIENT_ID', value='PAT-TE-12345678', normalized_value='PAT-TE-12345678', span=[33:48])
+
+# ۳. پنهان‌سازی (حفظ برچسب متن 'Patient ID: ' و جایگزینی فقط بخش شناسه)
+redacted = redact(text, detectors=[hospital_detector])
+# خروجی: "پرونده: [MRN_1] و Patient ID: [PATIENT_ID_1]"
+
+# ۴. نام‌مستعارسازی چندمرحله‌ای با ارقام فارسی و انگلیسی
+session = PseudonymizationSession()
+# مرحله اول: با ارقام فارسی
+turn1 = session.pseudonymize("پرونده: MRN-۱۲۳۴۵۶", detectors=[hospital_detector])
+# خروجی: "پرونده: [MRN_1]"
+
+# مرحله دوم: با ارقام لاتین (به همان [MRN_1] متصل می‌شود)
+turn2 = session.pseudonymize("پیگیری پرونده MRN-123456", detectors=[hospital_detector])
+# خروجی: "پیگیری پرونده [MRN_1]"
+
+# بازگردانی به اولین شکل دیده‌شده (ارقام فارسی):
+restored = session.restore("پاسخ به [MRN_1]")
+# خروجی: "پاسخ به MRN-۱۲۳۴۵۶"
+```
+
+- **معماری اختیاری (Opt-in)**: کلاس `PatternDetector` کاملاً اختیاری است و در `_DEFAULT_DETECTORS` قرار ندارد. ارسال `detectors=[hospital_detector]` تشخیص‌دهنده‌های پیش‌فرض را برای آن فراخوانی جایگزین می‌کند.
+- **تطابق روی متن نرمال‌شده (پیش‌فرض)**: در حالت پیش‌فرض (`source="normalized"`), الگوها با متن نرمال‌شده مطابقت داده می‌شوند؛ بنابراین یک رجکس ساده اسکی مانند `MRN-[0-9]{6}` می‌تواند ارقام فارسی (`MRN-۱۲۳۴۵۶`)، عربی (`MRN-١٢٣٤٥٦`) و لاتین (`MRN-123456`) را تشخیص دهد و فرم ظاهری را در `Detection.value` و مقدار نرمال‌شده را در `Detection.normalized_value` حفظ نماید.
+- **حالت تطابق متن خام (source="original")**: در صورت نیاز به بررسی دقیق بر روی متن دست‌نخورده، حالت `source="original"` نیز پشتیبانی می‌شود.
+- **پشتیبانی از گروه‌های انتخابی (Capture Groups)**: امکان استفاده از اندیس عددی (`group=1`) یا گروه نام‌دار (`group="id"`) برای جدا کردن شناسه از کلمات مجاور یا برچسب‌ها. عدم شرکت گروه در تطابق با `ValueError` مواجه خواهد شد.
+- **مالکیت مرزهای رجکس (Boundary Ownership)**: کتابخانه رجکس‌های تعریف‌شده توسط کاربر را در مرزهای کلمه مانند `\b` محصور نمی‌کند؛ کنترل کامل رفتار رجکس بر عهدهٔ سازمان پیکربندی‌کننده است.
+- **کامپایل یکباره و تغییرناپذیری**: کلاس `PatternRule` یک dataclass منجمد (frozen) و تغییرناپذیر است و الگوها در زمان ساخت `PatternDetector` یک‌بار کامپایل و کش می‌شوند.
+
+> [!WARNING]
+> - **الگوهای تستی و نمایشی**: الگوهای مثال ارائه‌شده (`MRN-[0-9]{6}` و ...) صرفاً مثال‌های نمایشی و ساختگی هستند و استاندارد درمانی یا قانونی محسوب نمی‌شوند.
+> - **هشدار امنیتی اعتماد به رجکس**: قواعد `PatternRule` باید بخشی از پیکربندی مورد اعتماد برنامه باشند. موتور استاندارد `re` پایتون timeout داخلی برای اجرای regex ندارد. نباید regex تأییدنشده یا تولیدشده توسط کاربران ناشناس یا LLM بدون بازبینی اجرا شود.
+> - **سلب مسئولیت استعلام و پرونده**: تطابق رجکس صرفاً صحت ساختار متنی را نشان می‌دهد؛ هیچ‌گونه استعلام از سامانه‌های اطلاعات بیمارستانی (HIS)، سرورهای FHIR یا پایگاه‌های داده انجام نمی‌شود و وجود خارجی بیمار یا پرونده تایید نمی‌گردد.
+
+#### ۹. بازسازی دقیق بر اساس span در پنهان‌سازی
 
 خروجی بر اساس بازه‌های دقیق `Detection` از متن اصلی ساخته می‌شود؛ فقط همان spanهای تشخیص‌داده‌شده جایگزین می‌شوند و بخش‌های دیگر متن بدون تغییر کپی می‌شوند. پیاده‌سازی از `str.replace()` سراسری بر اساس مقدار استفاده نمی‌کند.
 
-#### ۹. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی
+#### ۱۰. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی
 
 کلاس `PseudonymizationSession` رفتارهای امنیتی زیر را تضمین می‌کند:
 
@@ -1012,7 +1185,8 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 | **آدرس ایمیل** | ❌ پشتیبانی نمی‌شود | 🧪 پشتیبانی می‌شود (اختیاری) | اعتبارسنجی و تشخیص ایمیل‌های اسکی محافظه‌کارانه (`detectors=[EmailDetector()]`) |
 | **نام اشخاص** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | نیازمند مدل‌های پردازش زبان طبیعی و بازشناسی موجودیت‌های نام‌دار (NER) |
 | **آدرس پستی و موقعیت مکانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | موجودیت‌های غیرساختاریافته |
-| **شماره پرونده پزشکی (MRN)** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی (قابل تعریف با Custom Detector) |
+| **شماره پرونده پزشکی (MRN)** | ❌ پشتیبانی نمی‌شود | 🧪 قابل پیکربندی (اختیاری) | تعریف شده توسط کاربر با `PatternRule`؛ فاقد قالب جهانی |
+| **شناسه‌های بیمار / پذیرش / مراجعه** | ❌ پشتیبانی نمی‌شود | 🧪 قابل پیکربندی (اختیاری) | قواعد ویژهٔ سازمان/بیمارستان با `PatternDetector` |
 | **شماره بیمه درمانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی |
 | **شماره کارت بانکی (PAN)** | ❌ پشتیبانی نمی‌شود | 🧪 پشتیبانی می‌شود (اختیاری) | فرمت فشردهٔ ۱۶ رقمی + Luhn؛ بدون استعلام BIN/IIN یا صادرکننده (`detectors=[BankCardDetector()]`) |
 | **تاریخ تولد و زمان‌ها** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | برنامه‌ریزی‌شده برای نسخه‌های آتی |

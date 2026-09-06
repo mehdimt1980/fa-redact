@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Configurable `PatternRule` immutable frozen dataclass supporting custom regex patterns, placeholder-safe entity types (`^[A-Z][A-Z0-9_]{0,63}$`), normalized/original source selection, integer and named capture-group span selection, and standard library `re` flags (Phase 15).
+- `PatternDetector` executing user-configured `PatternRule` collections across source texts, caching compiled regular expressions once at initialization, and producing deterministic `Detection` sequences sorted by `(start, end, type)` (Phase 15).
+- Institution-specific identifier detection (e.g. MRN, Patient ID, Admission ID, Encounter ID, Case ID) with position-preserving Persian and Arabic-Indic digit normalization support (Phase 15).
+- Context-aware capture group support (`group=int` or `group=str`) enabling prefix/context matching while isolating identifier spans (Phase 15).
+- Opt-in pattern detection support in `detect()`, `redact()`, and `PseudonymizationSession.pseudonymize()` via explicit `detectors=[PatternDetector(...)]` usage (Phase 15).
+- Public root exports `PatternDetector` and `PatternRule` from the `fa_redact` package namespace (Phase 15).
 - 16-digit payment card (PAN) validator (`is_valid_bank_card_number`) supporting compact 16-digit electronic format with standard Luhn checksum validation and defensive all-identical digit sequence rejection (Phase 14).
 - `BankCardDetector` scanning position-preserving normalized text for 16-digit candidate sequences and producing `BANK_CARD` detections with Persian and Arabic-Indic digit support (Phase 14).
 - Opt-in bank card detection support in `detect()`, `redact()`, and `PseudonymizationSession.pseudonymize()` via explicit `detectors=[BankCardDetector()]` usage (Phase 14).
@@ -25,9 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public root exports `EmailDetector` and `is_valid_email` from the `fa_redact` package namespace (Phase 12).
 
 ### Changed
-- Note: `BankCardDetector` and `EmailDetector` remain strictly opt-in in Phase 14 and are not included in the default detector set to prevent unhandled overlaps and avoid false positives on generic numeric sequences without BIN/issuer context (Phase 14).
+- Note: No universal MRN, Patient ID, Encounter ID, or other institution-specific patterns are built in; `PatternDetector` is strictly opt-in and requires application-supplied rules (Phase 15).
+- Note: `BankCardDetector` and `EmailDetector` remain strictly opt-in in Phase 14/15 and are not included in the default detector set to prevent unhandled overlaps and avoid false positives on generic numeric sequences without BIN/issuer context (Phase 14/15).
 - No BIN/IIN lookup or issuer verification is performed; validation confirms structural 16-digit format and Luhn checksum only (Phase 14).
-- `_DEFAULT_DETECTORS` pipeline set remains `(IranianNationalIDDetector, IranianMobileNumberDetector, IranianIBANDetector)` (Phase 13/14).
+- `_DEFAULT_DETECTORS` pipeline set remains `(IranianNationalIDDetector, IranianMobileNumberDetector, IranianIBANDetector)` (Phase 13/14/15).
 
 ## [0.1.0] - 2026-09-05
 

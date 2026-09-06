@@ -7,6 +7,7 @@ from fa_redact.detectors.email import EmailDetector
 from fa_redact.detectors.iranian_iban import IranianIBANDetector
 from fa_redact.detectors.mobile import IranianMobileNumberDetector
 from fa_redact.detectors.national_id import IranianNationalIDDetector
+from fa_redact.detectors.pattern import PatternDetector, PatternRule
 
 __all__ = [
     "BankCardDetector",
@@ -14,4 +15,6 @@ __all__ = [
     "IranianIBANDetector",
     "IranianMobileNumberDetector",
     "IranianNationalIDDetector",
+    "PatternDetector",
+    "PatternRule",
 ]

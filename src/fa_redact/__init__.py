@@ -9,6 +9,8 @@ from fa_redact.detectors import (
     IranianIBANDetector,
     IranianMobileNumberDetector,
     IranianNationalIDDetector,
+    PatternDetector,
+    PatternRule,
 )
 from fa_redact.models import Detection
 from fa_redact.normalization import (
@@ -38,6 +40,8 @@ __all__: list[str] = [
     "IranianIBANDetector",
     "IranianMobileNumberDetector",
     "IranianNationalIDDetector",
+    "PatternDetector",
+    "PatternRule",
     "PseudonymizationSession",
     "detect",
     "is_valid_bank_card_number",
