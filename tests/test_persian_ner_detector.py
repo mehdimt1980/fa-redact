@@ -73,8 +73,6 @@ class DummyModel:
         )
 
         # Create dummy logits that argmax to pred_indices
-        import torch
-
         if self.pred_indices:
             num_classes = max(len(self.config.id2label), max(self.pred_indices) + 1)
             batch_logits = []
@@ -82,12 +80,12 @@ class DummyModel:
                 row = [-100.0] * num_classes
                 row[idx] = 100.0
                 batch_logits.append(row)
-            logits_tensor = torch.tensor([batch_logits], dtype=torch.float32)
+            logits_data: Any = [batch_logits]
         else:
             # Default single O
-            logits_tensor = torch.zeros((1, 1, len(self.config.id2label)))
+            logits_data = [[[0.0] * len(self.config.id2label)]]
 
-        return DummyOutput(logits=logits_tensor)
+        return DummyOutput(logits=logits_data)
 
 
 class DummyFastTokenizer:
@@ -200,23 +198,27 @@ def test_local_only_loading_and_trust_remote_code_false(tmp_path: Path) -> None:
     mock_tokenizer = DummyFastTokenizer()
     mock_model = DummyModel()
 
-    with (
-        patch("transformers.AutoTokenizer.from_pretrained") as mock_tok_fn,
-        patch(
-            "transformers.AutoModelForTokenClassification.from_pretrained"
-        ) as mock_mod_fn,
-    ):
-        mock_tok_fn.return_value = mock_tokenizer
-        mock_mod_fn.return_value = mock_model
+    mock_transformers = MagicMock()
+    mock_transformers.AutoTokenizer.from_pretrained.return_value = mock_tokenizer
+    mock_transformers.AutoModelForTokenClassification.from_pretrained.return_value = (
+        mock_model
+    )
 
+    with patch.dict(
+        sys.modules,
+        {
+            "torch": MagicMock(),
+            "transformers": mock_transformers,
+        },
+    ):
         PersianNERDetector(model_dir)
 
-        mock_tok_fn.assert_called_once_with(
+        mock_transformers.AutoTokenizer.from_pretrained.assert_called_once_with(
             str(model_dir.resolve()),
             local_files_only=True,
             trust_remote_code=False,
         )
-        mock_mod_fn.assert_called_once_with(
+        mock_transformers.AutoModelForTokenClassification.from_pretrained.assert_called_once_with(
             str(model_dir.resolve()),
             local_files_only=True,
             trust_remote_code=False,
@@ -231,14 +233,18 @@ def test_fast_tokenizer_required(tmp_path: Path) -> None:
     slow_tokenizer = DummyFastTokenizer(is_fast=False)
     mock_model = DummyModel()
 
-    with (
-        patch(
-            "transformers.AutoTokenizer.from_pretrained", return_value=slow_tokenizer
-        ),
-        patch(
-            "transformers.AutoModelForTokenClassification.from_pretrained",
-            return_value=mock_model,
-        ),
+    mock_transformers = MagicMock()
+    mock_transformers.AutoTokenizer.from_pretrained.return_value = slow_tokenizer
+    mock_transformers.AutoModelForTokenClassification.from_pretrained.return_value = (
+        mock_model
+    )
+
+    with patch.dict(
+        sys.modules,
+        {
+            "torch": MagicMock(),
+            "transformers": mock_transformers,
+        },
     ):
         with pytest.raises(ValueError, match="fast tokenizer"):
             PersianNERDetector(model_dir)
@@ -252,14 +258,18 @@ def test_model_eval_invoked(tmp_path: Path) -> None:
     mock_tokenizer = DummyFastTokenizer()
     mock_model = DummyModel()
 
-    with (
-        patch(
-            "transformers.AutoTokenizer.from_pretrained", return_value=mock_tokenizer
-        ),
-        patch(
-            "transformers.AutoModelForTokenClassification.from_pretrained",
-            return_value=mock_model,
-        ),
+    mock_transformers = MagicMock()
+    mock_transformers.AutoTokenizer.from_pretrained.return_value = mock_tokenizer
+    mock_transformers.AutoModelForTokenClassification.from_pretrained.return_value = (
+        mock_model
+    )
+
+    with patch.dict(
+        sys.modules,
+        {
+            "torch": MagicMock(),
+            "transformers": mock_transformers,
+        },
     ):
         PersianNERDetector(model_dir)
         assert mock_model.eval_called is True
@@ -773,3 +783,21 @@ def test_conflict_resolution_with_ner_and_other_detectors() -> None:
     )
     assert len(resolved) == 1
     assert resolved[0].type == "PERSON"
+
+
+def test_offline_mock_detector_when_torch_uninstalled() -> None:
+    """Verify PersianNERDetector._create_for_test works when torch is not installed."""
+    text = "علی رضایی"
+    offsets = [(0, 0), (0, 3), (4, 9), (0, 0)]
+    pred_indices = [0, 1, 2, 0]
+
+    tokenizer = DummyFastTokenizer(token_offsets=offsets)
+    model = DummyModel(pred_indices=pred_indices)
+
+    with patch.dict(sys.modules, {"torch": None, "transformers": None}):
+        detector = PersianNERDetector._create_for_test(tokenizer, model)
+        detections = detector.detect(text, text)
+
+    assert len(detections) == 1
+    assert detections[0].type == "PERSON"
+    assert detections[0].value == "علی رضایی"
