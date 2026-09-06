@@ -9,7 +9,7 @@ from fa_redact.models import Detection
 from fa_redact.validators.bank_card import is_valid_bank_card_number
 
 _ENTITY_TYPE: str = "BANK_CARD"
-_CANDIDATE_PATTERN: re.Pattern[str] = re.compile(r"(?<![0-9])[0-9]{16}(?![0-9])")
+_CANDIDATE_PATTERN: re.Pattern[str] = re.compile(r"(?<!\w)[0-9]{16}(?!\w)")
 
 
 class BankCardDetector:

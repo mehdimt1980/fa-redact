@@ -645,3 +645,25 @@ def test_pseudonymize_multiple_distinct_bank_cards() -> None:
         "[BANK_CARD_1]": "1234567890123452",
         "[BANK_CARD_2]": "5022291234567897",
     }
+
+
+def test_pseudonymize_bank_card_and_email_overlap_fails_and_rolls_back() -> None:
+    """Verify session fails on Email and BankCard overlap and preserves atomic state."""
+    from fa_redact import BankCardDetector, EmailDetector
+
+    session = PseudonymizationSession()
+
+    with pytest.raises(ValueError, match=r"[Oo]verlap"):
+        session.pseudonymize(
+            "ایمیل: 1234567890123452@example.com",
+            detectors=[
+                EmailDetector(),
+                BankCardDetector(),
+            ],
+        )
+
+    # Verify session state remains untouched after failed call
+    assert session.mapping == {}
+    assert session._identity_to_placeholder == {}
+    assert session._counters_by_type == {}
+    assert session._reserved_placeholders == set()
