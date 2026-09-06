@@ -74,7 +74,8 @@ When contributing to `fa-redact`, please keep these foundational rules in mind:
 
 ## Pull Request Guidelines
 
-1. Create a feature or bugfix branch (e.g. `feat/new-detector` or `fix/span-offset`).
-2. Write tests covering all new features, bug fixes, or edge cases.
-3. Ensure automated tests, Ruff, mypy, and twine checks pass without warnings.
-4. Keep pull requests focused and concise.
+1. Before starting larger feature work, review [PROJECT_STATUS.md](PROJECT_STATUS.md) and [ROADMAP.md](ROADMAP.md) for current state, core invariants, and planned phase sequencing.
+2. Create a feature or bugfix branch (e.g. `feat/new-detector` or `fix/span-offset`).
+3. Write tests covering all new features, bug fixes, or edge cases.
+4. Ensure automated tests, Ruff, mypy, and twine checks pass without warnings.
+5. Keep pull requests focused and concise.

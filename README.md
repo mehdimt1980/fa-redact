@@ -771,7 +771,7 @@ python -m build
 python -m twine check dist/*
 ```
 
-For guidelines on contributing, see [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+For guidelines on contributing, see [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). For current development status and planned phases, see [PROJECT_STATUS.md](PROJECT_STATUS.md) and [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -1525,7 +1525,7 @@ python -m build
 python -m twine check dist/*
 ```
 
-برای آگاهی از نحوهٔ مشارکت در پروژه، راهنماهای [CONTRIBUTING.md](CONTRIBUTING.md) و [SECURITY.md](SECURITY.md) را مطالعه فرمایید.
+برای آگاهی از نحوهٔ مشارکت در پروژه، راهنماهای [CONTRIBUTING.md](CONTRIBUTING.md) و [SECURITY.md](SECURITY.md) را مطالعه فرمایید. برای مشاهدهٔ وضعیت جاری توسعه و فازهای برنامه‌ریزی‌شده، فایل‌های [PROJECT_STATUS.md](PROJECT_STATUS.md) و [ROADMAP.md](ROADMAP.md) را بررسی کنید.
 
 ---
 
