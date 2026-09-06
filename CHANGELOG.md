@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Persian Named Entity Recognition (NER) comprehensive research deliverable (`research/phase21_persian_ner.md`) evaluating public Persian NER corpora (PEYMA, ARMAN, WikiANN, MultiNERD, clinical datasets), model architectures (ParsBERT, DistilBERT, ONNX Runtime), exact-span metrics, licensing, optional packaging design (`fa-redact[ner]`), and healthcare domain shift (Phase 21).
+- Standard-library-only research evaluation harness (`research/evaluation.py`) computing exact-span entity-level precision, recall, and F1 with corpus micro-averaging and detailed error analysis (Phase 21).
+- Synthetic Persian NER challenge set (`research/synthetic_fixtures.py`) containing 14 challenge fixtures covering multi-token compound surnames, honorifics, common-word/name homographs, ZWNJ variations, Arabic character variants, and clinical contexts (Phase 21).
 - Conservative, non-destructive structured data helper `redact_fields(record, fields, *, detectors=None, conflict_policy="reject", type_priority=None)` replacing detected PII with typed placeholders across explicitly selected string paths in mappings/records with record-wide referential consistency and literal collision avoidance without mutating original objects (Phase 20).
 - Structured detection helper `detect_fields(record, fields, *, detectors=None)` executing raw detection on explicitly selected field paths and returning a dictionary mapping each path to its `Detection` instances (Phase 20).
 - Structured reporting helper `report_fields(record, fields, *, detectors=None)` generating privacy-safe, value-free `DetectionReport` summaries for explicitly selected field paths (Phase 20).
