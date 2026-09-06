@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.2.0`
 - **Current source version:** `0.2.0`
-- **Development status:** `v0.2.0` released; Phase 18 and Phase 19 merged as `[Unreleased]` development
-- **Last closed phase:** Phase 19 — CLI
-- **Current active phase:** Phase 20 — Structured Data Helpers (In Progress)
+- **Development status:** `v0.2.0` released; Phase 18, Phase 19, and Phase 20 merged as `[Unreleased]` development
+- **Last closed phase:** Phase 20 — Structured Data Helpers
+- **Current active phase:** Phase 21 — Persian Names / NER Research & Evaluation (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -78,6 +78,12 @@ The following built-in detectors remain strictly **opt-in**:
 - Conservative, privacy-conscious command-line interface `fa-redact` with `detect`, `report`, and `redact` subcommands.
 - Standard I/O streaming (`stdin` / `stdout`) and file-based processing with overwrite protection.
 - Value-free JSON reporting and raw metadata streaming without terminal or error PII leakage.
+
+### Structured Data Helpers
+- Non-destructive processing of explicitly selected string paths within Python mappings/records: `detect_fields()`, `redact_fields()`, and `report_fields()`.
+- Dot-separated path navigation (e.g. `"note"`, `"meta.contact"`, `"patient.info.note"`) with strict path syntax validation and duplicate path rejection.
+- Record-wide referential consistency in `redact_fields()` across multiple targeted fields within a single record.
+- Preserves all unselected keys, non-string values, booleans, numbers, None, and lists without blind recursive traversal.
 
 ---
 
@@ -172,7 +178,7 @@ A development phase transitions through three discrete states:
 ```
 
 ### 1. IN PROGRESS
-- Active implementation, test development, and local review on a dedicated feature branch (`feat/...` or `docs/...`).
+- Active implementation, test development, and local review on a dedicated feature branch (`feat/...`, `research/...`, or `docs/...`).
 
 ### 2. MERGE-READY
 - Implementation is complete.
@@ -191,23 +197,24 @@ A development phase transitions through three discrete states:
 
 ## Last Closed Phase
 
-- **Phase:** Phase 19 — CLI
+- **Phase:** Phase 20 — Structured Data Helpers
 - **Status:** `CLOSED`
-- **Key Deliverables:** Command-line interface `fa-redact` and module `python -m fa_redact` with `detect`, `report`, and `redact` subcommands, privacy-safe error diagnostics, and overwrite protection.
-- **Test Baseline:** 659 passing tests.
+- **Key Deliverables:** Non-destructive structured data helpers `detect_fields()`, `redact_fields()`, and `report_fields()` for targeted string fields in mappings/records with dot-separated path navigation, record-wide referential consistency, and privacy-safe diagnostics.
+- **Test Baseline:** 692 passing tests.
 - **Stable Historical Anchors:**
   - `v0.2.0` release commit: `227577deeb899de9593efb296659822f1ec0bf20`
   - Phase 18 merge commit: `4ce102f95ff683d957f55bea79d393bff8976787` (PR #17)
   - Phase 19 merge commit: `5fe894d23424bdb3825bac75ccfbc6c250e79c19` (PR #19)
+  - Phase 20 merge commit: `5e1023a2e3f9a910cc669569525652098262b2ea` (PR #20)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
 ## Active Phase
 
-- **Phase:** Phase 20 — Structured Data Helpers
+- **Phase:** Phase 21 — Persian Names / NER Research & Evaluation
 - **Status:** `IN PROGRESS`
-- **Scope:** Provide conservative helpers for applying existing `fa-redact` detection, redaction, and reporting capabilities to explicitly selected fields in structured Python mappings / JSON-like records without blind recursion or external dependencies.
+- **Scope:** Investigate and evaluate Persian personal-name named entity recognition (NER) candidates, public corpora, model architectures, exact-span PERSON evaluation metrics, failure modes, healthcare domain shift, and optional dependency packaging without altering core zero-dependency guarantees.
 
 ---
 

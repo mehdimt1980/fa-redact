@@ -83,32 +83,32 @@ Provided a conservative command-line interface over existing `fa-redact` capabil
 
 ---
 
-## Active Phase
-
 ### Phase 20 — Structured Data Helpers
-*Status: `IN PROGRESS`*
+*Status: `MERGED / UNRELEASED` (Merged into `main` via PR #20, commit `5e1023a2e3f9a910cc669569525652098262b2ea`)*
 
-Provide safe helpers for processing explicitly selected fields within structured dictionaries, mappings, or JSON-like records:
-- Explicit field targeting (users specify which keys/paths to scan, redact, or report).
-- No blind recursive redaction of arbitrary structures.
-- Preserve non-target data types, booleans, numbers, and unaffected keys.
-- Maintain zero runtime dependencies (no pandas, polars, or dataframe requirements in core).
-- No database or ORM coupling.
+Provided conservative helpers for processing explicitly selected fields within structured dictionaries, mappings, or JSON-like records:
+- Explicit field targeting via `detect_fields()`, `redact_fields()`, and `report_fields()`.
+- Dot-separated path navigation with strict syntax validation and duplicate path rejection.
+- Record-wide referential consistency during redaction across multiple targeted string fields.
+- Non-destructive processing preserving unselected keys, non-string types, booleans, numbers, and lists.
+- Zero external runtime dependencies (no pandas, polars, or dataframe requirements).
 
 ---
 
-## Planned Phases
+## Active Phase
 
-### Phase 21 — Names / Persian NER
-*Status: `RESEARCH / PLANNED`*
+### Phase 21 — Persian Names / NER Research & Evaluation
+*Status: `ACTIVE / RESEARCH IN PROGRESS`*
 
 Investigate and design named entity recognition (NER) for Persian personal names and unstructured medical entities:
 - Acknowledge that name recognition is probabilistic and qualitatively distinct from rule-based/checksum detection.
-- Conduct empirical evaluation against Persian datasets with rigorous precision/recall and false-positive analysis.
+- Conduct empirical evaluation against Persian datasets with rigorous precision/recall, exact-span entity scoring, and false-positive analysis.
 - If machine learning models or tokenizers are required, package them strictly as **optional dependencies / extras** to ensure core `fa-redact` remains lightweight and zero-dependency.
 - Do not select or hardcode any external NLP framework or model until research is completed.
 
 ---
+
+## Planned Phases
 
 ### Phase 22 — Clinical De-identification Layer
 *Status: `FUTURE`*

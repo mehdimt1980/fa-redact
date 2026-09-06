@@ -879,7 +879,7 @@ Local Hospital / Trusted Boundary
 | **16-digit Bank Card (PAN)** | ❌ Not Supported | 🧪 Opt-in | 16-digit compact PAN + Luhn checksum validation (`detectors=[BankCardDetector()]`) |
 | **Institutional / Healthcare IDs (MRN, Patient ID)** | ❌ Not Supported | 🧪 Opt-in | Configurable via user-defined `PatternRule` / `PatternDetector` |
 | **Explicit Conflict Resolution** | ❌ Not Supported | 🧪 Opt-in Policy | Resolves overlaps/duplicates via `"longest"` or `"priority"` policy |
-| **Personal Names** | ❌ Not Supported | ❌ Not Supported | Planned for future versions (requires NER/contextual models) |
+| **Personal Names** | ❌ Not Supported | 🔬 Research | Under empirical evaluation (Phase 21); not yet in stable detector set |
 | **Postal Addresses** | ❌ Not Supported | ❌ Not Supported | Unstructured spatial entities |
 | **Dates of Birth / Timestamps** | ❌ Not Supported | ❌ Not Supported | Planned for future versions |
 | **Health Insurance Numbers** | ❌ Not Supported | ❌ Not Supported | Institution-specific |
@@ -1786,7 +1786,7 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 | **شماره کارت بانکی (PAN)** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | فرمت فشردهٔ ۱۶ رقمی + Luhn؛ بدون استعلام BIN/IIN یا صادرکننده (`detectors=[BankCardDetector()]`) |
 | **شناسه‌های سازمانی / درمانی (MRN و بیمار)** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | قابل پیکربندی اختصاصی توسط کاربر با `PatternRule` و `PatternDetector` |
 | **حل صریح تعارض تشخیص‌ها** | ❌ پشتیبانی نمی‌شود | 🧪 سیاست اختیاری | حل همپوشانی‌ها و تکرارها با سیاست `"longest"` یا `"priority"` |
-| **نام اشخاص** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | نیازمند مدل‌های پردازش زبان طبیعی و بازشناسی موجودیت‌های نام‌دار (NER) |
+| **نام اشخاص** | ❌ پشتیبانی نمی‌شود | 🔬 ارزیابی پژوهشی | در حال ارزیابی تجربی در فاز ۲۱؛ هنوز جزو مجموعهٔ پایدار نیست |
 | **آدرس پستی و موقعیت مکانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | موجودیت‌های غیرساختاریافته |
 | **تاریخ تولد و زمان‌ها** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | برنامه‌ریزی‌شده برای نسخه‌های آتی |
 | **شماره بیمه درمانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی |
