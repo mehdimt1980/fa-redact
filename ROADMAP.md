@@ -95,16 +95,30 @@ Provided conservative helpers for processing explicitly selected fields within s
 
 ---
 
+### Phase 21 — Persian Names / NER Research & Evaluation
+*Status: `MERGED / UNRELEASED` (Merged into `main` via PR #21, commit `9ff013e1b4dddf7f2bd5f21cdf9c9feed480266c`)*
+
+Established the research and evaluation foundation for Persian personal-name named entity recognition:
+- Comprehensive research deliverable evaluating candidate models (ParsBERT, DistilBERT, Stanza), public corpora (PEYMA, ARMAN, MultiNERD, WikiANN), licensing, failure modes, and healthcare domain shift.
+- Standard-library-only exact-span entity evaluation harness with micro-averaging and granular error classification.
+- Synthetic challenge fixture set covering multi-token compound surnames, honorifics, common-word homographs, ZWNJ, and Arabic variants.
+- Verified zero runtime dependencies in core and established packaging design for optional extras.
+- Note: Phase 21 explicitly did not execute a real model benchmark or add a production detector.
+
+---
+
 ## Active Phase
 
-### Phase 21 — Persian Names / NER Research & Evaluation
-*Status: `ACTIVE / RESEARCH IN PROGRESS`*
+### Phase 21.1 — Persian NER Empirical Benchmark & Prototype
+*Status: `ACTIVE / IN PROGRESS`*
 
-Investigate and design named entity recognition (NER) for Persian personal names and unstructured medical entities:
-- Acknowledge that name recognition is probabilistic and qualitatively distinct from rule-based/checksum detection.
-- Conduct empirical evaluation against Persian datasets with rigorous precision/recall, exact-span entity scoring, and false-positive analysis.
-- If machine learning models or tokenizers are required, package them strictly as **optional dependencies / extras** to ensure core `fa-redact` remains lightweight and zero-dependency.
-- Do not select or hardcode any external NLP framework or model until research is completed.
+Execute a real, reproducible Persian PERSON NER benchmark on a held-out corpus:
+- Benchmark a real candidate model checkpoint (e.g. `HooshvareLab/bert-fa-base-uncased-ner-peyma`) against a real held-out Persian benchmark dataset (e.g. PEYMA) with verified licensing.
+- Reproduce exact-span PERSON entity metrics (TP, FP, FN, precision, recall, F1) using the Phase 21 evaluation harness.
+- Validate deterministic token-to-span mapping and exact character offset reconstruction (`original_text[start:end]`) without text distortion.
+- Quantify error profiles (false positives, false negatives, compound name boundaries, ZWNJ, Arabic variants, title/honorific boundaries).
+- Keep core `fa-redact` at zero runtime dependencies (`dependencies = []`).
+- Provide an evidence-based production readiness decision (GO / CONDITIONAL GO / NO-GO) for any future production detector phase.
 
 ---
 

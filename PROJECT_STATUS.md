@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.2.0`
 - **Current source version:** `0.2.0`
-- **Development status:** `v0.2.0` released; Phase 18, Phase 19, and Phase 20 merged as `[Unreleased]` development
-- **Last closed phase:** Phase 20 — Structured Data Helpers
-- **Current active phase:** Phase 21 — Persian Names / NER Research & Evaluation (In Progress)
+- **Development status:** `v0.2.0` released; Phase 18, Phase 19, Phase 20, and Phase 21 merged as `[Unreleased]` development
+- **Last closed phase:** Phase 21 — Persian Names / NER Research & Evaluation
+- **Current active phase:** Phase 21.1 — Persian NER Empirical Benchmark & Prototype (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -197,24 +197,34 @@ A development phase transitions through three discrete states:
 
 ## Last Closed Phase
 
-- **Phase:** Phase 20 — Structured Data Helpers
+- **Phase:** Phase 21 — Persian Names / NER Research & Evaluation
 - **Status:** `CLOSED`
-- **Key Deliverables:** Non-destructive structured data helpers `detect_fields()`, `redact_fields()`, and `report_fields()` for targeted string fields in mappings/records with dot-separated path navigation, record-wide referential consistency, and privacy-safe diagnostics.
-- **Test Baseline:** 692 passing tests.
+- **PR:** #21
+- **Merge Commit:** `9ff013e1b4dddf7f2bd5f21cdf9c9feed480266c`
+- **Verified Post-Merge Main CI:** Run `34038606125` (push to `main`, conclusion: success, 5 jobs passed)
+- **Phase 21 Baseline:** 722 passing tests.
+- **Unreleased Scope:** Phase 18, 19, 20, and 21 are merged as `[Unreleased]` development.
+- **Phase 21 Boundaries:** Phase 21 did NOT add a production `PersianNameDetector` and did NOT execute a real model benchmark.
+- **Key Deliverables Produced:**
+  - Comprehensive Persian NER research document (`research/phase21_persian_ner.md`)
+  - Exact-span research evaluation harness (`research/evaluation.py`)
+  - Synthetic Persian NER challenge fixtures (`research/synthetic_fixtures.py`)
+  - Licensing, dataset terms, and optional packaging architectural analysis
 - **Stable Historical Anchors:**
   - `v0.2.0` release commit: `227577deeb899de9593efb296659822f1ec0bf20`
   - Phase 18 merge commit: `4ce102f95ff683d957f55bea79d393bff8976787` (PR #17)
   - Phase 19 merge commit: `5fe894d23424bdb3825bac75ccfbc6c250e79c19` (PR #19)
   - Phase 20 merge commit: `5e1023a2e3f9a910cc669569525652098262b2ea` (PR #20)
+  - Phase 21 merge commit: `9ff013e1b4dddf7f2bd5f21cdf9c9feed480266c` (PR #21)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
 ## Active Phase
 
-- **Phase:** Phase 21 — Persian Names / NER Research & Evaluation
+- **Phase:** Phase 21.1 — Persian NER Empirical Benchmark & Prototype
 - **Status:** `IN PROGRESS`
-- **Scope:** Investigate and evaluate Persian personal-name named entity recognition (NER) candidates, public corpora, model architectures, exact-span PERSON evaluation metrics, failure modes, healthcare domain shift, and optional dependency packaging without altering core zero-dependency guarantees.
+- **Scope:** Execute a real, reproducible Persian PERSON NER benchmark on a held-out corpus with verified licensing, evaluate exact-span precision/recall/F1 metrics, validate token-to-span and exact character offset reconstruction without text distortion, perform detailed error analysis, maintain zero runtime dependencies in core, and provide a clear decision for any future production detector phase.
 
 ---
 

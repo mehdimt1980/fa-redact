@@ -39,3 +39,8 @@ htmlcov/
 # Operating System
 .DS_Store
 Thumbs.db
+
+# Local research caches & downloads (do not commit data or model assets)
+.cache/
+.research_cache/
+research/cache/
