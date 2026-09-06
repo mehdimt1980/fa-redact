@@ -657,9 +657,7 @@ def run_benchmark(
         torch = importlib.import_module("torch")
         transformers = importlib.import_module("transformers")
         AutoTokenizer = transformers.AutoTokenizer
-        AutoModelForTokenClassification = (
-            transformers.AutoModelForTokenClassification
-        )
+        AutoModelForTokenClassification = transformers.AutoModelForTokenClassification
     except ImportError as e:
         raise ImportError(
             "Research benchmark execution requires 'torch' and 'transformers'. "
