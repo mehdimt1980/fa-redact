@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import json
 import platform
 from collections.abc import Mapping, Sequence
@@ -650,14 +651,14 @@ def run_benchmark(
         FileNotFoundError: If dataset file or model is not found.
         ValueError: If model configuration is missing required PERSON labels.
     """
-    # Lazy imports of ML dependencies
+    # Lazy dynamic imports to support environments without optional ML packages
     try:
-        import tokenizers  # type: ignore[import-untyped]
-        import torch
-        import transformers  # type: ignore[import-untyped]
-        from transformers import (
-            AutoModelForTokenClassification,
-            AutoTokenizer,
+        tokenizers = importlib.import_module("tokenizers")
+        torch = importlib.import_module("torch")
+        transformers = importlib.import_module("transformers")
+        AutoTokenizer = transformers.AutoTokenizer
+        AutoModelForTokenClassification = (
+            transformers.AutoModelForTokenClassification
         )
     except ImportError as e:
         raise ImportError(
