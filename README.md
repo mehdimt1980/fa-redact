@@ -453,15 +453,92 @@ restored = session.restore("پاسخ به [MRN_1]")
 > - **Trusted Configuration Security Notice**: Pattern rules are trusted application configuration. Python's standard `re` engine does not provide a built-in match timeout. Do not execute arbitrary unreviewed regexes supplied by untrusted users, tenants, LLMs, or external configuration sources.
 > - **Offline Syntactic Matching Only**: A regex match proves only that configured syntax matched. It does not perform HIS/FHIR lookups, database queries, or network requests, and does not verify that a patient, encounter, admission, or hospital record exists.
 
-#### 9. Redaction Semantics
+#### 9. Explicit Detection Conflict Resolution (Opt-in / Unreleased)
+
+> [!NOTE]
+> **Unreleased / Development Version (Phase 16)**: Explicit conflict resolution (`ConflictPolicy` and `resolve_detection_conflicts`) is introduced in the unreleased development cycle and is not part of published PyPI release `0.1.0`.
+
+`detect()` always returns raw detector evidence and intentionally preserves overlapping and duplicate detections. This design allows callers to audit and inspect raw matches without hidden priority heuristics.
+
+By default, downstream functions (`redact()` and `PseudonymizationSession.pseudonymize()`) operate under `conflict_policy="reject"`, failing loudly if any overlapping, nested, or duplicate detections exist:
+
+```python
+from fa_redact import BankCardDetector, EmailDetector, redact
+
+text = "ایمیل: 1234567890123452@example.com"
+detectors = [EmailDetector(), BankCardDetector()]
+
+# Default reject policy: raises ValueError because EMAIL and BANK_CARD spans overlap
+# redact(text, detectors=detectors)  # -> ValueError: Overlapping detections at spans [7:35] (EMAIL) and [7:23] (BANK_CARD)
+```
+
+For callers who understand the ambiguity and choose to resolve conflicts explicitly, `fa-redact` provides two opt-in resolution policies:
+
+##### 1. Longest Span Policy (`conflict_policy="longest"`)
+
+Greedily selects the longest matching span and discards shorter overlapping candidates. Exact duplicates are collapsed into one. Ambiguous equal-length overlapping spans raise a `ValueError`:
+
+```python
+# Longest policy selects the full EMAIL span (length 28) over BANK_CARD (length 16)
+safe_text = redact(text, detectors=detectors, conflict_policy="longest")
+# Output: "ایمیل: [EMAIL_1]"
+```
+
+##### 2. Explicit Type Priority Policy (`conflict_policy="priority"`)
+
+Resolves conflicts based on an explicit user-configured sequence of entity types in descending priority order (`type_priority=[...]`). Higher priority types win over lower priority types regardless of span length:
+
+```python
+# Priority: BANK_CARD > EMAIL
+card_first = redact(
+    text,
+    detectors=detectors,
+    conflict_policy="priority",
+    type_priority=["BANK_CARD", "EMAIL"],
+)
+# Output: "ایمیل: [BANK_CARD_1]@example.com"
+
+# Priority: EMAIL > BANK_CARD
+email_first = redact(
+    text,
+    detectors=detectors,
+    conflict_policy="priority",
+    type_priority=["EMAIL", "BANK_CARD"],
+)
+# Output: "ایمیل: [EMAIL_1]"
+```
+
+##### Standalone Conflict Resolver for Auditing
+
+Callers can inspect and resolve raw detections independently before redaction:
+
+```python
+from fa_redact import detect, resolve_detection_conflicts
+
+raw_detections = detect(text, detectors=detectors)
+# Returns 2 overlapping detections: EMAIL and BANK_CARD
+
+resolved_detections = resolve_detection_conflicts(
+    raw_detections,
+    policy="longest",
+)
+# Returns 1 detection: EMAIL
+```
+
+> [!WARNING]
+> - **Heuristic Policy Disclaimer**: Conflict resolution is heuristic policy, not entity verification. Resolving a conflict does not verify the real-world semantic identity of a string.
+> - **Substring Exposure Risk**: Selecting `longest` or `priority` may discard a detection that covers characters extending outside the winning detection. For example, selecting a shorter `BANK_CARD` over an `EMAIL` leaves `@example.com` unredacted in the output.
+> - **Conservative Recommendation**: In cases of uncertainty or high-risk privacy requirements, keep the default `reject` policy.
+
+#### 10. Redaction Semantics
 
 - **Exact Span Reconstruction**: `redact()` rebuilds the output from the original Detection spans, preserving untouched source slices exactly and replacing only detected spans. It does not perform global value-based `str.replace()`.
 - **Typed Placeholders**: Placeholders follow the format `[<TYPE>_<INDEX>]` (e.g., `[IR_NATIONAL_ID_1]`, `[IR_MOBILE_1]`, `[IR_IBAN_1]`, `[EMAIL_1]`, `[BANK_CARD_1]`, `[MRN_1]`).
 - **Deterministic Numbering**: Identifiers receive sequential numbering based on their order of first appearance.
 - **Collision Avoidance**: If an input already contains a literal string matching the placeholder syntax, newly generated placeholders increment past the colliding index.
-- **Fail-Loud on Overlap**: If overlapping or duplicate spans are passed to `redact()`, it raises a `ValueError`.
+- **Fail-Loud on Overlap by Default**: Under default `conflict_policy="reject"`, if overlapping or duplicate spans are passed to `redact()`, it raises a `ValueError`.
 
-#### 10. Stateful Pseudonymization Sessions
+#### 11. Stateful Pseudonymization Sessions
 
 `PseudonymizationSession` manages persistent mappings across multi-turn AI interactions:
 
@@ -1080,11 +1157,55 @@ restored = session.restore("پاسخ به [MRN_1]")
 > - **هشدار امنیتی اعتماد به رجکس**: قواعد `PatternRule` باید بخشی از پیکربندی مورد اعتماد برنامه باشند. موتور استاندارد `re` پایتون timeout داخلی برای اجرای regex ندارد. نباید regex تأییدنشده یا تولیدشده توسط کاربران ناشناس یا LLM بدون بازبینی اجرا شود.
 > - **سلب مسئولیت استعلام و پرونده**: تطابق رجکس صرفاً صحت ساختار متنی را نشان می‌دهد؛ هیچ‌گونه استعلام از سامانه‌های اطلاعات بیمارستانی (HIS)، سرورهای FHIR یا پایگاه‌های داده انجام نمی‌شود و وجود خارجی بیمار یا پرونده تایید نمی‌گردد.
 
-#### ۹. بازسازی دقیق بر اساس span در پنهان‌سازی
+#### ۹. حل صریح تعارض تشخیص‌ها (اختیاری / در حال توسعه)
+
+> [!NOTE]
+> **نسخهٔ در حال توسعه (Phase 16)**: حل صریح تعارض تشخیص‌ها (`ConflictPolicy` و `resolve_detection_conflicts`) در چرخهٔ توسعهٔ منتشرنشده اضافه شده و در نسخهٔ فعلی منتشرشده در PyPI (`0.1.0`) وجود ندارد.
+
+تابع `detect()` همواره شواهد خام تشخیص‌دهنده‌ها را بازمی‌گرداند و همپوشانی‌ها و رکوردهای تکراری را دقیقاً حفظ می‌کند تا امکان ممیزی و بازبینی شفاف وجود داشته باشد.
+
+به‌صورت پیش‌فرض، توابع `redact()` و `session.pseudonymize()` با سیاست محافظه‌کارانهٔ `conflict_policy="reject"` اجرا می‌شوند و در صورت وجود هرگونه تداخل، همپوشانی یا تکرار، با خطای `ValueError` متوقف می‌شوند:
+
+```python
+from fa_redact import BankCardDetector, EmailDetector, redact
+
+text = "ایمیل: 1234567890123452@example.com"
+detectors = [EmailDetector(), BankCardDetector()]
+
+# سیاست پیش‌فرض reject: به دلیل تداخل spanهای EMAIL و BANK_CARD خطا می‌دهد
+# redact(text, detectors=detectors)  # -> ValueError
+```
+
+در صورت نیاز، سازمان یا برنامه می‌تواند با انتخاب یکی از سیاست‌های صریح، نحوهٔ حل تعارض را مشخص کند:
+
+- **سیاست طولانی‌ترین بازه (`conflict_policy="longest"`)**: به‌صورت حریصانه طولانی‌ترین span را انتخاب کرده و تشخیص‌های کوتاه‌تر همپوشان را حذف می‌کند. موارد کاملاً تکراری در یکدیگر ادغام می‌شوند. در صورت وجود همپوشانی مبهم با طول مساوی، `ValueError` صادر می‌شود.
+- **سیاست اولویت نوع موجودیت (`conflict_policy="priority"`)**: اولویت‌بندی بر اساس فهرست مشخص‌شده در `type_priority=[...]` انجام می‌شود و موجودیت با اولویت بالاتر برنده خواهد بود (حتی اگر طول span آن کوتاه‌تر باشد). تمامی انواع موجودیت‌های درگیر در تعارض باید در `type_priority` ذکر شده باشند.
+
+```python
+# انتخاب EMAIL به دلیل طول بیشتر
+redacted_longest = redact(text, detectors=detectors, conflict_policy="longest")
+# خروجی: "ایمیل: [EMAIL_1]"
+
+# اولویت‌دهی به کارت بانکی بر روی ایمیل
+redacted_priority = redact(
+    text,
+    detectors=detectors,
+    conflict_policy="priority",
+    type_priority=["BANK_CARD", "EMAIL"],
+)
+# خروجی: "ایمیل: [BANK_CARD_1]@example.com"
+```
+
+> [!WARNING]
+> - **عدم قطعیت ماهیت شناسه**: حل تعارض صرفاً یک قاعدهٔ پالایش اکتشافی است و به معنی تشخیص قطعی ماهیت واقعی شناسه نیست.
+> - **خطر باقی‌ماندن بخشی از شناسه در متن**: انتخاب `longest` یا `priority` ممکن است یک تشخیص همپوشان دیگر را حذف کند و بخشی از span آن تشخیص (مانند پسوند ایمیل) در متن باقی بماند.
+> - **توصیهٔ امنیتی**: در صورت هرگونه تردید، استفاده از سیاست پیش‌فرض `reject` توصیه می‌شود.
+
+#### ۱۰. بازسازی دقیق بر اساس span در پنهان‌سازی
 
 خروجی بر اساس بازه‌های دقیق `Detection` از متن اصلی ساخته می‌شود؛ فقط همان spanهای تشخیص‌داده‌شده جایگزین می‌شوند و بخش‌های دیگر متن بدون تغییر کپی می‌شوند. پیاده‌سازی از `str.replace()` سراسری بر اساس مقدار استفاده نمی‌کند.
 
-#### ۱۰. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی
+#### ۱۱. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی
 
 کلاس `PseudonymizationSession` رفتارهای امنیتی زیر را تضمین می‌کند:
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
+from fa_redact.conflicts import ConflictPolicy, resolve_detection_conflicts
 from fa_redact.pipeline import detect
 from fa_redact.protocols import Detector
 
@@ -39,6 +40,8 @@ class PseudonymizationSession:
         text: str,
         *,
         detectors: Sequence[Detector] | None = None,
+        conflict_policy: ConflictPolicy = "reject",
+        type_priority: Sequence[str] | None = None,
     ) -> str:
         """Pseudonymize detected PII in text using stable, typed placeholders.
 
@@ -52,14 +55,21 @@ class PseudonymizationSession:
             text: Input string to pseudonymize.
             detectors: Optional sequence of Detector instances to execute. If None,
                 uses default built-in detectors. If `[]`, no detectors run.
+            conflict_policy: Policy for resolving conflicting, overlapping, or
+                duplicate detections ('reject', 'longest', or 'priority').
+                Default is 'reject'.
+            type_priority: Sequence of entity type names in descending priority
+                order. Required when conflict_policy='priority', must be None
+                otherwise.
 
         Returns:
             The pseudonymized string with detected spans replaced by placeholders.
 
         Raises:
-            TypeError: If `text` is not a string.
+            TypeError: If `text` is not a string, or if policy arguments have
+                invalid types.
             ValueError: If `text` contains a placeholder already assigned by this
-                session, or if detected spans overlap.
+                session, or if conflict resolution encounters unresolvable conflicts.
         """
         if not isinstance(text, str):
             raise TypeError(f"text must be a str, got {type(text).__name__}")
@@ -85,20 +95,15 @@ class PseudonymizationSession:
         assigned_placeholders = assigned_keys.copy()
 
         detections = detect(text, detectors=detectors)
+        detections = resolve_detection_conflicts(
+            detections,
+            policy=conflict_policy,
+            type_priority=type_priority,
+        )
         if not detections:
             # Commit reserved literals even when no PII is detected
             self._reserved_placeholders = temp_reserved_placeholders
             return text
-
-        # Validate that detections do not overlap, nest, or duplicate
-        for i in range(1, len(detections)):
-            prev = detections[i - 1]
-            curr = detections[i]
-            if curr.start < prev.end:
-                raise ValueError(
-                    f"Overlapping detections at spans [{prev.start}:{prev.end}] "
-                    f"({prev.type}) and [{curr.start}:{curr.end}] ({curr.type})"
-                )
 
         pieces: list[str] = []
         cursor = 0
