@@ -47,6 +47,8 @@
   - [15. Experimental Opt-in Persian PERSON NER (v0.3.0)](#15-experimental-opt-in-persian-person-ner-v030)
   - [16. Clinical Redaction Profiles (v0.3.0)](#16-clinical-redaction-profiles-v030)
   - [17. Batch Processing Helpers (v0.3.0)](#17-batch-processing-helpers-v030)
+  - [18. Structured Serialization (v0.3.0)](#18-structured-serialization-v030)
+  - [19. Opt-in Iranian Legal Entity National ID Validation & Detection](#19-opt-in-iranian-legal-entity-national-id-validation--detection)
 - [Custom Detectors](#custom-detectors)
 - [Healthcare & AI/LLM Usage Pattern](#healthcare--aillm-usage-pattern)
 - [Current Coverage & Limitations](#current-coverage--limitations)
@@ -1121,6 +1123,76 @@ print(json_output)
 
 ---
 
+#### 19. Opt-in Iranian Legal Entity National ID Validation & Detection
+
+> [!NOTE]
+> **Introduced in Phase 28**: Iranian Legal Entity National ID (*شناسه ملی اشخاص حقوقی*) validation (`is_valid_iranian_legal_entity_id`) and detection (`IranianLegalEntityIDDetector`) are provided as a strictly **opt-in** feature.
+
+`fa-redact` provides an offline, deterministic 11-digit Iranian Legal Entity National ID validator (`is_valid_iranian_legal_entity_id`) and detector (`IranianLegalEntityIDDetector`):
+
+```python
+from fa_redact import (
+    IranianLegalEntityIDDetector,
+    PseudonymizationSession,
+    detect,
+    is_valid_iranian_legal_entity_id,
+    redact,
+)
+
+# Deterministically construct a test candidate at runtime from a 10-digit prefix
+prefix = "1400000001"
+coefficients = (29, 27, 23, 19, 17, 29, 27, 23, 19, 17)
+digits = [int(c) for c in prefix]
+add = digits[9] + 2
+remainder = sum((digits[i] + add) * coefficients[i] for i in range(10)) % 11
+check_digit = 0 if remainder == 10 else remainder
+synthetic_id = f"{prefix}{check_digit}"
+
+# Convert to Persian and Arabic-Indic digit representations dynamically
+persian_id = "".join(chr(0x06F0 + int(c)) for c in synthetic_id)
+arabic_id = "".join(chr(0x0660 + int(c)) for c in synthetic_id)
+
+# 1. Standalone Validation (Exact 11 digits, Variant A checksum)
+is_valid_iranian_legal_entity_id(
+    synthetic_id
+)  # True (deterministically constructed candidate)
+is_valid_iranian_legal_entity_id(persian_id)  # True (Persian digits)
+is_valid_iranian_legal_entity_id(arabic_id)  # True (Arabic-Indic digits)
+is_valid_iranian_legal_entity_id(
+    f"{prefix}{(check_digit + 1) % 10}"
+)  # False (checksum mismatch)
+is_valid_iranian_legal_entity_id("11111111111")  # False (repeated digits rejected)
+is_valid_iranian_legal_entity_id(prefix)  # False (length 10 rejected)
+
+# 2. Opt-in Detection (Pass IranianLegalEntityIDDetector explicitly)
+text = f"شناسه ملی شرکت با کد {synthetic_id} در سامانه ثبت گردید."
+detections = detect(text, detectors=[IranianLegalEntityIDDetector()])
+# Returns: [Detection(type='IR_LEGAL_ENTITY_ID', value=synthetic_id, ...)]
+
+# 3. Opt-in Redaction & Pseudonymization
+redacted = redact(text, detectors=[IranianLegalEntityIDDetector()])
+# Output: "شناسه ملی شرکت با کد [IR_LEGAL_ENTITY_ID_1] در سامانه ثبت گردید."
+
+session = PseudonymizationSession()
+text_fa = f"شناسه حقوقی {persian_id} ثبت شد."
+pseudonymized = session.pseudonymize(
+    text_fa,
+    detectors=[IranianLegalEntityIDDetector()],
+)
+# Output: "شناسه حقوقی [IR_LEGAL_ENTITY_ID_1] ثبت شد."
+
+restored = session.restore("تایید [IR_LEGAL_ENTITY_ID_1]")
+# Output matches original text: f"تایید {persian_id}"
+```
+
+- **Opt-in Architecture**: `IranianLegalEntityIDDetector` is strictly **opt-in** and is NOT included in `_DEFAULT_DETECTORS`. To run defaults plus the legal entity detector, explicitly pass all desired detectors.
+- **11-Digit Structure & Digit Normalization**: Accepts ASCII (`0-9`), Persian (`۰-۹`), Arabic-Indic (`٠-٩`), and mixed-script digits, preserving exact surface characters in `Detection.value` and mapping to normalized ASCII in `Detection.normalized_value`.
+- **Variant A Checksum Formula**: The checksum implementation follows the Variant A formula selected in Phase 27 from reviewed technical implementations and empirical verification (`[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]`, `d[9] + 2`, modulo 11, remainder 10 $\to$ 0). No primary statutory publication of the arithmetic formula was identified.
+- **Numeric Collisions & Conflict Resolution**: Because both Iranian mobile numbers and Legal Entity IDs are 11 digits, an arbitrary 11-digit number may mathematically satisfy both rules on the exact same character span. `detect()` preserves both detections as raw evidence. Under default `conflict_policy="reject"`, `redact()` fails loudly. Because both spans have identical length (11 characters), `conflict_policy="longest"` is ambiguous on same-span overlaps and raises a `ValueError`. To resolve same-span collisions deterministically, callers must use `conflict_policy="priority"` with explicit `type_priority` (e.g. `type_priority=["IR_MOBILE", "IR_LEGAL_ENTITY_ID"]` or vice versa).
+- **Structural Validation Only**: Validation performs purely local, offline mathematical checksum checks. It does NOT query SSAA, ILENC, or tax registries, and does NOT verify entity existence, active legal status, or corporate ownership.
+
+---
+
 ### Custom Detectors
 
 `fa-redact` uses Python's structural typing (protocols). Any class implementing the two-argument `detect(self, original_text: str, normalized_text: str) -> Sequence[Detection]` method can be passed to `detect()`, `redact()`, or `session.pseudonymize()`:
@@ -1201,6 +1273,7 @@ Local Hospital / Trusted Boundary
 | **Iranian National ID (`کد ملی`)** | ✅ Supported | ✅ Default | ✅ Default | Strict 10-digit modulo-11 checksum validation |
 | **Iranian Mobile Number** | ✅ Supported | ✅ Default | ✅ Default | Prefix-aware validation against 2026 CRA numbering plan |
 | **Iranian IBAN / Sheba (`شبا`)** | ❌ Not Supported | ✅ Default | ✅ Default | Strict 26-char MOD-97 checksum validation (`IR` + 24 digits) |
+| **Iranian Legal Entity ID (`شناسه ملی حقوقی`)** | ❌ Not Supported | ❌ Not Supported | 🧪 Opt-in | 11-digit compact ID + Variant A checksum (`detectors=[IranianLegalEntityIDDetector()]`) |
 | **Email Addresses** | ❌ Not Supported | 🧪 Opt-in | 🧪 Opt-in | Conservative ASCII email validation and detection (`detectors=[EmailDetector()]`) |
 | **16-digit Bank Card (PAN)** | ❌ Not Supported | 🧪 Opt-in | 🧪 Opt-in | 16-digit compact PAN + Luhn checksum validation (`detectors=[BankCardDetector()]`) |
 | **Institutional / Healthcare IDs (MRN, Patient ID)** | ❌ Not Supported | 🧪 Opt-in | 🧪 Opt-in | Configurable via user-defined `PatternRule` / `PatternDetector` |
@@ -1314,6 +1387,8 @@ This project is licensed under the [MIT License](LICENSE).
   - [۱۵. تشخیص اختیاری نام اشخاص فارسی (NER) (v0.3.0)](#۱۵-تشخیص-اختیاری-نام-اشخاص-فارسی-ner-v030)
   - [۱۶. پروفایل‌های پالایش متون بالینی (v0.3.0)](#۱۶-پروفایلهای-پالایش-متون-بالینی-v030)
   - [۱۷. پردازش دسته‌ای اسناد (v0.3.0)](#۱۷-پردازش-دسته‌ای-اسناد-v030)
+  - [۱۸. سریال‌سازی ساختاریافته (v0.3.0)](#۱۸-سریالسازی-ساختاریافته-v030)
+  - [۱۹. اعتبارسنجی و تشخیص شناسه ملی اشخاص حقوقی (اختیاری)](#۱۹-اعتبارسنجی-و-تشخیص-شناسه-ملی-اشخاص-حقوقی-اختیاری)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
 - [جدول پوشش و قابلیت‌ها](#جدول-پوشش-و-قابلیت‌ها)
@@ -2354,6 +2429,73 @@ print(json_output)
 
 ---
 
+#### ۱۹. اعتبارسنجی و تشخیص شناسه ملی اشخاص حقوقی (اختیاری)
+
+> [!NOTE]
+> **ارائه‌شده در فاز ۲۸**: اعتبارسنجی (`is_valid_iranian_legal_entity_id`) و تشخیص (`IranianLegalEntityIDDetector`) شناسه ملی اشخاص حقوقی به صورت کاملاً **اختیاری (Opt-in)** ارائه شده است و به صورت پیش‌فرض فعال نیست.
+
+کتابخانهٔ `fa-redact` اعتبارسنجی و تشخیص آفلاین و قطعی شناسهٔ ۱۱ رقمی ملی اشخاص حقوقی را فراهم می‌کند:
+
+```python
+from fa_redact import (
+    IranianLegalEntityIDDetector,
+    PseudonymizationSession,
+    detect,
+    is_valid_iranian_legal_entity_id,
+    redact,
+)
+
+# ساخت نمونه آزمایشی به صورت قطعی در زمان اجرا از پیشوند ۱۰ رقمی
+prefix = "1400000001"
+coefficients = (29, 27, 23, 19, 17, 29, 27, 23, 19, 17)
+digits = [int(c) for c in prefix]
+add = digits[9] + 2
+remainder = sum((digits[i] + add) * coefficients[i] for i in range(10)) % 11
+check_digit = 0 if remainder == 10 else remainder
+synthetic_id = f"{prefix}{check_digit}"
+
+# تبدیل پویا به ارقام فارسی و عربی
+persian_id = "".join(chr(0x06F0 + int(c)) for c in synthetic_id)
+arabic_id = "".join(chr(0x0660 + int(c)) for c in synthetic_id)
+
+# ۱. اعتبارسنجی مستقل (دقیقاً ۱۱ رقم، الگوریتم چکسام Variant A)
+is_valid_iranian_legal_entity_id(synthetic_id)  # True (نمونه ساخته‌شده در زمان اجرا)
+is_valid_iranian_legal_entity_id(persian_id)  # True (ارقام فارسی)
+is_valid_iranian_legal_entity_id(arabic_id)  # True (ارقام عربی)
+is_valid_iranian_legal_entity_id(
+    f"{prefix}{(check_digit + 1) % 10}"
+)  # False (چکسام نامعتبر)
+is_valid_iranian_legal_entity_id("11111111111")  # False (ارقام تکراری نامعتبر)
+is_valid_iranian_legal_entity_id(prefix)  # False (طول نامعتبر)
+
+# ۲. تشخیص اختیاری (ارسال صریح IranianLegalEntityIDDetector)
+text = f"شناسه ملی شرکت با کد {synthetic_id} در سامانه ثبت گردید."
+detections = detect(text, detectors=[IranianLegalEntityIDDetector()])
+# خروجی: [Detection(type='IR_LEGAL_ENTITY_ID', value=synthetic_id, ...)]
+
+# ۳. پالایش اختیاری
+redacted = redact(text, detectors=[IranianLegalEntityIDDetector()])
+# خروجی: "شناسه ملی شرکت با کد [IR_LEGAL_ENTITY_ID_1] در سامانه ثبت گردید."
+
+session = PseudonymizationSession()
+text_fa = f"شناسه حقوقی {persian_id} ثبت شد."
+pseudonymized = session.pseudonymize(
+    text_fa,
+    detectors=[IranianLegalEntityIDDetector()],
+)
+# خروجی: "شناسه حقوقی [IR_LEGAL_ENTITY_ID_1] ثبت شد."
+
+restored = session.restore("تایید [IR_LEGAL_ENTITY_ID_1]")
+# خروجی منطبق با متن اصلی: f"تایید {persian_id}"
+```
+
+- **معماری کاملاً اختیاری**: `IranianLegalEntityIDDetector` در مجموعهٔ پیش‌فرض (`_DEFAULT_DETECTORS`) قرار ندارد. برای ترکیب آن با تشخیص‌دهنده‌های پیش‌فرض، باید تمام موارد مورد نیاز به صورت صریح ارسال شوند.
+- **اعتبارسنجی صرفاً ساختاری و ریاضی**: اعتبارسنجی صرفاً صحت فرمت و چکسام ریاضی را به صورت محلی بررسی می‌کند. هیچ‌گونه استعلام آنلاین از سامانه شناسه ملی اشخاص حقوقی (ILENC/ثبت شرکت‌ها) انجام نمی‌شود و اعتبار ریاضی به معنای ثبت رسمی، وجود شرکت یا فعال بودن شخص حقوقی نیست.
+- **محدودیت شواهد الگوریتم چکسام**: الگوریتم چکسام بر مبنای فرمول اجماعی Variant A در پژوهش Phase 27 پیاده‌سازی شده و مستند قانونی رسمی منتشرشده‌ای برای فرمول ریاضی چکسام یافت نشد.
+- **همپوشانی با شماره‌های ۱۱ رقمی دیگر و حل تعارض**: با توجه به ۱۱ رقمی بودن شماره تلفن همراه و شناسه حقوقی، یک عدد ممکن است از نظر ساختار و چکسام ریاضی در هر دو شناسه در یک بازهٔ متنی یکسان صدق کند. تابع `detect()` هر دو تشخیص را در لایهٔ شواهد حفظ می‌کند. در این وضعیت، سیاست پیش‌فرض `conflict_policy="reject"` با خطا متوقف می‌شود؛ سیاست `longest` نیز به دلیل یکسان بودن طول هر دو بازه (۱۱ کاراکتر) با خطای ابهام (`ValueError`) مواجه می‌گردد. برای حل قطعی تعارض، استفاده از `conflict_policy="priority"` به همراه تعیین صریح اولویت نوع (`type_priority=["IR_MOBILE", "IR_LEGAL_ENTITY_ID"]` یا برعکس) الزامی است.
+
+---
+
 ### تشخیص‌دهنده‌های سفارشی (Custom Detectors)
 
 معماری `fa-redact` مبتنی بر پروتکل‌های ساختاری پایتون (Duck Typing) است. شما می‌توانید کلاسی با متد دوآرگومانی پیاده‌سازی کنید:
@@ -2437,6 +2579,7 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 | **کد ملی ایران** | ✅ پشتیبانی می‌شود | ✅ پیش‌فرض | ✅ پیش‌فرض | اعتبارسنجی دقیق ۱۰ رقمی با قاعدهٔ چکسام Modulo-11 |
 | **شماره تلفن همراه ایران** | ✅ پشتیبانی می‌شود | ✅ پیش‌فرض | ✅ پیش‌فرض | اعتبارسنجی پیش‌شماره‌های مصوب رگولاتوری ایران (CRA 2026) |
 | **شماره شبا (IBAN)** | ❌ پشتیبانی نمی‌شود | ✅ پیش‌فرض | ✅ پیش‌فرض | اعتبارسنجی دقیق ۲۶ کاراکتری با قاعدهٔ چکسام MOD-97 (`IR` + ۲۴ رقم) |
+| **شناسه ملی اشخاص حقوقی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | فرمت فشردهٔ ۱۱ رقمی + الگوریتم چکسام Variant A (`detectors=[IranianLegalEntityIDDetector()]`) |
 | **آدرس ایمیل** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | 🧪 اختیاری | اعتبارسنجی و تشخیص ایمیل‌های اسکی محافظه‌کارانه (`detectors=[EmailDetector()]`) |
 | **شماره کارت بانکی (PAN)** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | 🧪 اختیاری | فرمت فشردهٔ ۱۶ رقمی + Luhn؛ بدون استعلام BIN/IIN یا صادرکننده (`detectors=[BankCardDetector()]`) |
 | **شناسه‌های سازمانی / درمانی (MRN و بیمار)** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | 🧪 اختیاری | قابل پیکربندی اختصاصی توسط کاربر با `PatternRule` و `PatternDetector` |

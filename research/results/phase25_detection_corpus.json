@@ -60,6 +60,26 @@
       "total_predicted": 5,
       "true_positives": 5
     },
+    "legal_entity_id_negative": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 0,
+      "total_predicted": 0,
+      "true_positives": 0
+    },
+    "legal_entity_id_positive": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 6,
+      "total_predicted": 6,
+      "true_positives": 6
+    },
     "mixed_default": {
       "f1": 1.0,
       "false_negatives": 0,
@@ -192,6 +212,16 @@
       "total_predicted": 7,
       "true_positives": 7
     },
+    "IR_LEGAL_ENTITY_ID": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 6,
+      "total_predicted": 6,
+      "true_positives": 6
+    },
     "IR_MOBILE": {
       "f1": 1.0,
       "false_negatives": 0,
@@ -233,20 +263,20 @@
       "true_positives": 2
     }
   },
-  "case_count": 62,
+  "case_count": 70,
   "failed_case_ids": [],
   "generated_by": "fa-redact synthetic detection corpus benchmark runner",
-  "gold_entity_count": 54,
+  "gold_entity_count": 60,
   "overall": {
     "f1": 1.0,
     "false_negatives": 0,
     "false_positives": 0,
     "precision": 1.0,
     "recall": 1.0,
-    "total_gold": 54,
-    "total_predicted": 54,
-    "true_positives": 54
+    "total_gold": 60,
+    "total_predicted": 60,
+    "true_positives": 60
   },
-  "prediction_count": 54,
+  "prediction_count": 60,
   "schema_version": "1.0.0"
 }

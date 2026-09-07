@@ -793,3 +793,43 @@ def test_report_before_and_after_conflict_resolution() -> None:
     assert resolved_report.has_conflicts is False
     assert resolved_report.conflict_pairs == 0
     assert resolved_report.conflicting_detections == 0
+
+
+def test_legal_entity_id_reporting() -> None:
+    """Verify reporting with opt-in IranianLegalEntityIDDetector counts accurately."""
+    from research.legal_entity_id_reference import (
+        compute_legal_entity_checksum_variant_a,
+    )
+
+    from fa_redact import IranianLegalEntityIDDetector
+    from fa_redact.serialization import dumps_report, report_to_dict
+
+    prefix = "1400000001"
+    check = compute_legal_entity_checksum_variant_a(prefix)
+    synthetic_id = f"{prefix}{check}"
+    text = f"شناسه ملی شرکت {synthetic_id}"
+    report = detection_report(text, detectors=[IranianLegalEntityIDDetector()])
+
+    assert report.total_detections == 1
+    assert report.counts["IR_LEGAL_ENTITY_ID"] == 1
+    assert report.distinct_types == 1
+    assert report.has_conflicts is False
+
+    # Privacy check: raw identifier and character spans must not appear
+    # in string representation
+    rep_str = repr(report)
+    assert synthetic_id not in rep_str
+    assert "start" not in rep_str
+    assert "end" not in rep_str
+
+    # Serialization privacy checks (report_to_dict and dumps_report)
+    rep_dict = report_to_dict(report)
+    assert synthetic_id not in str(rep_dict)
+    assert "start" not in rep_dict
+    assert "end" not in rep_dict
+    assert rep_dict["counts"] == {"IR_LEGAL_ENTITY_ID": 1}
+
+    json_str = dumps_report(report)
+    assert synthetic_id not in json_str
+    assert "start" not in json_str
+    assert "end" not in json_str

@@ -764,3 +764,65 @@ def test_pseudonymize_conflict_atomic_rollback_on_failure() -> None:
     assert session._counters_by_type == orig_counters
     assert session._identity_to_placeholder == orig_identities
     assert session._reserved_placeholders == orig_reserved
+
+
+def test_legal_entity_id_pseudonymization_default_vs_explicit() -> None:
+    """Verify Legal Entity ID is ignored by default and pseudonymized when explicit."""
+    from research.legal_entity_id_reference import (
+        compute_legal_entity_checksum_variant_a,
+    )
+
+    from fa_redact import IranianLegalEntityIDDetector
+
+    prefix = "1400000001"
+    check = compute_legal_entity_checksum_variant_a(prefix)
+    synthetic_id = f"{prefix}{check}"
+
+    # A. Default session does NOT pseudonymize Legal Entity ID
+    default_session = PseudonymizationSession()
+    default_res = default_session.pseudonymize(f"شناسه شرکت: {synthetic_id}")
+    assert default_res == f"شناسه شرکت: {synthetic_id}"
+    assert default_session.mapping == {}
+
+    # B. Explicit detector DOES pseudonymize it
+    explicit_session = PseudonymizationSession()
+    explicit_res = explicit_session.pseudonymize(
+        f"شناسه شرکت: {synthetic_id}",
+        detectors=[IranianLegalEntityIDDetector()],
+    )
+    assert explicit_res == "شناسه شرکت: [IR_LEGAL_ENTITY_ID_1]"
+    assert explicit_session.mapping == {"[IR_LEGAL_ENTITY_ID_1]": synthetic_id}
+
+
+def test_legal_entity_id_pseudonymization_cross_turn_stability_and_restore() -> None:
+    """Verify cross-turn placeholder reuse across digit scripts and restore behavior."""
+    from research.legal_entity_id_reference import (
+        compute_legal_entity_checksum_variant_a,
+    )
+
+    from fa_redact import IranianLegalEntityIDDetector
+
+    prefix = "1400000001"
+    check = compute_legal_entity_checksum_variant_a(prefix)
+    ascii_id = f"{prefix}{check}"
+    persian_id = "".join(chr(0x06F0 + int(c)) for c in ascii_id)
+
+    session = PseudonymizationSession()
+    detectors = [IranianLegalEntityIDDetector()]
+
+    # Turn 1: ASCII synthetic candidate
+    turn1 = session.pseudonymize(f"نوبت اول: {ascii_id}", detectors=detectors)
+    assert turn1 == "نوبت اول: [IR_LEGAL_ENTITY_ID_1]"
+
+    # Turn 2: Same candidate in Persian digits -> reuses same placeholder
+    # [IR_LEGAL_ENTITY_ID_1]
+    turn2 = session.pseudonymize(f"نوبت دوم: {persian_id}", detectors=detectors)
+    assert turn2 == "نوبت دوم: [IR_LEGAL_ENTITY_ID_1]"
+
+    # D. restore() returns first-observed raw representation (ASCII)
+    assert session.mapping == {"[IR_LEGAL_ENTITY_ID_1]": ascii_id}
+    restored = session.restore("پاسخ به [IR_LEGAL_ENTITY_ID_1]")
+    assert restored == f"پاسخ به {ascii_id}"
+
+    # E. mapping remains local and existing session invariants remain unchanged
+    assert len(session.mapping) == 1

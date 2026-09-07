@@ -380,8 +380,8 @@ class TestChecksumReferenceAlgorithms:
         assert not verify_legal_entity_id_variant_a("")
 
     def test_non_digit_rejected(self) -> None:
-        assert not verify_legal_entity_id_variant_a("1010038714A")
-        assert not verify_legal_entity_id_variant_a("10100 87143")
+        assert not verify_legal_entity_id_variant_a("1400000001A")
+        assert not verify_legal_entity_id_variant_a("14000 00001")
 
     def test_variant_disagreement_on_synthetic_prefixes(self) -> None:
         """Empirically prove that variants compute different checksums."""
@@ -396,15 +396,13 @@ class TestChecksumReferenceAlgorithms:
 
 
 class TestProjectInvariants:
-    """Verify that Phase 27 maintained all zero-change production constraints."""
+    """Verify that secondary identifier types remain unadded."""
 
     def test_no_production_validators_added(self) -> None:
-        assert not hasattr(fa_redact, "is_valid_iranian_legal_entity_id")
         assert not hasattr(fa_redact, "is_valid_postal_code")
         assert not hasattr(fa_redact, "is_valid_registration_number")
 
     def test_no_production_detectors_added(self) -> None:
-        assert not hasattr(fa_redact, "IranianLegalEntityIDDetector")
         assert not hasattr(fa_redact, "IranianPostalCodeDetector")
         assert not hasattr(fa_redact, "IranianRegistrationNumberDetector")
 

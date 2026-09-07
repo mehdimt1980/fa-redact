@@ -604,3 +604,41 @@ def test_cross_field_unselected_fields_not_scanned() -> None:
     # user@example.com gets [EMAIL_1] since unselected field is never inspected
     assert redacted["selected"] == "Real email [EMAIL_1]"
     assert redacted["unselected"] == "Real email user@example.com and [EMAIL_1]"
+
+
+def test_structured_fields_with_legal_entity_id() -> None:
+    """Verify detect_fields, redact_fields, and report_fields with explicit
+    Legal Entity detector.
+    """
+    from research.legal_entity_id_reference import (
+        compute_legal_entity_checksum_variant_a,
+    )
+
+    from fa_redact import IranianLegalEntityIDDetector
+
+    p = "1400000001"
+    synth_id = f"{p}{compute_legal_entity_checksum_variant_a(p)}"
+    record = {
+        "company": {
+            "name": "شرکت نمونه",
+            "legal_id": synth_id,
+        },
+        "notes": f"شناسه ثبتی {synth_id}",
+    }
+    dets = [IranianLegalEntityIDDetector()]
+
+    # detect_fields
+    df = detect_fields(record, ["company.legal_id", "notes"], detectors=dets)
+    assert len(df["company.legal_id"]) == 1
+    assert df["company.legal_id"][0].type == "IR_LEGAL_ENTITY_ID"
+    assert len(df["notes"]) == 1
+
+    # redact_fields
+    rf = redact_fields(record, ["company.legal_id", "notes"], detectors=dets)
+    assert rf["company"]["legal_id"] == "[IR_LEGAL_ENTITY_ID_1]"
+    assert rf["notes"] == "شناسه ثبتی [IR_LEGAL_ENTITY_ID_1]"
+
+    # report_fields
+    rep = report_fields(record, ["company.legal_id", "notes"], detectors=dets)
+    assert rep["company.legal_id"].counts["IR_LEGAL_ENTITY_ID"] == 1
+    assert rep["notes"].counts["IR_LEGAL_ENTITY_ID"] == 1

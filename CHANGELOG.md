@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Opt-in Iranian Legal Entity National ID Implementation (Phase 28):**
+  - Public validator `is_valid_iranian_legal_entity_id(value: str) -> bool` in `fa_redact.validators` and exported from top-level `fa_redact`.
+  - Public detector `IranianLegalEntityIDDetector` with canonical entity type `IR_LEGAL_ENTITY_ID` in `fa_redact.detectors` and exported from top-level `fa_redact`.
+  - Offline mathematical checksum implementation following the Phase 27 Variant A consensus formula (`[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]`, `d[9] + 2`, modulo 11, remainder 10 $\to$ 0) with defensive rejection of all-identical 11-digit pseudo-values.
+  - Position-preserving digit normalization supporting ASCII (`0-9`), Persian (`۰-۹`), Arabic-Indic (`٠-٩`), and mixed-script representations while preserving exact original source offsets and raw surface strings in `Detection.value`.
+  - Strictly opt-in integration: `_DEFAULT_DETECTORS` remains strictly `(IranianNationalIDDetector, IranianMobileNumberDetector, IranianIBANDetector)` (3 default detectors).
+  - Explicit detector composition: explicit `detectors=[IranianLegalEntityIDDetector()]` replaces defaults; composition with defaults requires explicit detector list.
+  - Full pipeline, redaction, pseudonymization, reporting, serialization, batch, and structured helper compatibility.
+  - Extended synthetic regression corpus in `research.detection_corpus` with dedicated `legal_entity_id` suite.
+  - Zero network or registry lookups: purely offline structural and mathematical validation without SSAA/ILENC queries, active status verification, or network dependencies.
+  - No official statutory checksum claim: documented as Variant A technical consensus from Phase 27 research.
+  - Zero mandatory runtime dependencies (`dependencies = []`), Python >=3.10 support, and package version `0.3.0`.
 - **Additional Iranian Identifier Research & Decision Gate (Phase 27):**
   - Comprehensive evidence review deliverable (`research/phase27_additional_iranian_identifiers.md`) evaluating four candidate Iranian identifier types: Legal Entity National ID (*شناسه ملی اشخاص حقوقی*), Iranian Postal Code (*کد پستی ده رقمی*), Company Registration Number (*شماره ثبت شرکت‌ها*), and Economic/Tax Identifier (*کد اقتصادی*).
   - Deterministic 8-dimension suitability scoring rubric and metadata-only decision artifact (`research/results/phase27_identifier_decision.json`) recording scores, blocker lists, and evidence counts without real identifiers or text dumps.

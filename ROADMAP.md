@@ -112,18 +112,31 @@ Provided small, explicit, standard-library-only serialization helpers for fa-red
 
 ---
 
+### Phase 27 — Additional Iranian Identifier Research & Decision Gate
+*Status: `COMPLETED`*
+
+Researched candidate additional Iranian identifiers to determine suitability for deterministic, offline, privacy-first implementation in fa-redact:
+- Evaluated candidate identifiers: Iranian Legal Entity National ID (*شناسه ملی اشخاص حقوقی*), Iranian Postal Code (*کد پستی ده رقمی*), Company Registration Number (*شماره ثبت شرکت‌ها*), and Economic/Tax Identifier (*کد اقتصادی*).
+- Resolved checksum algorithm disagreements across technical implementations and empirical public data.
+- Established an 8-dimension deterministic scoring rubric and decision bands: Iranian Legal Entity National ID scored 15/16 (CONDITIONAL GO, opt-in detector).
+- Documented research limitation: no primary statutory publication of the arithmetic checksum formula was identified; Variant A consensus prime-weight formula confirmed across reviewed implementations and empirical samples.
+- Maintained zero production source changes, zero new runtime dependencies (`dependencies = []`), package version `0.3.0`, and default detectors unchanged.
+
+---
+
 ## Active Phase
 
-### Phase 27 — Additional Iranian Identifier Research & Decision Gate
+### Phase 28 — Opt-in Iranian Legal Entity National ID Implementation
 *Status: `ACTIVE / IN PROGRESS`*
 
-Research candidate additional Iranian identifiers to determine suitability for deterministic, offline, privacy-first implementation in fa-redact:
-- Evaluate candidate identifiers: Iranian Legal Entity National ID (*شناسه ملی اشخاص حقوقی*), Iranian Postal Code (*کد پستی ده رقمی*), Company Registration Number (*شماره ثبت شرکت‌ها*), and Economic/Tax Identifier (*کد اقتصادی*).
-- Resolve checksum algorithm disagreements across technical implementations and empirical public data.
-- Establish an 8-dimension deterministic scoring rubric and decision bands.
-- Provide a research-only reference implementation comparing candidate formulas without modifying `src/fa_redact/`.
-- Produce a deterministic decision JSON artifact (`research/results/phase27_identifier_decision.json`) and comprehensive research deliverable (`research/phase27_additional_iranian_identifiers.md`).
-- Maintain zero production source changes, zero new runtime dependencies (`dependencies = []`), package version `0.3.0`, and default detectors unchanged.
+Implement strictly opt-in Iranian Legal Entity National ID (*شناسه ملی اشخاص حقوقی*) validator (`is_valid_iranian_legal_entity_id`) and detector (`IranianLegalEntityIDDetector`) with canonical entity type `IR_LEGAL_ENTITY_ID`:
+- Implement Phase 27 Variant A consensus checksum formula (`[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]`, `d[9] + 2`, modulo 11, remainder 10 $\to$ 0).
+- Reject all-identical 11-digit pseudo-values and malformed candidates defensively.
+- Support ASCII, Persian, and Arabic-Indic digit scripts via position-preserving normalization.
+- Preserve exact source character offsets and surface representations (`Detection.value` vs. `Detection.normalized_value`).
+- Maintain strictly opt-in integration: do NOT add to `_DEFAULT_DETECTORS` or default clinical profiles.
+- Zero network or registry lookups (offline mathematical validation only).
+- Zero new runtime dependencies (`dependencies = []`), Python >=3.10 support, and package version `0.3.0`.
 
 ---
 
