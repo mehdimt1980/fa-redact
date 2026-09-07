@@ -21,7 +21,12 @@ from fa_redact.pipeline import detect
 from fa_redact.protocols import Detector
 from fa_redact.redaction import redact
 from fa_redact.reporting import detection_report
-from fa_redact.serialization import dumps_detections, dumps_report
+from fa_redact.serialization import (
+    dumps_detections as dumps_detections,
+)
+from fa_redact.serialization import (
+    dumps_report as dumps_report,
+)
 
 _DETECTOR_MAP: dict[str, type[Detector]] = {
     "national_id": IranianNationalIDDetector,

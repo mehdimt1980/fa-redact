@@ -826,8 +826,8 @@ def test_cli_internally_uses_serialization_helpers() -> None:
 
     assert hasattr(cli_mod, "dumps_detections")
     assert hasattr(cli_mod, "dumps_report")
-    assert getattr(cli_mod, "dumps_detections") is dumps_detections
-    assert getattr(cli_mod, "dumps_report") is dumps_report
+    assert cli_mod.dumps_detections is dumps_detections
+    assert cli_mod.dumps_report is dumps_report
 
 
 def test_no_new_cli_commands_or_flags() -> None:
