@@ -7,60 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-07
+
 ### Added
-- Clinical redaction profiles (`ClinicalRedactionProfile` and builder `clinical_profile`) composing built-in direct identifier detectors (`IranianNationalIDDetector`, `IranianMobileNumberDetector`, `IranianIBANDetector`), optional email (`EmailDetector`, default True) and bank card (`BankCardDetector`, default False) detectors, institutional pattern rules (`PatternRule`), and optional person detectors into deterministic profiles for Persian healthcare text workflows (Phase 22).
-- Standardized clinical text template workflow labels: `outpatient_note`, `discharge_summary`, and `referral_letter` via `ClinicalTextTemplate` literal type (Phase 22).
-- Profile convenience methods delegating to core pipeline, transformation, and structured helpers (`detect`, `redact`, `report`, `detect_fields`, `redact_fields`, `report_fields`) preserving record-wide referential consistency and value-free reporting guarantees (Phase 22).
-- Conservative reject conflict policy (`conflict_policy="reject"`) default with pass-through support for explicit `longest` and `priority` policies (Phase 22).
-- Public export of `ClinicalRedactionProfile`, `ClinicalTextTemplate`, and `clinical_profile` from `fa_redact` and `fa_redact.clinical` (Phase 22).
-- Experimental, opt-in `PersianNERDetector` performing local Persian personal name (`PERSON`) named entity recognition using explicitly supplied local Hugging Face-compatible token-classification model directories (Phase 21.2).
-- Optional `ner` dependency extra (`torch>=2.7.0,<3`, `transformers>=4.49.0,<5`) preserving zero mandatory runtime dependencies in core package (Phase 21.2).
-- Exact source character offset extraction from position-preserving normalized text, slicing exact raw strings for `Detection.value` and aligned normalized strings for `Detection.normalized_value` without text distortion (Phase 21.2).
-- Structural tokenizer offset safety check verifying non-special token offsets are non-negative, bounded within text length, and monotonic (Phase 21.2).
-- Deterministic BIO to `PERSON` span reconstruction supporting subword merging, consecutive distinct `B-PER` entities, and leading `I-PER` recovery (Phase 21.2).
-- Privacy-safe fail-loud long-text policy raising `ValueError` on inputs exceeding configured/model max length without silent truncation (Phase 21.2).
-- Public export of `PersianNERDetector` from `fa_redact` and `fa_redact.detectors` (Phase 21.2).
-- Persian Named Entity Recognition (NER) empirical benchmark runner and exact offset mapping utilities (`research/persian_ner_benchmark.py`) mapping subword predictions and character offsets to exact Python string slices without text distortion, parsing BIO/CoNLL annotations, and generating deterministic value-free aggregate summaries (Phase 21.1).
-- Empirical Persian NER benchmark report (`research/phase21_1_persian_ner_benchmark.md`) and aggregate result artifact (`research/results/phase21_1_persian_ner_benchmark.json`) reproducing exact-span `PERSON` metrics on the held-out PEYMA test split (1,026 sentences, 434 gold entities: TP=430, FP=3, FN=4, Precision=99.31%, Recall=99.08%, F1=99.19%, 0 offset mapping failures) with Apache-2.0 model checkpoint `HooshvareLab/bert-fa-base-uncased-ner-peyma` (Phase 21.1).
-- Persian Named Entity Recognition (NER) comprehensive research deliverable (`research/phase21_persian_ner.md`) evaluating public Persian NER corpora (PEYMA, ARMAN, WikiANN, MultiNERD, clinical/health text resources), model architectures (ParsBERT, DistilBERT, ONNX Runtime), exact-span metrics, licensing, optional packaging design (`fa-redact[ner]`), and healthcare domain shift (Phase 21).
-- Standard-library-only research evaluation harness (`research/evaluation.py`) computing exact-span entity-level precision, recall, and F1 with corpus micro-averaging and detailed error analysis (Phase 21).
-- Synthetic Persian NER challenge set (`research/synthetic_fixtures.py`) containing 14 challenge fixtures covering multi-token compound surnames, honorifics, common-word/name homographs, ZWNJ variations, Arabic character variants, and clinical contexts (Phase 21).
-- Conservative, non-destructive structured data helper `redact_fields(record, fields, *, detectors=None, conflict_policy="reject", type_priority=None)` replacing detected PII with typed placeholders across explicitly selected string paths in mappings/records with record-wide referential consistency and literal collision avoidance without mutating original objects (Phase 20).
-- Structured detection helper `detect_fields(record, fields, *, detectors=None)` executing raw detection on explicitly selected field paths and returning a dictionary mapping each path to its `Detection` instances (Phase 20).
-- Structured reporting helper `report_fields(record, fields, *, detectors=None)` generating privacy-safe, value-free `DetectionReport` summaries for explicitly selected field paths (Phase 20).
-- Dot-separated path navigation (e.g. `"note"`, `"metadata.contact"`, `"patient.info.note"`) with strict syntax validation, duplicate path rejection, and privacy-safe diagnostics that never leak target field values (Phase 20).
-- Non-destructive copying returning clean `dict[str, Any]` transformed records while preserving all non-target keys, numbers, booleans, None, lists, and unselected strings unchanged (Phase 20).
-- Public root exports `detect_fields`, `redact_fields`, and `report_fields` from the `fa_redact` package namespace (Phase 20).
-- Conservative, privacy-conscious command-line interface `fa-redact` via `[project.scripts]` and `python -m fa_redact` module entry point (Phase 19).
-- CLI `detect` subcommand reading from stdin or file and emitting deterministic machine-readable JSON metadata (`type`, `start`, `end`) without exposing raw identifier values, normalized values, source text, snippets, or PII hashes (Phase 19).
-- CLI `report` subcommand generating privacy-safe, value-free aggregate detection summaries as JSON (Phase 19).
-- CLI `redact` subcommand replacing detected PII with typed placeholders across stdin/stdout and file paths with support for explicit conflict policies (`reject`, `longest`, `priority`) (Phase 19).
-- Explicit `--detectors` selection across CLI subcommands, strictly replacing the default detector set with built-in (`national_id`, `mobile`, `iban`) or opt-in (`email`, `bank_card`) detectors without changing core Python API semantics (Phase 19).
-- Privacy-safe CLI error handling directing sanitized diagnostics to `stderr` without exposing input text, detected PII, or internal state (Phase 19).
-- In-place overwrite protection rejecting execution cleanly when input and output refer to the same file path (Phase 19).
-- Privacy-safe aggregate detection reporting model `DetectionReport` (frozen dataclass with slots) summarizing raw detection evidence without storing, returning, or persisting detected PII values, normalized values, text, spans, snippets, or PII hashes (Phase 18).
-- Pure aggregation function `report_detections(detections)` computing total detections, deterministic lexicographical type counts (`counts: Mapping[str, int]`), distinct entity types (`distinct_types`), conflict metrics (`has_conflicts`, `conflict_pairs`, `conflicting_detections`), and duplicate group counts (`duplicate_groups`) (Phase 18).
-- Convenience function `detection_report(text, *, detectors=None)` executing raw detection via `detect()` and returning an aggregate `DetectionReport` without automatic conflict resolution (Phase 18).
-- Public root exports `DetectionReport`, `detection_report`, and `report_detections` from the `fa_redact` package namespace (Phase 18).
+- **Clinical Redaction Profiles & Templates (Phase 22):**
+  - High-level composition layer (`ClinicalRedactionProfile` and builder `clinical_profile`) composing built-in direct identifier detectors (`IranianNationalIDDetector`, `IranianMobileNumberDetector`, `IranianIBANDetector`), optional email (`EmailDetector`, default `True`), bank card (`BankCardDetector`, default `False`), institutional regex patterns (`PatternRule`), and optional person detectors (`person_detector`) into deterministic profiles.
+  - Standardized clinical text template workflow presets: `outpatient_note`, `discharge_summary`, and `referral_letter` via `ClinicalTextTemplate` literal type.
+  - Profile convenience methods delegating to core pipeline, transformation, and structured helpers (`detect`, `redact`, `report`, `detect_fields`, `redact_fields`, `report_fields`) with record-wide referential consistency and value-free reporting guarantees.
+  - Public export of `ClinicalRedactionProfile`, `ClinicalTextTemplate`, and `clinical_profile` from `fa_redact` and `fa_redact.clinical`.
+- **Experimental Opt-In Persian NER Detector (Phase 21.2):**
+  - Opt-in `PersianNERDetector` performing local Persian personal name (`PERSON`) named entity recognition using explicitly supplied local Hugging Face-compatible token-classification model directories (`local_files_only=True`, `trust_remote_code=False`).
+  - Optional `ner` dependency extra (`torch>=2.7.0,<3`, `transformers>=4.49.0,<5`) preserving zero mandatory runtime dependencies in the base package.
+  - Exact source character offset extraction from position-preserving normalized text, slicing exact raw strings for `Detection.value` and aligned normalized strings for `Detection.normalized_value` without text distortion.
+  - Structural tokenizer offset safety check verifying non-special token offsets are non-negative, bounded within text length, and monotonic.
+  - Deterministic BIO to `PERSON` span reconstruction supporting subword merging, consecutive distinct `B-PER` entities, and leading `I-PER` recovery.
+  - Privacy-safe fail-loud long-text policy raising `ValueError` on inputs exceeding configured/model max length without silent truncation.
+  - Public export of `PersianNERDetector` from `fa_redact` and `fa_redact.detectors`.
+- **Persian NER Research, Evaluation & Benchmark Infrastructure (Phases 21 & 21.1):**
+  - Standard-library-only research evaluation harness (`research/evaluation.py`) computing exact-span entity-level precision, recall, and F1 with corpus micro-averaging and detailed error classification.
+  - Synthetic Persian NER challenge set (`research/synthetic_fixtures.py`) containing 14 challenge fixtures covering multi-token compound surnames, honorifics, common-word/name homographs, ZWNJ variations, Arabic character variants, and clinical contexts.
+  - Reproducible empirical benchmark runner (`research/persian_ner_benchmark.py`) reproducing exact-span `PERSON` metrics on the held-out PEYMA test split (1,026 sentences, 434 gold entities: TP=430, FP=3, FN=4, Precision=99.31%, Recall=99.08%, F1=99.19%, 0 offset mapping failures) with Apache-2.0 model checkpoint `HooshvareLab/bert-fa-base-uncased-ner-peyma`.
+  - Comprehensive research deliverable (`research/phase21_persian_ner.md`) evaluating candidate models, corpora, licensing, optional packaging design (`fa-redact[ner]`), and healthcare domain shift.
+- **Structured Data Helpers (Phase 20):**
+  - Non-destructive processing of explicitly selected string paths within Python mappings/records: `detect_fields()`, `redact_fields()`, and `report_fields()`.
+  - Dot-separated path navigation (e.g., `"note"`, `"meta.contact"`, `"patient.info.note"`) with strict path syntax validation and duplicate path rejection.
+  - Record-wide referential consistency in `redact_fields()` across multiple targeted fields within a single record.
+  - Non-destructive copying returning clean `dict[str, Any]` transformed records while preserving all non-target keys, numbers, booleans, None, lists, and unselected strings unchanged.
+  - Public exports `detect_fields`, `redact_fields`, and `report_fields` from `fa_redact` and `fa_redact.structured`.
+- **Command-Line Interface (Phase 19):**
+  - Conservative, privacy-conscious command-line interface `fa-redact` via console script entry point and `python -m fa_redact` module entry point.
+  - Subcommands `detect`, `report`, and `redact` across `stdin`/`stdout` streams and file paths.
+  - Explicit `--detectors` selection across CLI subcommands, strictly replacing the default detector set with built-in (`national_id`, `mobile`, `iban`) or opt-in (`email`, `bank_card`) detectors.
+  - Privacy-safe CLI error handling directing sanitized diagnostics to `stderr` without exposing input text, detected PII, or internal state.
+  - In-place overwrite protection rejecting execution cleanly when input and output refer to the same file path.
+- **Privacy-Safe Aggregate Detection Reports (Phase 18):**
+  - Privacy-safe aggregate reporting model `DetectionReport` (frozen dataclass with slots) summarizing raw detection evidence without storing, returning, or persisting detected PII values, normalized values, text, spans, snippets, or PII hashes.
+  - Pure aggregation function `report_detections(detections)` computing total detections, deterministic lexicographical type counts (`counts: Mapping[str, int]`), distinct entity types (`distinct_types`), conflict metrics (`has_conflicts`, `conflict_pairs`, `conflicting_detections`), and duplicate group counts (`duplicate_groups`).
+  - High-level convenience helper `detection_report(text, *, detectors=None)` executing raw detection via `detect()` and returning an aggregate `DetectionReport` without automatic conflict resolution.
+  - Public exports `DetectionReport`, `detection_report`, and `report_detections` from `fa_redact` and `fa_redact.reporting`.
+
+### Important Behavior
+- **Default Detectors Frozen:** Default detectors executed by `detect()`, `redact()`, and `PseudonymizationSession.pseudonymize()` remain strictly `(IranianNationalIDDetector, IranianMobileNumberDetector, IranianIBANDetector)`.
+- **Opt-In Detectors:** `EmailDetector`, `BankCardDetector`, `PatternDetector`, and `PersianNERDetector` remain strictly opt-in and are never activated automatically in default pipelines.
+- **Explicit Detector Overrides:** Explicit `detectors=[...]` arguments replace default detectors rather than merging with them; passing `detectors=[]` explicitly runs no detectors.
+- **Conflict Default Policy:** Default transformation conflict policy remains `"reject"`; raw `detect()` continues preserving overlapping, nested, and duplicate evidence.
+- **Zero Mandatory Dependencies:** Base `fa-redact` package preserves zero mandatory runtime dependencies (`dependencies = []`). Optional NER capabilities require `fa-redact[ner]`.
 
 ### Limitations
-- `ClinicalRedactionProfile` is a high-level composition layer over supported detectors; it does not guarantee complete clinical de-identification, HIPAA Safe Harbor compliance, GDPR compliance, or absence of residual identifiers (Phase 22).
-- Personal name detection is not performed unless an explicit `person_detector` (such as `PersianNERDetector`) is supplied; news-domain benchmark results (PEYMA) do not guarantee clinical PERSON extraction accuracy (Phase 22).
-- Institutional identifiers (MRN, Patient ID, Encounter ID) are not detected unless explicit application-specific `PatternRule` definitions are provided (Phase 22).
-- No generic date or address detectors are provided; clinical roles (patient, physician, relative) are not inferred (Phase 22).
-- Structured data helpers process explicitly targeted field paths only and do not automatically traverse clinical record schemas (Phase 22).
-- `PersianNERDetector` is an experimental prototype requiring explicit user opt-in and local model assets; it is not enabled by default and does not automatically download models (Phase 21.2).
-- Long documents exceeding configured model token length fail loudly; chunking and sliding-window merging are not implemented in Phase 21.2 (Phase 21.2).
-- Personal name detection predicts `PERSON` entities without inferring clinical or administrative roles (patient, physician, relative) and does not guarantee complete clinical de-identification (Phase 21.2).
-- Real empirical Persian NER benchmark completed; no production detector added in Phase 21.1 pending a dedicated implementation phase (Phase 21.1).
-- News-domain empirical benchmark results (PEYMA) do not prove clinical de-identification performance due to syntax, vocabulary, and multi-role healthcare domain shift (Phase 21.1).
-- Persian NER research foundation complete; no production detector added in Phase 21 pending dedicated empirical model benchmarking on held-out datasets (Phase 21).
-- Structured data helpers target explicitly selected paths only and do not perform blind recursive scanning or automatic schema-level PII field inference (Phase 20).
-- `report_fields()` output is keyed by caller-supplied paths; while reports contain no sensitive values, path names are metadata and must not encode patient identifiers (Phase 20).
-- Path model supports dot-separated mapping keys; list indexing (e.g. `items.0.note`) and wildcards (`items[*].note`, `**`) are not supported in Phase 20 (Phase 20).
-- CLI does not implement in-place destructive file editing; separate input and output destinations are required (Phase 19).
-- `PatternDetector` regex rules remain trusted application code and are not dynamically configured via generic CLI flags in Phase 19 (Phase 19).
-- `DetectionReport` is value-free by design but entity-type labels and aggregate counts are still metadata; custom detector authors must keep `Detection.type` schema-level and avoid encoding sensitive data in type names (Phase 18).
+- **Clinical Profile Scope & Anti-Claims:** `ClinicalRedactionProfile` is a convenience composition layer; it does **not** guarantee complete clinical de-identification, HIPAA Safe Harbor compliance, GDPR compliance, or absence of residual identifiers. It does not perform role inference (patient, doctor, relative) and is not certified as a medical device.
+- **Personal Name Detection Scope:** Personal name detection is not performed unless an explicit `person_detector` (such as `PersianNERDetector`) is supplied. News-domain benchmark results (PEYMA test split exact-span F1 = 99.19%) represent held-out journalistic corpus evidence and do not guarantee clinical PERSON extraction recall or universal Persian name accuracy.
+- **Experimental NER Boundary:** `PersianNERDetector` is experimental and opt-in, requiring caller-supplied local model files (`local_files_only=True`). No models are bundled or automatically downloaded. Inputs exceeding model token length fail loudly rather than silently truncating.
+- **Institutional & Clinical Identifiers:** No universal MRN, Patient ID, Encounter ID, date, date-of-birth, postal address, or health insurance number detectors are built in; institutional patterns require application-specific `PatternRule` definitions.
+- **Structured Data Scope:** Structured data helpers target explicitly selected paths only and do not perform blind recursive scanning or automatic schema-level PII field inference.
+- **CLI In-Place Editing:** CLI does not perform in-place destructive file editing; separate input and output destinations are required.
+- **Metadata Visibility:** `DetectionReport` is value-free by design, but entity-type labels and aggregate counts are metadata; custom detector authors must keep `Detection.type` schema-level and avoid encoding sensitive data in type names.
 
 ## [0.2.0] - 2026-09-06
 

@@ -117,12 +117,14 @@ jobs:
               'src/fa_redact/__init__.py',
               'src/fa_redact/__main__.py',
               'src/fa_redact/cli.py',
+              'src/fa_redact/clinical.py',
               'src/fa_redact/conflicts.py',
               'src/fa_redact/reporting.py',
               'src/fa_redact/structured.py',
               'src/fa_redact/detectors/pattern.py',
               'src/fa_redact/detectors/persian_ner.py',
               'tests/test_package.py',
+              'tests/test_clinical.py',
               'tests/test_structured.py',
               'tests/test_persian_ner_detector.py',
           ]
@@ -139,6 +141,7 @@ jobs:
               'fa_redact/__init__.py',
               'fa_redact/__main__.py',
               'fa_redact/cli.py',
+              'fa_redact/clinical.py',
               'fa_redact/conflicts.py',
               'fa_redact/reporting.py',
               'fa_redact/structured.py',
@@ -211,6 +214,9 @@ jobs:
           assert fa_redact.PatternDetector is not None
           assert fa_redact.PatternRule is not None
           assert fa_redact.PersianNERDetector is not None
+          assert fa_redact.ClinicalRedactionProfile is not None
+          assert fa_redact.ClinicalTextTemplate is not None
+          assert callable(fa_redact.clinical_profile)
           assert fa_redact.ConflictPolicy is not None
 
           result = fa_redact.redact("کد ملی: ۱۲۳۴۵۶۷۸۹۱")
@@ -248,6 +254,12 @@ jobs:
           assert "[IR_NATIONAL_ID_1]" in redacted_rec["meta"]["note"]
           assert record["meta"]["note"] == "کد ملی ۱۲۳۴۵۶۷۸۹۱"
           assert redacted_rec["age"] == 30
+
+          # Verify Phase 22 clinical redaction profiles smoke
+          clinic_prof = fa_redact.clinical_profile("outpatient_note")
+          clinical_redacted = clinic_prof.redact("کد ملی ۱۲۳۴۵۶۷۸۹۱ و ایمیل test@clinic.ir")
+          assert "[IR_NATIONAL_ID_1]" in clinical_redacted
+          assert "[EMAIL_1]" in clinical_redacted
 
           print("Wheel smoke test passed.")
           PY

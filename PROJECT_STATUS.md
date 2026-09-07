@@ -8,10 +8,10 @@
 ## Current State
 
 - **Latest published release:** `v0.2.0`
-- **Current source version:** `0.2.0`
-- **Development status:** `v0.2.0` released; Phase 18, Phase 19, Phase 20, Phase 21, Phase 21.1, and Phase 21.2 merged as `[Unreleased]` development
-- **Last closed phase:** Phase 21.2 — Opt-in Persian NER Implementation Prototype
-- **Current active phase:** Phase 22 — Clinical De-identification Layer (In Progress)
+- **Current source version:** `0.3.0`
+- **Development status:** `v0.3.0 RELEASE PREPARATION` (Phases 18, 19, 20, 21, 21.1, and 22 merged; v0.3.0 release candidate preparation in progress)
+- **Last closed phase:** Phase 22 — Clinical De-identification Layer
+- **Current active phase:** Phase 23 — v0.3.0 Release Preparation (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -198,25 +198,25 @@ A development phase transitions through three discrete states:
 
 ## Last Closed Phase
 
-- **Phase:** Phase 21.2 — Opt-in Persian NER Implementation Prototype
+- **Phase:** Phase 22 — Clinical De-identification Layer
 - **Status:** `CLOSED`
-- **PR:** #23
-- **Merge Commit:** `836ae09e6a44c9f234e6cc43492f1e0b70e6b4ac`
-- **Verified Post-Merge Main CI:** Run `34043988737` (push to `main`, conclusion: success, 5 jobs passed)
-- **Phase 21.2 Baseline:** 795 passing tests.
-- **Unreleased Scope:** Phase 18, 19, 20, 21, 21.1, and 21.2 are merged as `[Unreleased]` development.
-- **Key Phase 21.2 Result:**
-  - Experimental opt-in `PersianNERDetector` performing local Persian personal name (`PERSON`) named entity recognition using explicitly supplied local Hugging Face model directory.
-  - PERSON-only NER (no role inference for patient, physician, relative).
-  - Local model directory required (`local_files_only=True`, `trust_remote_code=False`).
-  - Fast tokenizer required with character offset mapping.
-  - Exact source character offsets extracted from position-preserving normalized text.
-  - Fail-loud long-text behavior (no silent truncation).
-  - Optional `ner` dependency extra (`torch>=2.7.0,<3`, `transformers>=4.49.0,<5`).
-  - Zero mandatory runtime dependencies retained in core package.
-  - Default detectors unchanged (`_DEFAULT_DETECTORS`).
-  - No NER CLI subcommand.
-  - No clinical or compliance guarantees.
+- **PR:** #24
+- **Merge Commit:** `c7bff32cad01f642198b8505c02799ce33235cff`
+- **Verified Post-Merge Main CI:** Run `34089912023` (push to `main`, conclusion: success, 5 jobs passed)
+- **Phase 22 Baseline:** 825 passing tests.
+- **Unreleased Scope:** Phase 18, 19, 20, 21, 21.1, 21.2, and 22 are merged into `main` and prepared for release in `v0.3.0`.
+- **Key Phase 22 Result:**
+  - High-level composition layer: `ClinicalRedactionProfile`, `ClinicalTextTemplate`, and `clinical_profile(...)` factory.
+  - Standardized clinical text templates: `outpatient_note`, `discharge_summary`, `referral_letter`.
+  - Explicit institutional `PatternRule` composition.
+  - `EmailDetector` included in clinical profiles by default (`include_email=True`).
+  - `BankCardDetector` explicit opt-in (`include_bank_card=False` by default).
+  - Explicit `person_detector` parameter (opt-in; no automatic `PersianNERDetector` instantiation).
+  - No role inference (patient, physician, relative).
+  - Profile convenience methods delegate to existing core APIs (`detect`, `redact`, `report`, `detect_fields`, `redact_fields`, `report_fields`).
+  - Conservative default conflict policy preserved (`conflict_policy="reject"`).
+  - Zero mandatory runtime dependencies preserved in core package.
+  - Explicit anti-claims: no complete clinical de-identification guarantee, no HIPAA/GDPR compliance claims, not a certified medical device.
 - **Stable Historical Anchors:**
   - `v0.2.0` release commit: `227577deeb899de9593efb296659822f1ec0bf20`
   - Phase 18 merge commit: `4ce102f95ff683d957f55bea79d393bff8976787` (PR #17)
@@ -225,15 +225,16 @@ A development phase transitions through three discrete states:
   - Phase 21 merge commit: `9ff013e1b4dddf7f2bd5f21cdf9c9feed480266c` (PR #21)
   - Phase 21.1 merge commit: `bf1a71b2e675466cb1bf7ef0ab60eaf5f0bbef0f` (PR #22)
   - Phase 21.2 merge commit: `836ae09e6a44c9f234e6cc43492f1e0b70e6b4ac` (PR #23)
+  - Phase 22 merge commit: `c7bff32cad01f642198b8505c02799ce33235cff` (PR #24)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
 ## Active Phase
 
-- **Phase:** Phase 22 — Clinical De-identification Layer
+- **Phase:** Phase 23 — v0.3.0 Release Preparation
 - **Status:** `IN PROGRESS`
-- **Scope:** Implement a small high-level composition layer for Persian healthcare text workflows via `ClinicalRedactionProfile` and `clinical_profile(...)`, composing existing detectors, institutional pattern rules, and conflict policies without duplicating detection/redaction engines, and without compliance claims.
+- **Scope:** Prepare `v0.3.0` minor release encompassing public capabilities from Phases 18–22 (Detection Reports, CLI, Structured Data Helpers, Persian NER evaluation/prototype, Clinical Redaction Profiles). Update package version to `0.3.0`, cut CHANGELOG `0.3.0` entry, align bilingual documentation and coverage tables, expand release wheel smoke test in `.github/workflows/release.yml`, update `RELEASING.md`, audit distribution contents, and open release preparation PR against `main`. Release publication remains a separate explicit gate after PR merge.
 
 ---
 

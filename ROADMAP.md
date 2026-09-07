@@ -58,10 +58,12 @@ Expanded identifier support, introduced institution-specific pattern configurati
 
 ---
 
-## Current Unreleased Development
+## Features Targeted for v0.3.0 Release
+
+The following phases have been completed, reviewed, merged into `main`, and consolidated for the upcoming `v0.3.0` release:
 
 ### Phase 18 — Privacy-Safe Detection Report
-*Status: `MERGED / UNRELEASED` (Merged into `main` via PR #17, commit `4ce102f95ff683d957f55bea79d393bff8976787`)*
+*Status: `MERGED` (Merged into `main` via PR #17, commit `4ce102f95ff683d957f55bea79d393bff8976787`)*
 
 Introduced aggregate, value-free detection reporting:
 - `DetectionReport` immutable data model capturing total counts, deterministic type breakdowns, conflict counts, and duplicate metrics.
@@ -73,7 +75,7 @@ Introduced aggregate, value-free detection reporting:
 ---
 
 ### Phase 19 — CLI
-*Status: `MERGED / UNRELEASED` (Merged into `main` via PR #19, commit `5fe894d23424bdb3825bac75ccfbc6c250e79c19`)*
+*Status: `MERGED` (Merged into `main` via PR #19, commit `5fe894d23424bdb3825bac75ccfbc6c250e79c19`)*
 
 Provided a conservative command-line interface over existing `fa-redact` capabilities:
 - Command-line entry point `fa-redact` and module `python -m fa_redact`.
@@ -84,7 +86,7 @@ Provided a conservative command-line interface over existing `fa-redact` capabil
 ---
 
 ### Phase 20 — Structured Data Helpers
-*Status: `MERGED / UNRELEASED` (Merged into `main` via PR #20, commit `5e1023a2e3f9a910cc669569525652098262b2ea`)*
+*Status: `MERGED` (Merged into `main` via PR #20, commit `5e1023a2e3f9a910cc669569525652098262b2ea`)*
 
 Provided conservative helpers for processing explicitly selected fields within structured dictionaries, mappings, or JSON-like records:
 - Explicit field targeting via `detect_fields()`, `redact_fields()`, and `report_fields()`.
@@ -96,7 +98,7 @@ Provided conservative helpers for processing explicitly selected fields within s
 ---
 
 ### Phase 21 — Persian Names / NER Research & Evaluation
-*Status: `MERGED / UNRELEASED` (Merged into `main` via PR #21, commit `9ff013e1b4dddf7f2bd5f21cdf9c9feed480266c`)*
+*Status: `MERGED` (Merged into `main` via PR #21, commit `9ff013e1b4dddf7f2bd5f21cdf9c9feed480266c`)*
 
 Established the research and evaluation foundation for Persian personal-name named entity recognition:
 - Comprehensive research deliverable evaluating candidate models (ParsBERT, DistilBERT, Stanza), public corpora (PEYMA, ARMAN, MultiNERD, WikiANN), licensing, failure modes, and healthcare domain shift.
@@ -108,7 +110,7 @@ Established the research and evaluation foundation for Persian personal-name nam
 ---
 
 ### Phase 21.1 — Persian NER Empirical Benchmark & Prototype
-*Status: `MERGED / UNRELEASED` (Merged into `main` via PR #22, commit `bf1a71b2e675466cb1bf7ef0ab60eaf5f0bbef0f`)*
+*Status: `MERGED` (Merged into `main` via PR #22, commit `bf1a71b2e675466cb1bf7ef0ab60eaf5f0bbef0f`)*
 
 Executed a real, reproducible Persian PERSON NER benchmark on a held-out corpus:
 - Benchmarked Apache-2.0 checkpoint `HooshvareLab/bert-fa-base-uncased-ner-peyma` against the PEYMA test split (1,026 sentences, 434 gold PERSON entities).
@@ -120,7 +122,7 @@ Executed a real, reproducible Persian PERSON NER benchmark on a held-out corpus:
 ---
 
 ### Phase 21.2 — Opt-in Persian NER Implementation Prototype
-*Status: `MERGED / UNRELEASED` (Merged into `main` via PR #23, commit `836ae09e6a44c9f234e6cc43492f1e0b70e6b4ac`)*
+*Status: `MERGED` (Merged into `main` via PR #23, commit `836ae09e6a44c9f234e6cc43492f1e0b70e6b4ac`)*
 
 Converted the validated Phase 21.1 research result into a strictly opt-in production-package detector prototype:
 - Implemented `PersianNERDetector` satisfying the `Detector` structural protocol.
@@ -134,17 +136,30 @@ Converted the validated Phase 21.1 research result into a strictly opt-in produc
 
 ---
 
+### Phase 22 — Clinical De-identification Layer
+*Status: `MERGED` (Merged into `main` via PR #24, commit `c7bff32cad01f642198b8505c02799ce33235cff`)*
+
+Provided high-level composite policies and presets for Persian healthcare text workflows:
+- Composed built-in direct identifier detectors, optional email and bank card detectors, institutional pattern rules (`PatternRule`), and optional person detectors into deterministic profiles (`ClinicalRedactionProfile`, `clinical_profile`).
+- Standardized redaction templates for `outpatient_note`, `discharge_summary`, and `referral_letter`.
+- Profile convenience methods delegating to core pipeline, transformation, and structured helpers (`detect`, `redact`, `report`, `detect_fields`, `redact_fields`, `report_fields`).
+- Conservative reject conflict policy default preserved.
+- Maintained zero mandatory runtime dependencies and clear anti-claims regarding complete de-identification and regulatory compliance.
+
+---
+
 ## Active Phase
 
-### Phase 22 — Clinical De-identification Layer
+### Phase 23 — v0.3.0 Release Preparation
 *Status: `ACTIVE / IN PROGRESS`*
 
-Provide high-level composite policies and presets for Persian healthcare text workflows:
-- Compose built-in and institutional detectors into coherent clinical redaction profiles (`ClinicalRedactionProfile`, `clinical_profile`).
-- Offer standardized redaction templates for outpatient notes, discharge summaries, and referral letters.
-- Support explicit institutional `PatternRule` integration and optional personal name detector (`person_detector`).
-- Conservative reject conflict policy default; delegate to existing core redaction and structured helpers.
-- Explicit invariant: must NOT be presented as guaranteed clinical de-identification or automated regulatory compliance.
+Prepare the `v0.3.0` minor release package, verify version alignment, update documentation and release smoke tests, and open release preparation PR:
+- Align package version across `pyproject.toml`, `src/fa_redact/__init__.py`, tests, and documentation to `0.3.0`.
+- Cut `CHANGELOG.md` entry `[0.3.0] - 2026-09-07` and initialize a fresh `[Unreleased]` section.
+- Expand release wheel smoke test in `.github/workflows/release.yml` covering base-wheel public APIs from Phases 18–22.
+- Update `RELEASING.md` operational release guide.
+- Audit wheel and sdist distribution packaging.
+- Note: Release publication to GitHub Releases and PyPI remains a separate gate after PR merge and post-merge CI verification.
 
 ---
 
