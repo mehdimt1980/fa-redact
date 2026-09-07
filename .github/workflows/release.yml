@@ -128,6 +128,7 @@ jobs:
               'fa_redact/clinical.py',
               'fa_redact/conflicts.py',
               'fa_redact/reporting.py',
+              'fa_redact/serialization.py',
               'fa_redact/structured.py',
               'fa_redact/detectors/persian_ner.py',
               'fa_redact/py.typed',
@@ -166,6 +167,7 @@ jobs:
               'src/fa_redact/cli.py',
               'src/fa_redact/clinical.py',
               'src/fa_redact/reporting.py',
+              'src/fa_redact/serialization.py',
               'src/fa_redact/structured.py',
               'src/fa_redact/detectors/persian_ner.py',
           ]
@@ -402,6 +404,27 @@ jobs:
           assert len(batch_out) == 2
           assert "[IR_NATIONAL_ID_1]" in batch_out[0]
           assert "[IR_MOBILE_1]" in batch_out[1]
+
+          # 14. Phase 26: Structured Serialization
+          assert callable(fa_redact.detection_to_dict)
+          assert callable(fa_redact.detections_to_list)
+          assert callable(fa_redact.report_to_dict)
+          assert callable(fa_redact.reports_to_dict)
+          assert callable(fa_redact.dumps_detections)
+          assert callable(fa_redact.dumps_report)
+          assert callable(fa_redact.dumps_reports)
+          ser_text = "کد ملی ۱۲۳۴۵۶۷۸۹۱"
+          ser_dets = fa_redact.detect(ser_text)
+          ser_dets_json = fa_redact.dumps_detections(ser_dets)
+          assert "IR_NATIONAL_ID" in ser_dets_json
+          assert "1234567891" not in ser_dets_json
+          assert "۱۲۳۴۵۶۷۸۹۱" not in ser_dets_json
+
+          ser_rep = fa_redact.detection_report(ser_text)
+          ser_rep_json = fa_redact.dumps_report(ser_rep)
+          assert "total_detections" in ser_rep_json
+          assert "1234567891" not in ser_rep_json
+          assert "۱۲۳۴۵۶۷۸۹۱" not in ser_rep_json
 
           print("Release wheel smoke test passed for the current fa-redact release candidate.")
           PY

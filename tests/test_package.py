@@ -59,6 +59,11 @@ def test_package_all_export() -> None:
         "detect_fields",
         "detect_many",
         "detection_report",
+        "detection_to_dict",
+        "detections_to_list",
+        "dumps_detections",
+        "dumps_report",
+        "dumps_reports",
         "is_valid_bank_card_number",
         "is_valid_email",
         "is_valid_iranian_iban",
@@ -73,6 +78,8 @@ def test_package_all_export() -> None:
         "report_detections",
         "report_fields",
         "report_many",
+        "report_to_dict",
+        "reports_to_dict",
         "resolve_detection_conflicts",
     }
     assert expected_exports.issubset(set(fa_redact.__all__))
@@ -121,6 +128,27 @@ def test_pipeline_and_protocols_imports() -> None:
     from fa_redact.reporting import (
         report_detections as sub_report_detections,
     )
+    from fa_redact.serialization import (
+        detection_to_dict as sub_detection_to_dict,
+    )
+    from fa_redact.serialization import (
+        detections_to_list as sub_detections_to_list,
+    )
+    from fa_redact.serialization import (
+        dumps_detections as sub_dumps_detections,
+    )
+    from fa_redact.serialization import (
+        dumps_report as sub_dumps_report,
+    )
+    from fa_redact.serialization import (
+        dumps_reports as sub_dumps_reports,
+    )
+    from fa_redact.serialization import (
+        report_to_dict as sub_report_to_dict,
+    )
+    from fa_redact.serialization import (
+        reports_to_dict as sub_reports_to_dict,
+    )
     from fa_redact.structured import (
         detect_fields as sub_detect_fields,
     )
@@ -139,6 +167,13 @@ def test_pipeline_and_protocols_imports() -> None:
     assert callable(sub_resolve)
     assert callable(sub_detection_report)
     assert callable(sub_report_detections)
+    assert callable(sub_detection_to_dict)
+    assert callable(sub_detections_to_list)
+    assert callable(sub_dumps_detections)
+    assert callable(sub_dumps_report)
+    assert callable(sub_dumps_reports)
+    assert callable(sub_report_to_dict)
+    assert callable(sub_reports_to_dict)
     assert callable(sub_detect_fields)
     assert callable(sub_redact_fields)
     assert callable(sub_report_fields)

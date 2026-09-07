@@ -1026,6 +1026,101 @@ for redacted in redact_many(documents):
 
 ---
 
+#### 18. Structured Serialization (v0.3.0)
+
+> [!NOTE]
+> **Introduced in v0.3.0 / Phase 26**: Standard-library-only structured serialization helpers (`detection_to_dict`, `detections_to_list`, `dumps_detections`, `report_to_dict`, `reports_to_dict`, `dumps_report`, `dumps_reports`) are available in `fa_redact.serialization` and exported from top-level `fa_redact`.
+
+`fa-redact` provides small, explicit, standard-library-only helpers for converting detection metadata and aggregate reports into JSON-serializable primitives and deterministic JSON strings:
+
+##### 1. Detection Structural Metadata Serialization
+
+Serialize `Detection` instances into structural metadata (`type`, `start`, `end`):
+
+```python
+from fa_redact import detect, dumps_detections
+
+text = "بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱ مراجعه کرد."
+detections = detect(text)
+
+json_output = dumps_detections(detections)
+print(json_output)
+```
+
+Output:
+```json
+[
+  {
+    "type": "IR_NATIONAL_ID",
+    "start": 17,
+    "end": 27
+  }
+]
+```
+
+> [!IMPORTANT]
+> **Value-Free vs. Span-Free Boundary**:
+> - `detection_to_dict()` and `dumps_detections()` are strictly **VALUE-FREE**: raw detected values (`value`) and normalized values (`normalized_value`) are **never** serialized.
+> - However, detection metadata is **NOT SPAN-FREE**: it deliberately includes character slice offsets (`start`, `end`).
+
+##### 2. DetectionReport Aggregate Metadata Serialization
+
+Serialize `DetectionReport` instances into value-free and span-free aggregate summaries:
+
+```python
+from fa_redact import detection_report, dumps_report
+
+text = "بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱ مراجعه کرد."
+report = detection_report(text)
+
+json_output = dumps_report(report)
+print(json_output)
+```
+
+Output:
+```json
+{
+  "total_detections": 1,
+  "counts": {
+    "IR_NATIONAL_ID": 1
+  },
+  "distinct_types": 1,
+  "has_conflicts": false,
+  "conflict_pairs": 0,
+  "conflicting_detections": 0,
+  "duplicate_groups": 0
+}
+```
+
+`DetectionReport` serialization is completely **VALUE-FREE and SPAN-FREE** (contains only aggregate counts, types, and conflict indicators).
+
+##### 3. Field-Level Report Mappings
+
+Convert structured field-level reports (e.g. from `report_fields()`) using `dumps_reports()`:
+
+```python
+from fa_redact import dumps_reports, report_fields
+
+record = {
+    "note": "کد ملی ۱۲۳۴۵۶۷۸۹۱",
+    "contact": "تلفن ۰۹۱۲۳۴۵۶۷۸۹",
+}
+field_reports = report_fields(record, ["note", "contact"])
+json_output = dumps_reports(field_reports)
+print(json_output)
+```
+
+##### 4. Architectural & Privacy Guarantees
+
+1. **Deterministic JSON Formatting**: All JSON string helpers (`dumps_*`) format output with `ensure_ascii=False`, default `indent=2`, and append exactly one trailing newline (`\n`).
+2. **Standard Library Only**: Uses Python's built-in `json` module with zero external dependencies.
+3. **No Raw Identifier Leakage**: There is no flag (e.g. `include_values=True`) to export raw or normalized identifier values.
+4. **No Deserialization / Reconstruction**: One-way serialization only. Omission of raw values prevents reconstructing `Detection` instances.
+5. **No Generic Arbitrary Object Serializer**: Only explicitly supported models (`Detection`, `DetectionReport`, and `Mapping[str, DetectionReport]`) are handled.
+6. **No Session Mapping Serialization**: `PseudonymizationSession.mapping` is sensitive internal state and is never serializable.
+
+---
+
 ### Custom Detectors
 
 `fa-redact` uses Python's structural typing (protocols). Any class implementing the two-argument `detect(self, original_text: str, normalized_text: str) -> Sequence[Detection]` method can be passed to `detect()`, `redact()`, or `session.pseudonymize()`:
@@ -2162,6 +2257,100 @@ for redacted in redact_many(documents):
 > [!WARNING]
 > - **عدم نام‌مستعارسازی مشترک میان اسناد**: تابع `redact_many()` وضعیت نشست مشترکی نگه‌داری نمی‌کند. در صورتی که به شناسه‌های پایدار در چند سند یا پیام نیاز دارید، صریحاً از `PseudonymizationSession` استفاده فرمایید.
 > - **عدم تکه‌تکه‌سازی اسناد طولانی (Chunking)**: توابع دسته‌ای اسناد مجزا را پردازش می‌کنند و متن طولانی یک سند را برای مدل‌های زبانی تکه‌تکه نمی‌کنند.
+
+---
+
+#### ۱۸. سریال‌سازی ساختاریافتهٔ امن (Structured Serialization)
+
+> [!NOTE]
+> **معرفی‌شده در نسخهٔ v0.3.0 / فاز ۲۶**: توابع سریال‌سازی استاندارد و امن (`detection_to_dict`، `detections_to_list`، `dumps_detections`، `report_to_dict`، `reports_to_dict`، `dumps_report` و `dumps_reports`) در ماژول `fa_redact.serialization` و سطح اول `fa_redact` ارائه شده‌اند.
+
+کتابخانهٔ `fa-redact` توابع صریح، سبک و مبتنی بر کتابخانهٔ استاندارد پایتون را برای تبدیل فراداده‌های ساختاری تشخیص و گزارش‌های تجمیعی به ساختارهای دیکشنری و رشته‌های قطعی JSON فراهم می‌کند:
+
+##### ۱. سریال‌سازی متادیتای ساختاری Detection
+
+تبدیل اشیای `Detection` به دیکشنری و JSON ساختاری شامل نوع و موقعیت (`type`، `start`، `end`):
+
+```python
+from fa_redact import detect, dumps_detections
+
+text = "بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱ مراجعه کرد."
+detections = detect(text)
+
+json_output = dumps_detections(detections)
+print(json_output)
+```
+
+خروجی:
+```json
+[
+  {
+    "type": "IR_NATIONAL_ID",
+    "start": 17,
+    "end": 27
+  }
+]
+```
+
+> [!IMPORTANT]
+> **تفکیک مرزهای حریم خصوصی**:
+> - متادیتای ساختاری `Detection` کاملاً **بدون مقدار (Value-Free)** است: مقادیر خام شناسه‌ها (`value`) و مقادیر نرمال‌شده (`normalized_value`) هرگز سریال‌سازی نمی‌شوند.
+> - با این حال، متادیتای ساختاری `Detection` **فاقد موقعیت (Span-Free) نیست**، زیرا موقعیت‌های کاراکتری (`start` و `end`) را عمداً شامل می‌شود.
+
+##### ۲. سریال‌سازی گزارش تجمیعی DetectionReport
+
+تبدیل شیء `DetectionReport` به ساختار تجمیعی بدون مقدار و بدون موقعیت:
+
+```python
+from fa_redact import detection_report, dumps_report
+
+text = "بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱ مراجعه کرد."
+report = detection_report(text)
+
+json_output = dumps_report(report)
+print(json_output)
+```
+
+خروجی:
+```json
+{
+  "total_detections": 1,
+  "counts": {
+    "IR_NATIONAL_ID": 1
+  },
+  "distinct_types": 1,
+  "has_conflicts": false,
+  "conflict_pairs": 0,
+  "conflicting_detections": 0,
+  "duplicate_groups": 0
+}
+```
+
+سریال‌سازی `DetectionReport` کاملاً **هم بدون مقدار (Value-Free) و هم بدون موقعیت (Span-Free)** است و صرفاً آمارها و شاخص‌های تعارض را شامل می‌شود.
+
+##### ۳. سریال‌سازی نگاشت گزارش فیلدها
+
+تبدیل گزارش فیلدهای ساختاریافته (نظیر خروجی `report_fields()`) با استفاده از `dumps_reports()`:
+
+```python
+from fa_redact import dumps_reports, report_fields
+
+record = {
+    "note": "کد ملی ۱۲۳۴۵۶۷۸۹۱",
+    "contact": "تلفن ۰۹۱۲۳۴۵۶۷۸۹",
+}
+field_reports = report_fields(record, ["note", "contact"])
+json_output = dumps_reports(field_reports)
+print(json_output)
+```
+
+##### ۴. ویژگی‌ها و تضمین‌های معماری و حریم خصوصی
+
+۱. **فرمت قطعی و استاندارد JSON**: تمام توابع `dumps_*` خروجی را با `ensure_ascii=False`، فاصلهٔ پیش‌فرض `indent=2` و دقیقاً یک خط پایانی (`\n`) تولید می‌کنند.
+۲. **صرفاً مبتنی بر کتابخانهٔ استاندارد**: بدون هیچ وابستگی خارجی و با استفاده از ماژول استاندارد `json`.
+۳. **عدم امکان نشت مقادیر خام**: هیچ پارامتر یا گزینه‌ای برای صادرات مقادیر حساس خام یا نرمال‌شده وجود ندارد.
+۴. **عدم وجود لایهٔ بازیابی (No Deserialization)**: به دلیل حذف عمدی مقادیر خام، تبدیل بازگشتی از JSON به شیء `Detection` امکان‌پذیر نبوده و ارائه نشده است.
+۵. **عدم سریال‌سازی نگاشت‌های نشست**: دیکشنری نگاشت `PseudonymizationSession.mapping` محرمانه بوده و قابلیت سریال‌سازی ندارد.
 
 ---
 
