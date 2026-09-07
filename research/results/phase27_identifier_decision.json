@@ -68,7 +68,7 @@
     {
       "decision": "CONDITIONAL GO",
       "evidence_counts": {
-        "community": 5,
+        "community": 3,
         "primary": 2,
         "secondary_technical": 3
       },

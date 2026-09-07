@@ -170,8 +170,8 @@ class TestPrivacyAndRegressionGuards:
             r"\s*([^|]+)\s*\|\s*([^|]+)\s*\|"
         )
         table_rows = re.findall(table_pattern, doc_text, re.MULTILINE)
-        assert len(table_rows) == 14, (
-            f"Expected 14 source table entries, found {len(table_rows)}"
+        assert len(table_rows) == 12, (
+            f"Expected 12 source table entries, found {len(table_rows)}"
         )
 
         sources_by_id: dict[str, dict[str, Any]] = {}
@@ -200,6 +200,15 @@ class TestPrivacyAndRegressionGuards:
                 "COMMUNITY IMPLEMENTATION",
                 "UNVERIFIED",
             }, f"Unknown classification for {src_id}: {clean_class}"
+
+            # Community implementation sources must point to specific files/threads
+            if clean_class == "COMMUNITY IMPLEMENTATION":
+                assert any(
+                    marker in clean_url for marker in ["/blob/", "/questions/"]
+                ), (
+                    f"Community source {src_id} must link to exact "
+                    f"file/thread: {clean_url}"
+                )
 
             cands = [
                 c.strip("`").strip()
@@ -242,8 +251,8 @@ class TestPrivacyAndRegressionGuards:
         assert len(sec_sources) == 5, (
             f"Expected 5 secondary sources, got {len(sec_sources)}"
         )
-        assert len(com_sources) == 5, (
-            f"Expected 5 community sources, got {len(com_sources)}"
+        assert len(com_sources) == 3, (
+            f"Expected 3 community sources, got {len(com_sources)}"
         )
 
         # Exact candidate-to-source reconciliation
