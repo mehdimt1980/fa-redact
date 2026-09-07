@@ -1,0 +1,252 @@
+{
+  "by_category": {
+    "bank_card_negative": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 0,
+      "total_predicted": 0,
+      "true_positives": 0
+    },
+    "bank_card_positive": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 5,
+      "total_predicted": 5,
+      "true_positives": 5
+    },
+    "email_negative": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 0,
+      "total_predicted": 0,
+      "true_positives": 0
+    },
+    "email_positive": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 7,
+      "total_predicted": 7,
+      "true_positives": 7
+    },
+    "iban_negative": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 0,
+      "total_predicted": 0,
+      "true_positives": 0
+    },
+    "iban_positive": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 5,
+      "total_predicted": 5,
+      "true_positives": 5
+    },
+    "mixed_default": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 12,
+      "total_predicted": 12,
+      "true_positives": 12
+    },
+    "mobile_negative": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 0,
+      "total_predicted": 0,
+      "true_positives": 0
+    },
+    "mobile_positive": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 7,
+      "total_predicted": 7,
+      "true_positives": 7
+    },
+    "mobile_script_variant": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 4,
+      "total_predicted": 4,
+      "true_positives": 4
+    },
+    "national_id_negative": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 0,
+      "total_predicted": 0,
+      "true_positives": 0
+    },
+    "national_id_positive": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 7,
+      "total_predicted": 7,
+      "true_positives": 7
+    },
+    "pattern_negative": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 0,
+      "total_predicted": 0,
+      "true_positives": 0
+    },
+    "pattern_normalized": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 2,
+      "total_predicted": 2,
+      "true_positives": 2
+    },
+    "pattern_positive": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 5,
+      "total_predicted": 5,
+      "true_positives": 5
+    }
+  },
+  "by_type": {
+    "BANK_CARD": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 5,
+      "total_predicted": 5,
+      "true_positives": 5
+    },
+    "EMAIL": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 7,
+      "total_predicted": 7,
+      "true_positives": 7
+    },
+    "ENCOUNTER_ID": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 3,
+      "total_predicted": 3,
+      "true_positives": 3
+    },
+    "IR_IBAN": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 7,
+      "total_predicted": 7,
+      "true_positives": 7
+    },
+    "IR_MOBILE": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 16,
+      "total_predicted": 16,
+      "true_positives": 16
+    },
+    "IR_NATIONAL_ID": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 12,
+      "total_predicted": 12,
+      "true_positives": 12
+    },
+    "MRN": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 2,
+      "total_predicted": 2,
+      "true_positives": 2
+    },
+    "PATIENT_ID": {
+      "f1": 1.0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "total_gold": 2,
+      "total_predicted": 2,
+      "true_positives": 2
+    }
+  },
+  "case_count": 62,
+  "failed_case_ids": [],
+  "generated_by": "fa-redact synthetic detection corpus benchmark runner",
+  "gold_entity_count": 54,
+  "overall": {
+    "f1": 1.0,
+    "false_negatives": 0,
+    "false_positives": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "total_gold": 54,
+    "total_predicted": 54,
+    "true_positives": 54
+  },
+  "prediction_count": 54,
+  "schema_version": "1.0.0"
+}

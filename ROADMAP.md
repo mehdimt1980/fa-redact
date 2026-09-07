@@ -74,18 +74,38 @@ Consolidated privacy-safe aggregate reporting, a CLI interface, structured dicti
 
 ---
 
-## Active Phase
+## Post-v0.3.0 Development
 
 ### Phase 24 — Batch Processing Helpers
+*Status: `COMPLETED`*
+
+Added lightweight, lazy streaming batch-processing helpers over Python iterables of strings:
+- Implemented `detect_many()`, `redact_many()`, and `report_many()` in `src/fa_redact/batch.py`.
+- Enforced lazy streaming without materializing the document collection in memory.
+- Snapshotted caller-supplied mutable configuration (`detectors`, `type_priority`) immutably at helper creation time.
+- Treated each document as an independent call (`redact_many` restarts placeholder counters per document without cross-document session state).
+- Returned one value-free `DetectionReport` per document in `report_many()`.
+- Maintained zero new runtime dependencies, Python >=3.10 support, and position/offset safety guarantees.
+
+---
+
+## Active Phase
+
+### Phase 25 — Synthetic Benchmark & Evaluation Corpus Tooling
 *Status: `ACTIVE / IN PROGRESS`*
 
-Add lightweight, lazy streaming batch-processing helpers over Python iterables of strings:
-- Implement `detect_many()`, `redact_many()`, and `report_many()` in `src/fa_redact/batch.py`.
-- Enforce lazy streaming without materializing the document collection in memory.
-- Snapshot caller-supplied mutable configuration (`detectors`, `type_priority`) immutably at helper creation time.
-- Treat each document as an independent call (`redact_many` restarts placeholder counters per document without cross-document session state).
-- Return one value-free `DetectionReport` per document in `report_many()`.
-- Maintain zero new runtime dependencies, Python >=3.10 support, and position/offset safety guarantees.
+Build a deterministic, offline, standard-library-only synthetic regression corpus and evaluation runner for fa-redact detectors under `research/`:
+- Create an immutable `SyntheticDetectionCase` model with exact character offsets and strict validation.
+- Provide a safe substring span-builder helper `_span_for` for deterministic index resolution.
+- Build curated 100% synthetic test suites covering:
+  - Default direct identifiers (`IR_NATIONAL_ID`, `IR_MOBILE`, `IR_IBAN`) with script/normalization variants and negative controls.
+  - Opt-in `EMAIL` detection (positive syntax variants, punctuation boundaries, negative controls).
+  - Opt-in `BANK_CARD` detection (positive Luhn numbers, Persian/Arabic-Indic digits, negative controls).
+  - Configurable institutional `PatternRule` / `PatternDetector` (synthetic MRN/Patient ID examples, contextual capture groups, normalized Persian digits).
+  - Multi-identifier mixed documents.
+- Implement an offline benchmark runner producing micro-averaged overall, per-type, and per-category exact-span metrics and identifying failed case IDs without PII/text leakage.
+- Generate a reproducible, metadata-only result JSON artifact.
+- Maintain zero new runtime dependencies, Python >=3.10 support, and strict research-only isolation.
 
 ---
 
@@ -93,7 +113,6 @@ Add lightweight, lazy streaming batch-processing helpers over Python iterables o
 
 The following topics represent potential future directions after the core planned phases:
 
-- **Benchmark & Evaluation Corpus Tooling:** Offline evaluation harnesses using synthetic test suites.
 - **Optional Structured Serialization:** Format adapters for specific healthcare interchange formats.
 - **Additional Iranian Identifier Types:** Research into other standardized national numbers (e.g., postal codes, registration numbers) where unambiguous formats and checksums exist.
 - **Performance Profiling & Optimization:** Micro-benchmarking regex execution and normalization throughput on large corpora.
