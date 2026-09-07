@@ -87,25 +87,30 @@ Added lightweight, lazy streaming batch-processing helpers over Python iterables
 - Returned one value-free `DetectionReport` per document in `report_many()`.
 - Maintained zero new runtime dependencies, Python >=3.10 support, and position/offset safety guarantees.
 
+### Phase 25 — Synthetic Benchmark & Evaluation Corpus Tooling
+*Status: `COMPLETED`*
+
+Built a deterministic, offline, standard-library-only synthetic regression corpus and evaluation runner for fa-redact detectors under `research/`:
+- Created an immutable `SyntheticDetectionCase` model with exact character offsets and strict validation.
+- Provided a safe substring span-builder helper `_span_for` for deterministic index resolution.
+- Built curated 100% synthetic test suites covering default direct identifiers (`IR_NATIONAL_ID`, `IR_MOBILE`, `IR_IBAN`), email (`EMAIL`), bank cards (`BANK_CARD`), and configurable institutional `PatternRule` / `PatternDetector` fixtures.
+- Implemented an offline benchmark runner producing micro-averaged overall, per-type, and per-category exact-span metrics without PII/text leakage.
+- Generated a reproducible, metadata-only result JSON artifact.
+- Maintained zero new runtime dependencies, Python >=3.10 support, and strict research-only isolation.
+
 ---
 
 ## Active Phase
 
-### Phase 25 — Synthetic Benchmark & Evaluation Corpus Tooling
+### Phase 26 — Privacy-Safe Structured Serialization
 *Status: `ACTIVE / IN PROGRESS`*
 
-Build a deterministic, offline, standard-library-only synthetic regression corpus and evaluation runner for fa-redact detectors under `research/`:
-- Create an immutable `SyntheticDetectionCase` model with exact character offsets and strict validation.
-- Provide a safe substring span-builder helper `_span_for` for deterministic index resolution.
-- Build curated 100% synthetic test suites covering:
-  - Default direct identifiers (`IR_NATIONAL_ID`, `IR_MOBILE`, `IR_IBAN`) with script/normalization variants and negative controls.
-  - Opt-in `EMAIL` detection (positive syntax variants, punctuation boundaries, negative controls).
-  - Opt-in `BANK_CARD` detection (positive Luhn numbers, Persian/Arabic-Indic digits, negative controls).
-  - Configurable institutional `PatternRule` / `PatternDetector` (synthetic MRN/Patient ID examples, contextual capture groups, normalized Persian digits).
-  - Multi-identifier mixed documents.
-- Implement an offline benchmark runner producing micro-averaged overall, per-type, and per-category exact-span metrics and identifying failed case IDs without PII/text leakage.
-- Generate a reproducible, metadata-only result JSON artifact.
-- Maintain zero new runtime dependencies, Python >=3.10 support, and strict research-only isolation.
+Provide small, explicit, standard-library-only serialization helpers for fa-redact detection metadata and DetectionReport objects in `src/fa_redact/serialization.py`:
+- Implement `detection_to_dict()`, `detections_to_list()`, and `dumps_detections()` exporting structural metadata (`type`, `start`, `end`) without raw or normalized values.
+- Implement `report_to_dict()`, `reports_to_dict()`, `dumps_report()`, and `dumps_reports()` exporting aggregate metrics with value-free and span-free privacy guarantees.
+- Refactor CLI `detect` and `report` subcommands to reuse shared serialization helpers while preserving byte-for-byte backward compatibility.
+- Enforce strict negative scope: no generic arbitrary-object serializer, no raw PII export, no deserialization, no unselected record serialization, and no FHIR/HL7 adapters.
+- Maintain zero new runtime dependencies (`dependencies = []`), Python >=3.10 support, and package version `0.3.0`.
 
 ---
 
@@ -113,7 +118,6 @@ Build a deterministic, offline, standard-library-only synthetic regression corpu
 
 The following topics represent potential future directions after the core planned phases:
 
-- **Optional Structured Serialization:** Format adapters for specific healthcare interchange formats.
 - **Additional Iranian Identifier Types:** Research into other standardized national numbers (e.g., postal codes, registration numbers) where unambiguous formats and checksums exist.
 - **Performance Profiling & Optimization:** Micro-benchmarking regex execution and normalization throughput on large corpora.
 

@@ -42,6 +42,15 @@ from fa_redact.reporting import (
     detection_report,
     report_detections,
 )
+from fa_redact.serialization import (
+    detection_to_dict,
+    detections_to_list,
+    dumps_detections,
+    dumps_report,
+    dumps_reports,
+    report_to_dict,
+    reports_to_dict,
+)
 from fa_redact.structured import (
     detect_fields,
     redact_fields,
@@ -78,6 +87,11 @@ __all__: list[str] = [
     "detect_fields",
     "detect_many",
     "detection_report",
+    "detection_to_dict",
+    "detections_to_list",
+    "dumps_detections",
+    "dumps_report",
+    "dumps_reports",
     "is_valid_bank_card_number",
     "is_valid_email",
     "is_valid_iranian_iban",
@@ -92,5 +106,7 @@ __all__: list[str] = [
     "report_detections",
     "report_fields",
     "report_many",
+    "report_to_dict",
+    "reports_to_dict",
     "resolve_detection_conflicts",
 ]

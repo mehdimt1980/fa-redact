@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 from collections.abc import Sequence
@@ -22,6 +21,12 @@ from fa_redact.pipeline import detect
 from fa_redact.protocols import Detector
 from fa_redact.redaction import redact
 from fa_redact.reporting import detection_report
+from fa_redact.serialization import (
+    dumps_detections as dumps_detections,
+)
+from fa_redact.serialization import (
+    dumps_report as dumps_report,
+)
 
 _DETECTOR_MAP: dict[str, type[Detector]] = {
     "national_id": IranianNationalIDDetector,
@@ -152,17 +157,7 @@ def _cmd_detect(args: argparse.Namespace) -> int:
     text = _read_input(args.input)
     detectors = _parse_detectors(args.detectors)
     detections = detect(text, detectors=detectors)
-
-    # Output machine-readable JSON without sensitive values, spans, or text
-    data = [
-        {
-            "type": d.type,
-            "start": d.start,
-            "end": d.end,
-        }
-        for d in detections
-    ]
-    json_output = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+    json_output = dumps_detections(detections, indent=2)
     _write_output(args.output, json_output, input_arg=args.input)
     return 0
 
@@ -172,17 +167,7 @@ def _cmd_report(args: argparse.Namespace) -> int:
     text = _read_input(args.input)
     detectors = _parse_detectors(args.detectors)
     report = detection_report(text, detectors=detectors)
-
-    report_dict = {
-        "total_detections": report.total_detections,
-        "counts": dict(report.counts),
-        "distinct_types": report.distinct_types,
-        "has_conflicts": report.has_conflicts,
-        "conflict_pairs": report.conflict_pairs,
-        "conflicting_detections": report.conflicting_detections,
-        "duplicate_groups": report.duplicate_groups,
-    }
-    json_output = json.dumps(report_dict, indent=2, ensure_ascii=False) + "\n"
+    json_output = dumps_report(report, indent=2)
     _write_output(args.output, json_output, input_arg=args.input)
     return 0
 

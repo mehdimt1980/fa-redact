@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.3.0`
 - **Current source version:** `0.3.0`
-- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 25 Synthetic Benchmark & Evaluation Corpus Tooling in progress)
-- **Last closed phase:** Phase 24 — Batch Processing Helpers
-- **Current active phase:** Phase 25 — Synthetic Benchmark & Evaluation Corpus Tooling (In Progress)
+- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 26 Privacy-Safe Structured Serialization in progress)
+- **Last closed phase:** Phase 25 — Synthetic Benchmark & Evaluation Corpus Tooling
+- **Current active phase:** Phase 26 — Privacy-Safe Structured Serialization (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -205,19 +205,19 @@ A development phase transitions through three discrete states:
 
 ## Last Closed Phase
 
-- **Phase:** Phase 24 — Batch Processing Helpers
+- **Phase:** Phase 25 — Synthetic Benchmark & Evaluation Corpus Tooling
 - **Status:** `CLOSED`
-- **PR:** #26
-- **Phase Branch Head:** `b9815071fe4ac5de6495d8b6a1e8c2f4d0982593`
-- **Merge Commit:** `350590d296e6a7f88be75a3ffc268ee56367fcee`
-- **Verified Post-Merge Main CI:** Run `34097189315` (push to `main`, conclusion: success, 5 jobs passed)
-- **Phase 24 Baseline:** 872 passing tests.
-- **Key Phase 24 Result:**
-  - Added lightweight, lazy streaming batch-processing helpers: `detect_many()`, `redact_many()`, and `report_many()` in `src/fa_redact/batch.py`.
-  - Enforced lazy ordered processing without materializing document collections in memory.
-  - Implemented immutable configuration snapshotting (`detectors`, `type_priority`) at generator creation time.
-  - Enforced independent per-document redaction semantics (placeholder numbering restarts per document without shared session state).
-  - Preserved zero mandatory runtime dependencies and full standard-library compatibility.
+- **PR:** #27
+- **Phase Branch Head:** `9c6019f012eb50162e93190297bc1160e1a02f9f`
+- **Merge Commit:** `0350280a6c0f276904f59dd57b313872e7d74cd0`
+- **Verified Post-Merge Main CI:** Run `34098651219` (push to `main`, conclusion: success, 5 jobs passed)
+- **Phase 25 Baseline:** 919 passing tests.
+- **Key Phase 25 Result:**
+  - 62 synthetic cases across 4 detection suites (`default`, `email`, `bank_card`, `pattern`).
+  - 54 gold entity spans evaluated with exact character offsets.
+  - Deterministic offline exact-span regression benchmark (`research/detection_corpus.py`, `research/detection_corpus_benchmark.py`).
+  - TP=54, FP=0, FN=0, F1=1.0 on synthetic curated fixtures only.
+  - No real-world accuracy claims; no runtime dependency or API behavior changes.
 - **Stable Historical Anchors:**
   - `v0.2.0` release commit: `227577deeb899de9593efb296659822f1ec0bf20`
   - Phase 18 merge commit: `4ce102f95ff683d957f55bea79d393bff8976787` (PR #17)
@@ -230,15 +230,16 @@ A development phase transitions through three discrete states:
   - Phase 23 merge commit: `ad2f6723db29f27f86d2ece833ff244a6e4864dd` (PR #25)
   - `v0.3.0` release commit: `ad2f6723db29f27f86d2ece833ff244a6e4864dd`
   - Phase 24 merge commit: `350590d296e6a7f88be75a3ffc268ee56367fcee` (PR #26)
+  - Phase 25 merge commit: `0350280a6c0f276904f59dd57b313872e7d74cd0` (PR #27)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
 ## Active Phase
 
-- **Phase:** Phase 25 — Synthetic Benchmark & Evaluation Corpus Tooling
+- **Phase:** Phase 26 — Privacy-Safe Structured Serialization
 - **Status:** `IN PROGRESS`
-- **Scope:** Build a deterministic, offline, standard-library-only synthetic regression corpus and evaluation runner for fa-redact detectors under `research/`. Validate exact entity types and exact source offsets against curated synthetic fixtures covering default direct identifiers (`IR_NATIONAL_ID`, `IR_MOBILE`, `IR_IBAN`), email (`EMAIL`), bank cards (`BANK_CARD`), and configurable institutional patterns. Reuse existing Phase 21 evaluation metrics without introducing runtime API changes or real-world clinical/accuracy claims. Maintain zero new runtime dependencies and Python >=3.10 support.
+- **Scope:** Provide small, explicit, standard-library-only serialization helpers for fa-redact detection metadata and DetectionReport objects in `src/fa_redact/serialization.py`. Detection structural metadata is strictly value-free (omits raw and normalized values) while retaining exact character offsets (`start`, `end`). DetectionReport serialization is value-free and span-free. Refactor CLI `detect` and `report` subcommands to reuse serialization helpers while preserving byte-for-byte backward compatibility. Maintain zero new runtime dependencies, version 0.3.0, and Python >=3.10 support.
 
 ---
 

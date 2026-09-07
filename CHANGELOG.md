@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Privacy-Safe Structured Serialization (Phase 26):**
+  - Standard-library-only serialization helpers `detection_to_dict()`, `detections_to_list()`, `report_to_dict()`, `reports_to_dict()`, `dumps_detections()`, `dumps_report()`, and `dumps_reports()` in `fa_redact.serialization` and exported from top-level `fa_redact`.
+  - Explicit Detection structural metadata serialization (`type`, `start`, `end`) that is strictly value-free (never serializes raw `value` or `normalized_value`).
+  - Explicit DetectionReport aggregate metadata serialization (`total_detections`, `counts`, `distinct_types`, `has_conflicts`, `conflict_pairs`, `conflicting_detections`, `duplicate_groups`) with value-free and span-free privacy guarantees.
+  - Mapping serializer `reports_to_dict()` / `dumps_reports()` supporting field-level report mappings (such as outputs from `report_fields()`).
+  - Deterministic JSON formatting with `ensure_ascii=False`, configurable indentation (default `2`), and exactly one trailing newline.
+  - CLI `detect` and `report` subcommands refactored to reuse shared serialization helpers with byte-for-byte backward compatibility.
+  - Zero mandatory runtime dependencies preserved in the base package (`dependencies = []`).
 - **Synthetic Detector Evaluation Corpus & Benchmark Tooling (Phase 25):**
   - Standard-library-only, offline synthetic regression corpus (`SYNTHETIC_DETECTION_CORPUS`) and validation harness (`validate_detection_corpus`) in `research.detection_corpus`.
   - Immutable `SyntheticDetectionCase` research data model with exact character offsets, strict bounds checking, and duplicate span validation.
@@ -31,6 +39,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Zero mandatory runtime dependencies preserved in the base package (`dependencies = []`).
 
 ### Limitations
+- **Detection Metadata Contains Offsets:** Detection structural serialization is value-free (never serializes `value` or `normalized_value`), but deliberately contains character offsets (`start`, `end`).
+- **No Raw Value Export:** No opt-in parameters or flags exist to export raw or normalized detected identifier values.
+- **No Deserialization:** Serialized detection metadata intentionally omits raw values and cannot reconstruct `Detection` objects; one-way serialization is enforced.
+- **No Arbitrary Record Serializer:** The library does not serialize arbitrary or partially-redacted record mappings to prevent implying that unselected fields are privacy-safe.
+- **No Pseudonymization Session Serialization:** `PseudonymizationSession.mapping` contains raw identifier associations and is not serializable.
+- **No FHIR / HL7 Adapters:** Healthcare-specific interchange formats (FHIR, HL7, CDA) are excluded from this phase.
 - **Synthetic Regression Boundary Only:** Phase 25 evaluation measures correctness against curated synthetic regression fixtures only; it makes no claims regarding real-world clinical recall, population-level precision, prevalence-adjusted accuracy, or regulatory compliance.
 - **No Automatic Cross-Document Consistency:** `redact_many()` does not maintain or share a `PseudonymizationSession` across documents; use `PseudonymizationSession` explicitly if stable cross-document aliases are required.
 - **No Whole-Batch Rollback:** Iterators stream results lazily; if an error occurs on document $N$, earlier yielded results remain valid and no batch-wide rollback is performed.

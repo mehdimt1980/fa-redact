@@ -121,6 +121,7 @@ jobs:
               'src/fa_redact/clinical.py',
               'src/fa_redact/conflicts.py',
               'src/fa_redact/reporting.py',
+              'src/fa_redact/serialization.py',
               'src/fa_redact/structured.py',
               'src/fa_redact/detectors/pattern.py',
               'src/fa_redact/detectors/persian_ner.py',
@@ -147,7 +148,7 @@ jobs:
           ]
           for name in sdist_names:
               for pattern in forbidden_sdist_patterns:
-                  assert pattern not in name.lower(), f"Forbidden pattern '{pattern}' found in sdist entry: {name}"
+                  assert pattern not in name.lower(), f\"Forbidden pattern '{pattern}' found in sdist entry: {name}\"
 
           # 2. Audit wheel contents
           with zipfile.ZipFile(wheel_path, 'r') as z:
@@ -161,6 +162,7 @@ jobs:
               'fa_redact/clinical.py',
               'fa_redact/conflicts.py',
               'fa_redact/reporting.py',
+              'fa_redact/serialization.py',
               'fa_redact/structured.py',
               'fa_redact/py.typed',
               'fa_redact/detectors/email.py',
@@ -232,9 +234,16 @@ jobs:
           assert callable(fa_redact.redact_fields)
           assert callable(fa_redact.redact_many)
           assert callable(fa_redact.detection_report)
+          assert callable(fa_redact.detection_to_dict)
+          assert callable(fa_redact.detections_to_list)
+          assert callable(fa_redact.dumps_detections)
+          assert callable(fa_redact.dumps_report)
+          assert callable(fa_redact.dumps_reports)
           assert callable(fa_redact.report_detections)
           assert callable(fa_redact.report_fields)
           assert callable(fa_redact.report_many)
+          assert callable(fa_redact.report_to_dict)
+          assert callable(fa_redact.reports_to_dict)
           assert callable(fa_redact.is_valid_national_id)
           assert callable(fa_redact.is_valid_mobile_number)
           assert callable(fa_redact.is_valid_iranian_iban)
@@ -328,6 +337,20 @@ jobs:
           assert len(batch_redacted) == 2
           assert "[IR_NATIONAL_ID_1]" in batch_redacted[0]
           assert "[IR_MOBILE_1]" in batch_redacted[1]
+
+          # Verify Phase 26 structured serialization helpers smoke
+          smoke_text = "کد ملی ۱۲۳۴۵۶۷۸۹۱"
+          smoke_dets = fa_redact.detect(smoke_text)
+          smoke_dets_json = fa_redact.dumps_detections(smoke_dets)
+          assert "IR_NATIONAL_ID" in smoke_dets_json
+          assert "1234567891" not in smoke_dets_json
+          assert "۱۲۳۴۵۶۷۸۹۱" not in smoke_dets_json
+
+          smoke_rep = fa_redact.detection_report(smoke_text)
+          smoke_rep_json = fa_redact.dumps_report(smoke_rep)
+          assert "total_detections" in smoke_rep_json
+          assert "1234567891" not in smoke_rep_json
+          assert "۱۲۳۴۵۶۷۸۹۱" not in smoke_rep_json
 
           print("Wheel smoke test passed.")
           PY
