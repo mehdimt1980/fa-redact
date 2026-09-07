@@ -3,6 +3,11 @@
 This package is currently in early development.
 """
 
+from fa_redact.batch import (
+    detect_many,
+    redact_many,
+    report_many,
+)
 from fa_redact.clinical import (
     ClinicalRedactionProfile,
     ClinicalTextTemplate,
@@ -71,6 +76,7 @@ __all__: list[str] = [
     "clinical_profile",
     "detect",
     "detect_fields",
+    "detect_many",
     "detection_report",
     "is_valid_bank_card_number",
     "is_valid_email",
@@ -82,7 +88,9 @@ __all__: list[str] = [
     "normalize_text",
     "redact",
     "redact_fields",
+    "redact_many",
     "report_detections",
     "report_fields",
+    "report_many",
     "resolve_detection_conflicts",
 ]
