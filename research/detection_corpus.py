@@ -17,6 +17,9 @@ from dataclasses import dataclass
 
 from fa_redact.detectors.pattern import PatternRule
 from research.evaluation import EntitySpan
+from research.legal_entity_id_reference import (
+    compute_legal_entity_checksum_variant_a,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -291,6 +294,40 @@ _PAT_NORM_2_TEXT = "شناسه پرونده: ٩٨٧٦٥ با ارقام عربی
 _PAT_NEG_1_TEXT = "کد حسابداری ACC-123456 نباید با الگوی بیمارستانی تطابق یابد."
 _PAT_NEG_2_TEXT = "شماره کوتاه MRN-12345 و طولانی PAT-1234567 معتبر نیستند."
 _PAT_NEG_3_TEXT = "شماره نامه: 54321 به دلیل عدم تطابق پیشوند متنی نباید استخراج شود."
+
+# Suite: legal_entity_id
+
+
+def _make_synthetic_leid(prefix_10: str) -> str:
+    check = compute_legal_entity_checksum_variant_a(prefix_10)
+    return f"{prefix_10}{check}"
+
+
+_SYNTH_LEID_1 = _make_synthetic_leid("1400000001")
+_SYNTH_LEID_2 = _make_synthetic_leid("1026000001")
+_SYNTH_LEID_3 = "".join(chr(0x06F0 + int(c)) for c in _SYNTH_LEID_1)
+_SYNTH_LEID_4 = "".join(chr(0x0660 + int(c)) for c in _SYNTH_LEID_1)
+
+# 16. Legal Entity ID - Positive
+_LEID_POS_1_TEXT = f"شناسه ملی شرکت با کد {_SYNTH_LEID_1} در روزنامه رسمی درج شد."
+_LEID_POS_2_TEXT = f"شماره ثبت و شناسه ملی {_SYNTH_LEID_2} در قرارداد قید گردید."
+_LEID_POS_3_TEXT = f"شناسه ملی حقوقی {_SYNTH_LEID_3} با ارقام فارسی ثبت شد."
+_LEID_POS_4_TEXT = f"شناسه ملی اشخاص حقوقی {_SYNTH_LEID_4} در سیستم وارد گردید."
+_LEID_POS_5_TEXT = (
+    f"شناسه ملی شرکت {_SYNTH_LEID_1} می‌باشد. استعلام شناسه {_SYNTH_LEID_1} تکمیل شد."
+)
+
+# 17. Legal Entity ID - Negative Controls
+_LEID_NEG_1_TEXT = (
+    "شناسه ملی با رقم کنترلی نادرست "
+    f"{_SYNTH_LEID_1[:-1]}{(int(_SYNTH_LEID_1[-1]) + 1) % 10} "
+    "نباید شناسایی شود."
+)
+_LEID_NEG_2_TEXT = "شناسه جعلی با ارقام تکراری 11111111111 و 00000000000 نامعتبر است."
+_LEID_NEG_3_TEXT = (
+    f"شناسه با طول ۱۰ رقمی {_SYNTH_LEID_1[:-1]} و "
+    f"۱۲ رقمی {_SYNTH_LEID_1}1 معتبر نیستند."
+)
 
 
 _RAW_CORPUS_CASES: list[SyntheticDetectionCase] = [
@@ -885,6 +922,89 @@ _RAW_CORPUS_CASES: list[SyntheticDetectionCase] = [
         category="pattern_negative",
         description="Negative control: 5-digit number without required context.",
         text=_PAT_NEG_3_TEXT,
+        gold_spans=[],
+    ),
+    # -------------------------------------------------------------------------
+    # SUITE: legal_entity_id -> IR_LEGAL_ENTITY_ID (Positive)
+    # -------------------------------------------------------------------------
+    _build_case(
+        id="syn_det_63_leid_ascii_standard",
+        suite="legal_entity_id",
+        category="legal_entity_id_positive",
+        description="Standard 11-digit ASCII Legal Entity ID in Persian sentence.",
+        text=_LEID_POS_1_TEXT,
+        gold_spans=[_span_for(_LEID_POS_1_TEXT, _SYNTH_LEID_1, "IR_LEGAL_ENTITY_ID")],
+    ),
+    _build_case(
+        id="syn_det_64_leid_ascii_second",
+        suite="legal_entity_id",
+        category="legal_entity_id_positive",
+        description="Second valid ASCII Legal Entity ID test vector.",
+        text=_LEID_POS_2_TEXT,
+        gold_spans=[_span_for(_LEID_POS_2_TEXT, _SYNTH_LEID_2, "IR_LEGAL_ENTITY_ID")],
+    ),
+    _build_case(
+        id="syn_det_65_leid_persian_digits",
+        suite="legal_entity_id",
+        category="legal_entity_id_positive",
+        description="Valid Legal Entity ID represented in Persian Unicode digits.",
+        text=_LEID_POS_3_TEXT,
+        gold_spans=[_span_for(_LEID_POS_3_TEXT, _SYNTH_LEID_3, "IR_LEGAL_ENTITY_ID")],
+    ),
+    _build_case(
+        id="syn_det_66_leid_arabic_indic_digits",
+        suite="legal_entity_id",
+        category="legal_entity_id_positive",
+        description="Valid Legal Entity ID represented in Arabic-Indic digits.",
+        text=_LEID_POS_4_TEXT,
+        gold_spans=[_span_for(_LEID_POS_4_TEXT, _SYNTH_LEID_4, "IR_LEGAL_ENTITY_ID")],
+    ),
+    _build_case(
+        id="syn_det_67_leid_repeated_document",
+        suite="legal_entity_id",
+        category="legal_entity_id_positive",
+        description="Document with repeated Legal Entity ID in separate sentences.",
+        text=_LEID_POS_5_TEXT,
+        gold_spans=[
+            _span_for(
+                _LEID_POS_5_TEXT,
+                _SYNTH_LEID_1,
+                "IR_LEGAL_ENTITY_ID",
+                occurrence=1,
+            ),
+            _span_for(
+                _LEID_POS_5_TEXT,
+                _SYNTH_LEID_1,
+                "IR_LEGAL_ENTITY_ID",
+                occurrence=2,
+            ),
+        ],
+    ),
+    # -------------------------------------------------------------------------
+    # SUITE: legal_entity_id -> IR_LEGAL_ENTITY_ID (Negative)
+    # -------------------------------------------------------------------------
+    _build_case(
+        id="syn_det_68_leid_checksum_invalid",
+        suite="legal_entity_id",
+        category="legal_entity_id_negative",
+        description="Negative control: invalid Variant A check digit.",
+        text=_LEID_NEG_1_TEXT,
+        gold_spans=[],
+    ),
+    _build_case(
+        id="syn_det_69_leid_repeated_digits",
+        suite="legal_entity_id",
+        category="legal_entity_id_negative",
+        description="Negative control: 11-digit repeated identical numbers.",
+        text=_LEID_NEG_2_TEXT,
+        gold_spans=[],
+    ),
+    _build_case(
+        id="syn_det_70_leid_malformed_length",
+        suite="legal_entity_id",
+        category="legal_entity_id_negative",
+        description="Negative control: 10-digit and 12-digit numbers.",
+        text=_LEID_NEG_3_TEXT,
         gold_spans=[],
     ),
 ]

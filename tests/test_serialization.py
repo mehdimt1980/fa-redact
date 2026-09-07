@@ -957,3 +957,28 @@ def test_root_serialization_exports() -> None:
         assert hasattr(fa_redact, name)
         assert callable(getattr(fa_redact, name))
         assert name in fa_redact.__all__
+
+
+def test_legal_entity_id_serialization() -> None:
+    """Verify serialization of IR_LEGAL_ENTITY_ID detections is strictly value-free."""
+    from research.legal_entity_id_reference import (
+        compute_legal_entity_checksum_variant_a,
+    )
+
+    from fa_redact import IranianLegalEntityIDDetector, detect
+
+    prefix = "1400000001"
+    check = compute_legal_entity_checksum_variant_a(prefix)
+    synthetic_id = f"{prefix}{check}"
+    text = f"شناسه ملی شرکت {synthetic_id}"
+    detections = detect(text, detectors=[IranianLegalEntityIDDetector()])
+    assert len(detections) == 1
+
+    serialized = detection_to_dict(detections[0])
+    assert serialized == {
+        "type": "IR_LEGAL_ENTITY_ID",
+        "start": 15,
+        "end": 26,
+    }
+    assert "value" not in serialized
+    assert "normalized_value" not in serialized

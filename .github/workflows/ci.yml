@@ -125,11 +125,15 @@ jobs:
               'src/fa_redact/structured.py',
               'src/fa_redact/detectors/pattern.py',
               'src/fa_redact/detectors/persian_ner.py',
+              'src/fa_redact/detectors/legal_entity_id.py',
+              'src/fa_redact/validators/legal_entity_id.py',
               'tests/test_package.py',
               'tests/test_batch.py',
               'tests/test_clinical.py',
               'tests/test_structured.py',
               'tests/test_persian_ner_detector.py',
+              'tests/test_legal_entity_id_validator.py',
+              'tests/test_legal_entity_id_detector.py',
           ]
           for req in required_sdist_files:
               assert any(name.endswith('/' + req) or name == req for name in sdist_names), (
@@ -148,7 +152,7 @@ jobs:
           ]
           for name in sdist_names:
               for pattern in forbidden_sdist_patterns:
-                  assert pattern not in name.lower(), f\"Forbidden pattern '{pattern}' found in sdist entry: {name}\"
+                  assert pattern not in name.lower(), f"Forbidden pattern '{pattern}' found in sdist entry: {name}"
 
           # 2. Audit wheel contents
           with zipfile.ZipFile(wheel_path, 'r') as z:
@@ -170,9 +174,11 @@ jobs:
               'fa_redact/detectors/bank_card.py',
               'fa_redact/detectors/pattern.py',
               'fa_redact/detectors/persian_ner.py',
+              'fa_redact/detectors/legal_entity_id.py',
               'fa_redact/validators/email.py',
               'fa_redact/validators/iranian_iban.py',
               'fa_redact/validators/bank_card.py',
+              'fa_redact/validators/legal_entity_id.py',
           ]
           for req in required_wheel_entries:
               assert req in wheel_names, (
@@ -247,6 +253,7 @@ jobs:
           assert callable(fa_redact.is_valid_national_id)
           assert callable(fa_redact.is_valid_mobile_number)
           assert callable(fa_redact.is_valid_iranian_iban)
+          assert callable(fa_redact.is_valid_iranian_legal_entity_id)
           assert callable(fa_redact.is_valid_email)
           assert callable(fa_redact.is_valid_bank_card_number)
           assert callable(fa_redact.resolve_detection_conflicts)
@@ -258,6 +265,7 @@ jobs:
           assert fa_redact.IranianNationalIDDetector is not None
           assert fa_redact.IranianMobileNumberDetector is not None
           assert fa_redact.IranianIBANDetector is not None
+          assert fa_redact.IranianLegalEntityIDDetector is not None
           assert fa_redact.EmailDetector is not None
           assert fa_redact.BankCardDetector is not None
           assert fa_redact.PatternDetector is not None
@@ -351,6 +359,24 @@ jobs:
           assert "total_detections" in smoke_rep_json
           assert "1234567891" not in smoke_rep_json
           assert "۱۲۳۴۵۶۷۸۹۱" not in smoke_rep_json
+
+          # Verify Phase 28: Legal Entity ID (opt-in behavior)
+          assert callable(fa_redact.is_valid_iranian_legal_entity_id)
+          _coefs = (29, 27, 23, 19, 17, 29, 27, 23, 19, 17)
+          _p = [1, 4, 0, 0, 0, 0, 0, 0, 0, 1]
+          _rem = sum((_p[i] + _p[9] + 2) * _coefs[i] for i in range(10)) % 11
+          _chk = 0 if _rem == 10 else _rem
+          _synth_id = "".join(str(x) for x in _p) + str(_chk)
+          assert fa_redact.is_valid_iranian_legal_entity_id(_synth_id)
+          leid_detector = fa_redact.IranianLegalEntityIDDetector()
+          leid_text = f"شناسه حقوقی {_synth_id} ثبت شد."
+          default_dets = fa_redact.detect(leid_text)
+          assert len(default_dets) == 0, "Default detect must not detect Legal Entity ID"
+          explicit_dets = fa_redact.detect(leid_text, detectors=[leid_detector])
+          assert len(explicit_dets) == 1
+          assert explicit_dets[0].type == "IR_LEGAL_ENTITY_ID"
+          assert explicit_dets[0].value == _synth_id
+          assert "research" not in sys.modules, "Research package must not be imported in production"
 
           print("Wheel smoke test passed.")
           PY

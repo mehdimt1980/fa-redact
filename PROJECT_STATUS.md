@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.3.0`
 - **Current source version:** `0.3.0`
-- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 27 Additional Iranian Identifier Research in progress)
-- **Last closed phase:** Phase 26 — Privacy-Safe Structured Serialization
-- **Current active phase:** Phase 27 — Additional Iranian Identifier Research & Decision Gate (In Progress)
+- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 28 Opt-in Iranian Legal Entity National ID Implementation in progress)
+- **Last closed phase:** Phase 27 — Additional Iranian Identifier Research & Decision Gate
+- **Current active phase:** Phase 28 — Opt-in Iranian Legal Entity National ID Implementation (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -28,6 +28,7 @@ Default detectors executed by `detect()`, `redact()`, and `PseudonymizationSessi
 
 The following built-in detectors remain strictly **opt-in**:
 
+- `IranianLegalEntityIDDetector` (`IR_LEGAL_ENTITY_ID`)
 - `EmailDetector` (`EMAIL`)
 - `BankCardDetector` (`BANK_CARD`)
 - `PatternDetector` (user-configured entity types via `PatternRule`)
@@ -52,13 +53,14 @@ The following built-in detectors remain strictly **opt-in**:
 - Detects Iranian National IDs (10-digit modulo-11 checksum validation).
 - Detects Iranian Mobile Numbers (2026 CRA National Numbering Plan prefix validation).
 - Detects Iranian IBANs / Sheba (26-character MOD-97 checksum validation).
+- Opt-in detection for Iranian Legal Entity National IDs (11-digit Variant A checksum validation).
 - Opt-in detection for ASCII Email addresses (syntactic dot-atom / domain validation).
 - Opt-in detection for 16-digit Bank Cards / PAN (Luhn MOD-10 checksum validation).
 - Opt-in configurable `PatternDetector` executing user-defined `PatternRule` regex specifications.
 - `detect()` represents the raw evidence layer: preserves overlaps, nested spans, and exact duplicate detections without silent filtering.
 
 ### Transformation
-- **Stateless Redaction (`redact`):** Replaces detected spans with deterministic typed placeholders (e.g., `[IR_NATIONAL_ID_1]`, `[IR_MOBILE_1]`, `[IR_IBAN_1]`). Enforces referential consistency within a single call and avoids collisions with pre-existing placeholder literals.
+- **Stateless Redaction (`redact`):** Replaces detected spans with deterministic typed placeholders (e.g., `[IR_NATIONAL_ID_1]`, `[IR_MOBILE_1]`, `[IR_IBAN_1]`, `[IR_LEGAL_ENTITY_ID_1]`). Enforces referential consistency within a single call and avoids collisions with pre-existing placeholder literals.
 - **Stateful Pseudonymization (`PseudonymizationSession`):** Maintains stable entity aliases across multiple conversational turns, supports non-cascading local restoration (`session.restore()`) using first-observed raw representations, reserves historical placeholder-like literals, and enforces atomic state updates on failure.
 
 ### Conflict Resolution
@@ -116,6 +118,7 @@ The following built-in detectors remain strictly **opt-in**:
 
 - **No Issuance or Identity Claims:** Checksum or prefix validity proves mathematical format only; it does not verify that an identifier exists, has been officially issued, or belongs to an individual.
 - **National ID Limitation:** Modulo-11 checksum validation does not verify Civil Registration Organization issuance.
+- **Legal Entity ID Limitation:** Checksum validation does not verify State Organization for Registration of Deeds and Properties (SSAA / ILENC) issuance, active corporate status, registry existence, or authorized signatories. The checksum implementation follows the Variant A formula selected in Phase 27 from reviewed technical implementations and empirical verification. No primary statutory publication of the arithmetic formula was identified.
 - **Mobile Number Limitation:** Prefix validation does not verify SIM registration, carrier ownership, active service, or number portability.
 - **IBAN Limitation:** MOD-97 validation does not verify bank account existence, status, or balance.
 - **Email Limitation:** Syntactic validation does not verify mailbox existence, MX records, or deliverability.
@@ -205,18 +208,19 @@ A development phase transitions through three discrete states:
 
 ## Last Closed Phase
 
-- **Phase:** Phase 26 — Privacy-Safe Structured Serialization
+- **Phase:** Phase 27 — Additional Iranian Identifier Research & Decision Gate
 - **Status:** `CLOSED`
-- **PR:** #28
-- **Phase Branch Head:** `6eea4c7038f44e8c1ebb43c9e90d65643b22e080`
-- **Merge Commit:** `17a02bc7cf56f92067cf0214b07027a49cdea23f`
-- **Verified Post-Merge Main CI:** Run `34100537979` (push to `main`, conclusion: success, 5 jobs passed)
-- **Phase 26 Baseline:** 983 passing tests.
-- **Key Phase 26 Result:**
-  - Explicit structural Detection serialization (`detection_to_dict`, `detections_to_list`, `dumps_detections`) omitting raw and normalized values.
-  - Value-free and span-free aggregate DetectionReport serialization (`report_to_dict`, `reports_to_dict`, `dumps_report`, `dumps_reports`).
-  - CLI `detect` and `report` subcommands refactored to reuse shared serialization helpers with byte-for-byte backward compatibility.
-  - Zero mandatory runtime dependencies preserved in the base package (`dependencies = []`).
+- **PR:** #29
+- **Phase Branch Head:** `ea3f27e7ff7488c589a4c11b94806121529e5f12`
+- **Merge Commit:** `9c50721db0bc70dbfc925326979e70136533cc23`
+- **Verified Post-Merge Main CI:** Run `34106995892` (push to `main`, conclusion: success, 5 jobs passed)
+- **Phase 27 Baseline:** 1004 passing tests.
+- **Key Phase 27 Result:**
+  - Evaluated four candidate Iranian identifier types: Legal Entity National ID (*شناسه ملی اشخاص حقوقی*), Iranian Postal Code (*کد پستی ده رقمی*), Company Registration Number (*شماره ثبت شرکت‌ها*), and Economic/Tax Identifier (*کد اقتصادی*).
+  - Evaluated Iranian Legal Entity National ID with score 15 / 16 (CONDITIONAL GO, recommended as opt-in detector with entity type `IR_LEGAL_ENTITY_ID`).
+  - Evaluated postal codes (REJECT: high collision), registration numbers (REJECT: lack of registry namespace), and economic identifiers (HOLD: 1401 regime transition).
+  - Selected Variant A consensus formula (`[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]`, `d[9] + 2`, modulo 11, remainder 10 $\to$ 0) with documented research limitation (no primary statutory arithmetic publication identified).
+  - Maintained zero production changes in Phase 27.
 - **Stable Historical Anchors:**
   - `v0.2.0` release commit: `227577deeb899de9593efb296659822f1ec0bf20`
   - Phase 18 merge commit: `4ce102f95ff683d957f55bea79d393bff8976787` (PR #17)
@@ -231,15 +235,16 @@ A development phase transitions through three discrete states:
   - Phase 24 merge commit: `350590d296e6a7f88be75a3ffc268ee56367fcee` (PR #26)
   - Phase 25 merge commit: `0350280a6c0f276904f59dd57b313872e7d74cd0` (PR #27)
   - Phase 26 merge commit: `17a02bc7cf56f92067cf0214b07027a49cdea23f` (PR #28)
+  - Phase 27 merge commit: `9c50721db0bc70dbfc925326979e70136533cc23` (PR #29)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
 ## Active Phase
 
-- **Phase:** Phase 27 — Additional Iranian Identifier Research & Decision Gate
+- **Phase:** Phase 28 — Opt-in Iranian Legal Entity National ID Implementation
 - **Status:** `IN PROGRESS`
-- **Scope:** Researching candidate additional Iranian identifiers (Legal Entity National ID, Iranian postal code, company registration number, economic/tax identifier) to determine suitability for deterministic, offline, privacy-first implementation in fa-redact. Evaluate authority, structure, checksum algorithms, conflicting implementations, and collision risks. Create comprehensive research deliverable and deterministic decision JSON artifact. Maintain zero production source changes, zero new runtime dependencies, package version 0.3.0, and default detectors unchanged.
+- **Scope:** Implement strictly opt-in Iranian Legal Entity National ID (*شناسه ملی اشخاص حقوقی*) validator (`is_valid_iranian_legal_entity_id`) and detector (`IranianLegalEntityIDDetector`) with canonical entity type `IR_LEGAL_ENTITY_ID`. Follow Phase 27 Variant A consensus formula (`[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]`, `d[9] + 2`, modulo 11, remainder 10 $\to$ 0). Maintain strictly opt-in integration (`_DEFAULT_DETECTORS` unchanged), position-preserving exact offsets, offline mathematical validation only (no network/registry lookups), zero new runtime dependencies (`dependencies = []`), 100% synthetic test fixtures, and package version `0.3.0`.
 
 ---
 

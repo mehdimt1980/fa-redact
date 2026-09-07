@@ -442,3 +442,113 @@ def test_pattern_detector_pipeline_explicit_combination() -> None:
     assert len(results) == 2
     assert results[0].type == "IR_NATIONAL_ID"
     assert results[1].type == "MRN"
+
+
+def test_default_detectors_tuple_is_exactly_three() -> None:
+    """Hard gate: Verify _DEFAULT_DETECTORS contains exactly 3 detectors
+    and not Legal Entity.
+    """
+    from fa_redact.detectors.iranian_iban import IranianIBANDetector
+    from fa_redact.detectors.legal_entity_id import IranianLegalEntityIDDetector
+    from fa_redact.detectors.mobile import IranianMobileNumberDetector
+    from fa_redact.detectors.national_id import IranianNationalIDDetector
+    from fa_redact.pipeline import _DEFAULT_DETECTORS
+
+    assert len(_DEFAULT_DETECTORS) == 3
+    expected_classes = (
+        IranianNationalIDDetector,
+        IranianMobileNumberDetector,
+        IranianIBANDetector,
+    )
+    assert tuple(type(d) for d in _DEFAULT_DETECTORS) == expected_classes
+    assert not any(
+        isinstance(d, IranianLegalEntityIDDetector) for d in _DEFAULT_DETECTORS
+    )
+
+
+def test_legal_entity_id_remains_absent_from_defaults() -> None:
+    """Verify IranianLegalEntityIDDetector is not run by default in detect()."""
+    from research.legal_entity_id_reference import (
+        compute_legal_entity_checksum_variant_a,
+    )
+
+    prefix = "1400000001"
+    check = compute_legal_entity_checksum_variant_a(prefix)
+    synthetic_legal_id = f"{prefix}{check}"
+    text = f"شناسه ملی شرکت: {synthetic_legal_id}"
+    results = detect(text)
+    # Default pipeline must detect 0 entities
+    assert len(results) == 0
+
+
+def test_legal_entity_id_explicit_detection() -> None:
+    """Verify explicit IranianLegalEntityIDDetector detects 11-digit legal IDs."""
+    from research.legal_entity_id_reference import (
+        compute_legal_entity_checksum_variant_a,
+    )
+
+    from fa_redact import IranianLegalEntityIDDetector
+
+    prefix = "1400000001"
+    check = compute_legal_entity_checksum_variant_a(prefix)
+    synthetic_legal_id = f"{prefix}{check}"
+    text = f"شناسه ملی شرکت: {synthetic_legal_id}"
+    results = detect(text, detectors=[IranianLegalEntityIDDetector()])
+    assert len(results) == 1
+    assert results[0].type == "IR_LEGAL_ENTITY_ID"
+    assert results[0].value == synthetic_legal_id
+
+
+def test_mobile_and_legal_entity_id_collision_preservation() -> None:
+    """Verify overlapping synthetic mobile / legal entity ID detection
+    and conflict behavior.
+    """
+    from fa_redact import (
+        IranianLegalEntityIDDetector,
+        IranianMobileNumberDetector,
+        is_valid_iranian_legal_entity_id,
+        is_valid_mobile_number,
+        redact,
+        resolve_detection_conflicts,
+    )
+
+    # Find a synthetic 11-digit number starting with 0912 that is valid for both
+    # mobile prefix and legal entity checksum
+    collision_value: str | None = None
+    for seq in range(100000, 200000):
+        prefix = f"0912{seq:06d}"[:10]
+        # Try all 10 check digits
+        for d in range(10):
+            cand = f"{prefix}{d}"
+            if is_valid_mobile_number(cand) and is_valid_iranian_legal_entity_id(cand):
+                collision_value = cand
+                break
+        if collision_value is not None:
+            break
+
+    assert collision_value is not None, (
+        "Expected to find a synthetic mobile/legal collision"
+    )
+
+    text = f"شماره مشکوک: {collision_value}"
+    both_detectors: list[Detector] = [
+        IranianMobileNumberDetector(),
+        IranianLegalEntityIDDetector(),
+    ]
+
+    # 1. detect() preserves both overlapping detections
+    detections = detect(text, detectors=both_detectors)
+    assert len(detections) == 2
+    types = {d.type for d in detections}
+    assert types == {"IR_MOBILE", "IR_LEGAL_ENTITY_ID"}
+
+    # 2. redact() fails loudly with reject policy on collision
+    with pytest.raises(ValueError, match=r"[Oo]verlap|[Dd]uplicate"):
+        redact(text, detectors=both_detectors)
+
+    # 3. Explicit priority policy can resolve the conflict cleanly
+    resolved = resolve_detection_conflicts(
+        detections, policy="priority", type_priority=["IR_MOBILE", "IR_LEGAL_ENTITY_ID"]
+    )
+    assert len(resolved) == 1
+    assert resolved[0].type == "IR_MOBILE"

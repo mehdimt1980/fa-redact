@@ -627,3 +627,43 @@ def test_configuration_validation_timing() -> None:
     # invalid detectors container fails immediately
     with pytest.raises(TypeError, match="detectors must be a Sequence"):
         detect_many([], detectors=123)  # type: ignore[arg-type]
+
+
+def test_batch_helpers_with_legal_entity_id() -> None:
+    """Verify detect_many, redact_many, and report_many work with explicit
+    Legal Entity detector.
+    """
+    from research.legal_entity_id_reference import (
+        compute_legal_entity_checksum_variant_a,
+    )
+
+    from fa_redact import IranianLegalEntityIDDetector
+
+    p1 = "1400000001"
+    p2 = "1026000001"
+    id1 = f"{p1}{compute_legal_entity_checksum_variant_a(p1)}"
+    id2 = f"{p2}{compute_legal_entity_checksum_variant_a(p2)}"
+    docs = [
+        f"شرکت الف: {id1}",
+        f"شرکت ب: {id2}",
+    ]
+    dets = [IranianLegalEntityIDDetector()]
+
+    # detect_many
+    batch_dets = list(detect_many(docs, detectors=dets))
+    assert len(batch_dets) == 2
+    assert len(batch_dets[0]) == 1 and batch_dets[0][0].type == "IR_LEGAL_ENTITY_ID"
+    assert len(batch_dets[1]) == 1 and batch_dets[1][0].type == "IR_LEGAL_ENTITY_ID"
+
+    # redact_many
+    batch_redacted = list(redact_many(docs, detectors=dets))
+    assert batch_redacted == [
+        "شرکت الف: [IR_LEGAL_ENTITY_ID_1]",
+        "شرکت ب: [IR_LEGAL_ENTITY_ID_1]",
+    ]
+
+    # report_many
+    batch_reports = list(report_many(docs, detectors=dets))
+    assert len(batch_reports) == 2
+    assert batch_reports[0].counts["IR_LEGAL_ENTITY_ID"] == 1
+    assert batch_reports[1].counts["IR_LEGAL_ENTITY_ID"] == 1

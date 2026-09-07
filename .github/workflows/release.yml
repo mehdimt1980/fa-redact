@@ -131,6 +131,8 @@ jobs:
               'fa_redact/serialization.py',
               'fa_redact/structured.py',
               'fa_redact/detectors/persian_ner.py',
+              'fa_redact/detectors/legal_entity_id.py',
+              'fa_redact/validators/legal_entity_id.py',
               'fa_redact/py.typed',
           ]
           for req in required_wheel_entries:
@@ -170,6 +172,8 @@ jobs:
               'src/fa_redact/serialization.py',
               'src/fa_redact/structured.py',
               'src/fa_redact/detectors/persian_ner.py',
+              'src/fa_redact/detectors/legal_entity_id.py',
+              'src/fa_redact/validators/legal_entity_id.py',
           ]
           for req in required_sdist_files:
               assert any(name.endswith('/' + req) or name == req for name in sdist_names), (
@@ -425,6 +429,25 @@ jobs:
           assert "total_detections" in ser_rep_json
           assert "1234567891" not in ser_rep_json
           assert "۱۲۳۴۵۶۷۸۹۱" not in ser_rep_json
+
+          # 15. Phase 28: Legal Entity ID (opt-in behavior)
+          assert callable(fa_redact.is_valid_iranian_legal_entity_id)
+          _coefs = (29, 27, 23, 19, 17, 29, 27, 23, 19, 17)
+          _p = [1, 4, 0, 0, 0, 0, 0, 0, 0, 1]
+          _rem = sum((_p[i] + _p[9] + 2) * _coefs[i] for i in range(10)) % 11
+          _chk = 0 if _rem == 10 else _rem
+          _synth_id = "".join(str(x) for x in _p) + str(_chk)
+          assert fa_redact.is_valid_iranian_legal_entity_id(_synth_id)
+          assert fa_redact.IranianLegalEntityIDDetector is not None
+          leid_detector = fa_redact.IranianLegalEntityIDDetector()
+          leid_text = f"شناسه حقوقی {_synth_id} ثبت شد."
+          default_dets = fa_redact.detect(leid_text)
+          assert len(default_dets) == 0, "Default detect must not detect Legal Entity ID"
+          explicit_dets = fa_redact.detect(leid_text, detectors=[leid_detector])
+          assert len(explicit_dets) == 1
+          assert explicit_dets[0].type == "IR_LEGAL_ENTITY_ID"
+          assert explicit_dets[0].value == _synth_id
+          assert "research" not in sys.modules, "Research package must not be imported in production"
 
           print("Release wheel smoke test passed for the current fa-redact release candidate.")
           PY

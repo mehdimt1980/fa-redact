@@ -48,6 +48,7 @@ def test_package_all_export() -> None:
         "Detector",
         "EmailDetector",
         "IranianIBANDetector",
+        "IranianLegalEntityIDDetector",
         "IranianMobileNumberDetector",
         "IranianNationalIDDetector",
         "PatternDetector",
@@ -67,6 +68,7 @@ def test_package_all_export() -> None:
         "is_valid_bank_card_number",
         "is_valid_email",
         "is_valid_iranian_iban",
+        "is_valid_iranian_legal_entity_id",
         "is_valid_mobile_number",
         "is_valid_national_id",
         "normalize_digits",
@@ -198,6 +200,9 @@ def test_subpackage_imports() -> None:
         IranianIBANDetector as SubIbanDetector,
     )
     from fa_redact.detectors import (
+        IranianLegalEntityIDDetector as SubLegalEntityDetector,
+    )
+    from fa_redact.detectors import (
         IranianMobileNumberDetector as SubMobileDetector,
     )
     from fa_redact.detectors import (
@@ -222,6 +227,9 @@ def test_subpackage_imports() -> None:
         is_valid_iranian_iban as sub_iban_val,
     )
     from fa_redact.validators import (
+        is_valid_iranian_legal_entity_id as sub_legal_val,
+    )
+    from fa_redact.validators import (
         is_valid_mobile_number as sub_mobile_val,
     )
     from fa_redact.validators import (
@@ -231,11 +239,13 @@ def test_subpackage_imports() -> None:
     assert callable(sub_card_val)
     assert callable(sub_email_val)
     assert callable(sub_iban_val)
+    assert callable(sub_legal_val)
     assert callable(sub_mobile_val)
     assert callable(sub_nid_val)
     assert SubBankCardDetector is not None
     assert SubEmailDetector is not None
     assert SubIbanDetector is not None
+    assert SubLegalEntityDetector is not None
     assert SubMobileDetector is not None
     assert SubNidDetector is not None
     assert SubPatternDetector is not None

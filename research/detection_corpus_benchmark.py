@@ -20,6 +20,7 @@ from typing import Any
 
 from fa_redact.detectors.bank_card import BankCardDetector
 from fa_redact.detectors.email import EmailDetector
+from fa_redact.detectors.legal_entity_id import IranianLegalEntityIDDetector
 from fa_redact.detectors.pattern import PatternDetector
 from fa_redact.pipeline import detect
 from fa_redact.protocols import Detector
@@ -45,6 +46,7 @@ DEFAULT_SUITE_DETECTORS: dict[str, Sequence[Detector] | None] = {
     "email": (EmailDetector(),),
     "bank_card": (BankCardDetector(),),
     "pattern": (PatternDetector(SYNTHETIC_PATTERN_RULES),),
+    "legal_entity_id": (IranianLegalEntityIDDetector(),),
 }
 
 

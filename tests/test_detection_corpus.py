@@ -246,13 +246,13 @@ class TestCorpusValidation:
         assert ids1 == ids2
 
     def test_corpus_size_in_target_range(self) -> None:
-        """Verify corpus contains between 40 and 70 cases."""
-        assert 40 <= len(SYNTHETIC_DETECTION_CORPUS) <= 70
+        """Verify corpus contains between 40 and 80 cases."""
+        assert 40 <= len(SYNTHETIC_DETECTION_CORPUS) <= 80
 
     def test_corpus_suites_present(self) -> None:
         """Verify all target suites are represented."""
         suites = {case.suite for case in SYNTHETIC_DETECTION_CORPUS}
-        assert suites == {"default", "email", "bank_card", "pattern"}
+        assert suites == {"default", "email", "bank_card", "pattern", "legal_entity_id"}
 
 
 # =============================================================================
@@ -341,6 +341,20 @@ class TestSuiteCoverage:
         assert len(pat_norm) >= 2
         assert len(pat_neg) >= 2
 
+    def test_legal_entity_id_suite_positive_and_negative(self) -> None:
+        leid_pos = [
+            c
+            for c in SYNTHETIC_DETECTION_CORPUS
+            if c.category == "legal_entity_id_positive"
+        ]
+        leid_neg = [
+            c
+            for c in SYNTHETIC_DETECTION_CORPUS
+            if c.category == "legal_entity_id_negative"
+        ]
+        assert len(leid_pos) >= 4
+        assert len(leid_neg) >= 3
+
     def test_no_universal_pattern_claim(self) -> None:
         """Verify synthetic pattern rules are explicitly typed PatternRule instances."""
         assert len(SYNTHETIC_PATTERN_RULES) >= 2
@@ -382,6 +396,7 @@ class TestBenchmarkRunner:
             "MRN",
             "PATIENT_ID",
             "ENCOUNTER_ID",
+            "IR_LEGAL_ENTITY_ID",
         }
         assert set(result.by_type.keys()) == expected_types
         for _entity_type, m in result.by_type.items():

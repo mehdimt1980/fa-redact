@@ -596,3 +596,59 @@ def test_redact_conflict_pattern_detector_policies() -> None:
         type_priority=["RAW_MRN", "FULL_MRN"],
     )
     assert res_priority == "شماره MRN-[RAW_MRN_1] ثبت شد"
+
+
+def test_redact_legal_entity_id_single_and_repeated() -> None:
+    """Verify single and repeated Legal Entity ID redaction with stable placeholder."""
+    from research.legal_entity_id_reference import (
+        compute_legal_entity_checksum_variant_a,
+    )
+
+    from fa_redact import IranianLegalEntityIDDetector
+
+    prefix = "1400000001"
+    check = compute_legal_entity_checksum_variant_a(prefix)
+    synthetic_id = f"{prefix}{check}"
+    persian_id = "".join(chr(0x06F0 + int(c)) for c in synthetic_id)
+    text = f"شرکت با شناسه {synthetic_id} (مجدداً {persian_id}) ثبت شد."
+    expected = (
+        "شرکت با شناسه [IR_LEGAL_ENTITY_ID_1] (مجدداً [IR_LEGAL_ENTITY_ID_1]) ثبت شد."
+    )
+
+    result = redact(text, detectors=[IranianLegalEntityIDDetector()])
+    assert result == expected
+
+
+def test_redact_legal_entity_id_distinct_entities() -> None:
+    """Verify multiple distinct Legal Entity IDs receive distinct
+    sequential placeholders.
+    """
+    from research.legal_entity_id_reference import (
+        compute_legal_entity_checksum_variant_a,
+    )
+
+    from fa_redact import IranianLegalEntityIDDetector
+
+    prefix1 = "1400000001"
+    prefix2 = "1026000001"
+    id1 = f"{prefix1}{compute_legal_entity_checksum_variant_a(prefix1)}"
+    id2 = f"{prefix2}{compute_legal_entity_checksum_variant_a(prefix2)}"
+    text = f"شرکت الف {id1} و شرکت ب {id2}"
+    expected = "شرکت الف [IR_LEGAL_ENTITY_ID_1] و شرکت ب [IR_LEGAL_ENTITY_ID_2]"
+
+    result = redact(text, detectors=[IranianLegalEntityIDDetector()])
+    assert result == expected
+
+
+def test_redact_legal_entity_id_absent_from_defaults() -> None:
+    """Verify Legal Entity ID is not redacted under default redact() call."""
+    from research.legal_entity_id_reference import (
+        compute_legal_entity_checksum_variant_a,
+    )
+
+    prefix = "1400000001"
+    check = compute_legal_entity_checksum_variant_a(prefix)
+    synthetic_id = f"{prefix}{check}"
+    text = f"شناسه ملی شرکت: {synthetic_id}"
+    # Default redact() must not modify the legal entity ID
+    assert redact(text) == text
