@@ -40,6 +40,8 @@ def test_package_all_export() -> None:
     expected_exports = {
         "__version__",
         "BankCardDetector",
+        "ClinicalRedactionProfile",
+        "ClinicalTextTemplate",
         "ConflictPolicy",
         "Detection",
         "DetectionReport",
@@ -52,6 +54,7 @@ def test_package_all_export() -> None:
         "PatternRule",
         "PersianNERDetector",
         "PseudonymizationSession",
+        "clinical_profile",
         "detect",
         "detect_fields",
         "detection_report",
@@ -76,6 +79,15 @@ def test_package_all_export() -> None:
 
 def test_pipeline_and_protocols_imports() -> None:
     """Verify direct imports from core submodules."""
+    from fa_redact.clinical import (
+        ClinicalRedactionProfile as SubClinicalProfileClass,
+    )
+    from fa_redact.clinical import (
+        ClinicalTextTemplate as SubClinicalTemplate,
+    )
+    from fa_redact.clinical import (
+        clinical_profile as sub_clinical_profile,
+    )
     from fa_redact.conflicts import (
         ConflictPolicy as SubConflictPolicy,
     )
@@ -115,6 +127,9 @@ def test_pipeline_and_protocols_imports() -> None:
     assert callable(sub_detect_fields)
     assert callable(sub_redact_fields)
     assert callable(sub_report_fields)
+    assert callable(sub_clinical_profile)
+    assert SubClinicalProfileClass is not None
+    assert SubClinicalTemplate is not None
     assert SubReport is not None
     assert SubSession is not None
     assert SubDetector is not None

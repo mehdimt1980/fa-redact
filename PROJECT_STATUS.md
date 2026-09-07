@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.2.0`
 - **Current source version:** `0.2.0`
-- **Development status:** `v0.2.0` released; Phase 18, Phase 19, Phase 20, Phase 21, and Phase 21.1 merged as `[Unreleased]` development
-- **Last closed phase:** Phase 21.1 — Persian NER Empirical Benchmark & Prototype
-- **Current active phase:** Phase 21.2 — Opt-in Persian NER Implementation Prototype (In Progress)
+- **Development status:** `v0.2.0` released; Phase 18, Phase 19, Phase 20, Phase 21, Phase 21.1, and Phase 21.2 merged as `[Unreleased]` development
+- **Last closed phase:** Phase 21.2 — Opt-in Persian NER Implementation Prototype
+- **Current active phase:** Phase 22 — Clinical De-identification Layer (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -198,29 +198,25 @@ A development phase transitions through three discrete states:
 
 ## Last Closed Phase
 
-- **Phase:** Phase 21.1 — Persian NER Empirical Benchmark & Prototype
+- **Phase:** Phase 21.2 — Opt-in Persian NER Implementation Prototype
 - **Status:** `CLOSED`
-- **PR:** #22
-- **Merge Commit:** `bf1a71b2e675466cb1bf7ef0ab60eaf5f0bbef0f`
-- **Verified Post-Merge Main CI:** Run `34042292070` (push to `main`, conclusion: success, 5 jobs passed)
-- **Phase 21.1 Baseline:** 757 passing tests.
-- **Unreleased Scope:** Phase 18, 19, 20, 21, and 21.1 are merged as `[Unreleased]` development.
-- **Key Phase 21.1 Empirical Result:**
-  - 1,026 evaluated sentences
-  - 434 gold PERSON entities
-  - 433 predicted PERSON entities
-  - TP = 430
-  - FP = 3
-  - FN = 4
-  - precision = 0.993072
-  - recall = 0.990783
-  - exact-span F1 = 0.991926
-  - boundary errors = 3
-  - duplicate predictions = 0
-  - tokenizer structural alignment failures = 0
-  - truncated sentences = 0
-  - max tokenized length = 153
-- **Phase 21.1 Decision:** CONDITIONAL GO FOR AN OPT-IN NER IMPLEMENTATION PROTOTYPE
+- **PR:** #23
+- **Merge Commit:** `836ae09e6a44c9f234e6cc43492f1e0b70e6b4ac`
+- **Verified Post-Merge Main CI:** Run `34043988737` (push to `main`, conclusion: success, 5 jobs passed)
+- **Phase 21.2 Baseline:** 795 passing tests.
+- **Unreleased Scope:** Phase 18, 19, 20, 21, 21.1, and 21.2 are merged as `[Unreleased]` development.
+- **Key Phase 21.2 Result:**
+  - Experimental opt-in `PersianNERDetector` performing local Persian personal name (`PERSON`) named entity recognition using explicitly supplied local Hugging Face model directory.
+  - PERSON-only NER (no role inference for patient, physician, relative).
+  - Local model directory required (`local_files_only=True`, `trust_remote_code=False`).
+  - Fast tokenizer required with character offset mapping.
+  - Exact source character offsets extracted from position-preserving normalized text.
+  - Fail-loud long-text behavior (no silent truncation).
+  - Optional `ner` dependency extra (`torch>=2.7.0,<3`, `transformers>=4.49.0,<5`).
+  - Zero mandatory runtime dependencies retained in core package.
+  - Default detectors unchanged (`_DEFAULT_DETECTORS`).
+  - No NER CLI subcommand.
+  - No clinical or compliance guarantees.
 - **Stable Historical Anchors:**
   - `v0.2.0` release commit: `227577deeb899de9593efb296659822f1ec0bf20`
   - Phase 18 merge commit: `4ce102f95ff683d957f55bea79d393bff8976787` (PR #17)
@@ -228,15 +224,16 @@ A development phase transitions through three discrete states:
   - Phase 20 merge commit: `5e1023a2e3f9a910cc669569525652098262b2ea` (PR #20)
   - Phase 21 merge commit: `9ff013e1b4dddf7f2bd5f21cdf9c9feed480266c` (PR #21)
   - Phase 21.1 merge commit: `bf1a71b2e675466cb1bf7ef0ab60eaf5f0bbef0f` (PR #22)
+  - Phase 21.2 merge commit: `836ae09e6a44c9f234e6cc43492f1e0b70e6b4ac` (PR #23)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
 ## Active Phase
 
-- **Phase:** Phase 21.2 — Opt-in Persian NER Implementation Prototype
+- **Phase:** Phase 22 — Clinical De-identification Layer
 - **Status:** `IN PROGRESS`
-- **Scope:** Implement an experimental, strictly opt-in `PersianNERDetector` satisfying the `Detector` protocol using local Hugging Face model checkpoints, optional `ner` packaging extra, exact character offset extraction from position-preserving normalized text, fail-loud long-text policy, deterministic output ordering, zero runtime dependencies in core, and no modifications to existing default detection behavior.
+- **Scope:** Implement a small high-level composition layer for Persian healthcare text workflows via `ClinicalRedactionProfile` and `clinical_profile(...)`, composing existing detectors, institutional pattern rules, and conflict policies without duplicating detection/redaction engines, and without compliance claims.
 
 ---
 
