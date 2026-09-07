@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Synthetic Detector Evaluation Corpus & Benchmark Tooling (Phase 25):**
+  - Standard-library-only, offline synthetic regression corpus (`SYNTHETIC_DETECTION_CORPUS`) and validation harness (`validate_detection_corpus`) in `research.detection_corpus`.
+  - Immutable `SyntheticDetectionCase` research data model with exact character offsets, strict bounds checking, and duplicate span validation.
+  - Safe substring span-builder helper `_span_for` for deterministic index resolution without source text rewriting.
+  - Curated 100% synthetic test suites covering:
+    - Default direct identifiers (`IR_NATIONAL_ID`, `IR_MOBILE`, `IR_IBAN`) with ASCII, Persian, and Arabic-Indic script variants, surrounding Persian prose, punctuation boundaries, and negative controls.
+    - Opt-in `EMAIL` detection covering ASCII syntax, subdomains, and punctuation boundary variants.
+    - Opt-in `BANK_CARD` detection covering 16-digit Luhn numbers across script variants and negative controls.
+    - Configurable institutional `PatternRule` / `PatternDetector` fixtures (`MRN`, `PATIENT_ID`, contextual capture groups, and normalized digit matching).
+    - Multi-identifier mixed documents with repeated and adjacent identifiers.
+  - Offline benchmark runner (`research.detection_corpus_benchmark`) computing micro-averaged overall, per-type, and per-category exact-span metrics using existing `research.evaluation` functions.
+  - Value-free, privacy-safe benchmark result serializer producing deterministic JSON metadata (`research/results/phase25_detection_corpus.json`) with zero text, raw value, timestamp, or system path leakage.
+  - Zero runtime API modifications; top-level `fa_redact` exports and `src/fa_redact/` remain completely untouched.
 - **Batch Processing Helpers (Phase 24):**
   - Lazy, streaming batch-processing helpers `detect_many()`, `redact_many()`, and `report_many()` in `fa_redact.batch` and exported from top-level `fa_redact`.
   - Sequential, one-document-at-a-time processing preserving exact input order without materializing the document collection in memory (`len()`, `list()`, or `tuple()` conversions are avoided).
@@ -18,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Zero mandatory runtime dependencies preserved in the base package (`dependencies = []`).
 
 ### Limitations
+- **Synthetic Regression Boundary Only:** Phase 25 evaluation measures correctness against curated synthetic regression fixtures only; it makes no claims regarding real-world clinical recall, population-level precision, prevalence-adjusted accuracy, or regulatory compliance.
 - **No Automatic Cross-Document Consistency:** `redact_many()` does not maintain or share a `PseudonymizationSession` across documents; use `PseudonymizationSession` explicitly if stable cross-document aliases are required.
 - **No Whole-Batch Rollback:** Iterators stream results lazily; if an error occurs on document $N$, earlier yielded results remain valid and no batch-wide rollback is performed.
 - **No NER Chunking:** Batch helpers process distinct documents; they do not partition single long documents into token windows or stitch overlapping NER inference chunks.

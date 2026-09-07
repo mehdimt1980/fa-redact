@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.3.0`
 - **Current source version:** `0.3.0`
-- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 24 Batch Processing Helpers in progress)
-- **Last closed phase:** Phase 23 — v0.3.0 Release Preparation & Publication
-- **Current active phase:** Phase 24 — Batch Processing Helpers (In Progress)
+- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 25 Synthetic Benchmark & Evaluation Corpus Tooling in progress)
+- **Last closed phase:** Phase 24 — Batch Processing Helpers
+- **Current active phase:** Phase 25 — Synthetic Benchmark & Evaluation Corpus Tooling (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -205,18 +205,19 @@ A development phase transitions through three discrete states:
 
 ## Last Closed Phase
 
-- **Phase:** Phase 23 — v0.3.0 Release Preparation & Publication
+- **Phase:** Phase 24 — Batch Processing Helpers
 - **Status:** `CLOSED`
-- **PR:** #25
-- **Merge Commit:** `ad2f6723db29f27f86d2ece833ff244a6e4864dd`
-- **Verified Post-Merge Main CI:** Run `34091770461` (push to `main`, conclusion: success, 5 jobs passed)
-- **Published Release:** `v0.3.0` (GitHub Release ID `383881404`, Release workflow `34092778623`, conclusion: `success`, PyPI `fa-redact 0.3.0`)
-- **Phase 23 Baseline:** 825 passing tests.
-- **Key Phase 23 Result:**
-  - Prepared and published `v0.3.0` minor release encompassing capabilities from Phases 18–22 (Detection Reports, CLI, Structured Data Helpers, Persian NER evaluation/prototype, Clinical Redaction Profiles).
-  - Version aligned across `pyproject.toml`, `src/fa_redact/__init__.py`, tests, and documentation to `0.3.0`.
-  - Finalized `CHANGELOG.md` entry `[0.3.0] - 2026-09-07`.
-  - Expanded release distribution audits and isolated wheel smoke tests.
+- **PR:** #26
+- **Phase Branch Head:** `b9815071fe4ac5de6495d8b6a1e8c2f4d0982593`
+- **Merge Commit:** `350590d296e6a7f88be75a3ffc268ee56367fcee`
+- **Verified Post-Merge Main CI:** Run `34097189315` (push to `main`, conclusion: success, 5 jobs passed)
+- **Phase 24 Baseline:** 872 passing tests.
+- **Key Phase 24 Result:**
+  - Added lightweight, lazy streaming batch-processing helpers: `detect_many()`, `redact_many()`, and `report_many()` in `src/fa_redact/batch.py`.
+  - Enforced lazy ordered processing without materializing document collections in memory.
+  - Implemented immutable configuration snapshotting (`detectors`, `type_priority`) at generator creation time.
+  - Enforced independent per-document redaction semantics (placeholder numbering restarts per document without shared session state).
+  - Preserved zero mandatory runtime dependencies and full standard-library compatibility.
 - **Stable Historical Anchors:**
   - `v0.2.0` release commit: `227577deeb899de9593efb296659822f1ec0bf20`
   - Phase 18 merge commit: `4ce102f95ff683d957f55bea79d393bff8976787` (PR #17)
@@ -228,15 +229,16 @@ A development phase transitions through three discrete states:
   - Phase 22 merge commit: `c7bff32cad01f642198b8505c02799ce33235cff` (PR #24)
   - Phase 23 merge commit: `ad2f6723db29f27f86d2ece833ff244a6e4864dd` (PR #25)
   - `v0.3.0` release commit: `ad2f6723db29f27f86d2ece833ff244a6e4864dd`
+  - Phase 24 merge commit: `350590d296e6a7f88be75a3ffc268ee56367fcee` (PR #26)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
 ## Active Phase
 
-- **Phase:** Phase 24 — Batch Processing Helpers
+- **Phase:** Phase 25 — Synthetic Benchmark & Evaluation Corpus Tooling
 - **Status:** `IN PROGRESS`
-- **Scope:** Add lightweight, lazy streaming batch-processing helpers (`detect_many`, `redact_many`, `report_many`) over Python iterables of strings. Process documents sequentially one at a time, preserving input order without materializing the document collection in memory. Snapshot caller configuration immutably at creation. Treat each document as an independent call (restart placeholder numbering per document; no cross-document session sharing). Maintain zero new runtime dependencies and Python >=3.10 support.
+- **Scope:** Build a deterministic, offline, standard-library-only synthetic regression corpus and evaluation runner for fa-redact detectors under `research/`. Validate exact entity types and exact source offsets against curated synthetic fixtures covering default direct identifiers (`IR_NATIONAL_ID`, `IR_MOBILE`, `IR_IBAN`), email (`EMAIL`), bank cards (`BANK_CARD`), and configurable institutional patterns. Reuse existing Phase 21 evaluation metrics without introducing runtime API changes or real-world clinical/accuracy claims. Maintain zero new runtime dependencies and Python >=3.10 support.
 
 ---
 
