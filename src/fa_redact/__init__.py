@@ -3,6 +3,11 @@
 This package is currently in early development.
 """
 
+from fa_redact.clinical import (
+    ClinicalRedactionProfile,
+    ClinicalTextTemplate,
+    clinical_profile,
+)
 from fa_redact.conflicts import (
     ConflictPolicy,
     resolve_detection_conflicts,
@@ -49,6 +54,8 @@ __version__: str = "0.2.0"
 __all__: list[str] = [
     "__version__",
     "BankCardDetector",
+    "ClinicalRedactionProfile",
+    "ClinicalTextTemplate",
     "ConflictPolicy",
     "Detection",
     "DetectionReport",
@@ -61,6 +68,7 @@ __all__: list[str] = [
     "PatternRule",
     "PersianNERDetector",
     "PseudonymizationSession",
+    "clinical_profile",
     "detect",
     "detect_fields",
     "detection_report",

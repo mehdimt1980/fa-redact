@@ -45,6 +45,7 @@
   - [13. Command-Line Interface (CLI) (Unreleased)](#13-command-line-interface-cli-unreleased)
   - [14. Structured Data Helpers (Unreleased)](#14-structured-data-helpers-unreleased)
   - [15. Experimental Opt-in Persian PERSON NER (Unreleased)](#15-experimental-opt-in-persian-person-ner-unreleased)
+  - [16. Clinical Redaction Profiles (Unreleased)](#16-clinical-redaction-profiles-unreleased)
 - [Custom Detectors](#custom-detectors)
 - [Healthcare & AI/LLM Usage Pattern](#healthcare--aillm-usage-pattern)
 - [Current Coverage & Limitations](#current-coverage--limitations)
@@ -867,6 +868,112 @@ print(redacted)
 
 ---
 
+#### 16. Clinical Redaction Profiles (Unreleased)
+
+`fa-redact` provides a small, immutable high-level composition layer for Persian healthcare text workflows through `ClinicalRedactionProfile` and the `clinical_profile(...)` builder. This layer composes existing direct identifier detectors, institutional regular expression rules, and optional person detectors without creating a duplicate detection engine or altering global default detectors.
+
+##### 1. Supported Document Workflow Templates
+
+`clinical_profile` supports three standardized workflow labels (`ClinicalTextTemplate`):
+- `"outpatient_note"` (یادداشت سرپایی)
+- `"discharge_summary"` (خلاصه ترخیص)
+- `"referral_letter"` (برگه ارجاع)
+
+All three templates start from the same conservative direct-identifier composition base. The workflow names provide structured configuration labels without imposing hidden regexes or different regulatory assumptions.
+
+##### 2. Detector Composition & Defaults
+
+When creating a clinical profile:
+- **Default Direct Identifiers**: `IranianNationalIDDetector`, `IranianMobileNumberDetector`, `IranianIBANDetector`, and `EmailDetector` (`include_email=True` by default).
+- **Bank Card Detection (Opt-in)**: `include_bank_card=False` by default. Set `include_bank_card=True` if payment card redaction is required.
+- **Institutional Identifiers**: Supply `institutional_rules=[PatternRule(...)]` to include institution-specific identifier formats (e.g., MRN, Patient ID, Encounter ID).
+- **Personal Names (Opt-in)**: Pass an explicitly instantiated `Detector` (such as `PersianNERDetector`) as `person_detector`. Without this parameter, personal names are **not** detected.
+- **Conflict Policy**: Defaults to `conflict_policy="reject"`. Pass `conflict_policy="longest"` or `"priority"` (with `type_priority=[...]`) for explicit conflict resolution.
+
+##### 3. Synthetic Examples
+
+###### Example A: Outpatient Note (Standard Direct Identifiers)
+```python
+from fa_redact import clinical_profile
+
+# Conservative profile covering National ID, Mobile, IBAN, and Email
+profile = clinical_profile("outpatient_note")
+
+text = "بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱ و شماره تماس ۰۹۱۲۳۴۵۶۷۸۹ و ایمیل patient@clinic.ir جهت ویزیت مراجعه کرد."
+redacted = profile.redact(text)
+print(redacted)
+# Output: "بیمار با کد ملی [IR_NATIONAL_ID_1] و شماره تماس [IR_MOBILE_1] و ایمیل [EMAIL_1] جهت ویزیت مراجعه کرد."
+```
+
+###### Example B: Discharge Summary with Institutional MRN Rule
+```python
+from fa_redact import PatternRule, clinical_profile
+
+# Add institution-specific MRN rule
+mrn_rule = PatternRule(type="MRN", pattern=r"(?<!\w)MRN-[0-9]{6}(?!\w)")
+profile = clinical_profile(
+    "discharge_summary",
+    institutional_rules=[mrn_rule],
+    include_bank_card=True,
+)
+
+text = "خلاصه ترخیص پرونده MRN-123456: پرداخت با کارت ۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲ انجام شد و با تماس ۰۹۱۲۳۴۵۶۷۸۹ هماهنگ گردید."
+redacted = profile.redact(text)
+print(redacted)
+# Output: "خلاصه ترخیص پرونده [MRN_1]: پرداخت با کارت [BANK_CARD_1] انجام شد و با تماس [IR_MOBILE_1] هماهنگ گردید."
+```
+
+###### Example C: Referral Letter with Optional PERSON NER Detector
+```python
+from fa_redact import PatternRule, PersianNERDetector, clinical_profile
+
+# Explicitly supply a local offline NER model (requires fa-redact[ner])
+ner = PersianNERDetector("/path/to/trusted/local/model")
+ref_rule = PatternRule(
+    type="REFERRAL_ID", pattern=r"(?<!\w)REF-[A-Z]{2}-[0-9]{4}(?!\w)"
+)
+
+profile = clinical_profile(
+    "referral_letter",
+    institutional_rules=[ref_rule],
+    person_detector=ner,
+)
+
+text = "بیمار سارا محمدی با ارجاع REF-TE-9876 و شماره شبا IR641234567890123456789012 معرفی می‌شود."
+redacted = profile.redact(text)
+print(redacted)
+# Illustrative output (with a compatible tested model):
+# "بیمار [PERSON_1] با ارجاع [REFERRAL_ID_1] و شماره شبا [IR_IBAN_1] معرفی می‌شود."
+```
+
+##### 4. Structured Data Helper Integration
+
+`ClinicalRedactionProfile` provides convenience methods delegating to structured helpers:
+
+```python
+record = {
+    "patient": {"note": "مراجعه بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱"},
+    "contact": "کد ملی ۱۲۳۴۵۶۷۸۹۱ و ایمیل info@hospital.ir",
+    "unselected": 42,
+}
+
+profile = clinical_profile("outpatient_note")
+redacted_record = profile.redact_fields(record, ["patient.note", "contact"])
+# Maintains record-wide referential consistency across all selected fields:
+# redacted_record["patient"]["note"] -> "مراجعه بیمار با کد ملی [IR_NATIONAL_ID_1]"
+# redacted_record["contact"] -> "کد ملی [IR_NATIONAL_ID_1] و ایمیل [EMAIL_1]"
+```
+
+> [!WARNING]
+> - **No Guaranteed Clinical De-Identification**: `ClinicalRedactionProfile` is a convenience composition layer over supported detectors. It does **not** guarantee complete de-identification, HIPAA Safe Harbor compliance, GDPR compliance, or absence of residual identifiers.
+> - **Human & Institutional Review Required**: Automated redaction is an aid; clinical text requires institutional validation before release or external transmission.
+> - **No Automatic Personal Name Detection**: Without an explicitly configured `person_detector`, personal names are **not** detected.
+> - **No Built-in Universal MRN Patterns**: Healthcare identifiers (MRN, Patient ID, Encounter ID) vary across institutions and require application-supplied `PatternRule` definitions.
+> - **No Generic Date, Address, or Medical Entity Detection**: Dates, postal addresses, and clinical concepts (diagnoses, symptoms, medications) are not detected in Phase 22.
+> - **No Role Inference**: Detected names remain `PERSON`; the library does not infer whether an entity is a patient, doctor, nurse, or relative.
+
+---
+
 ### Custom Detectors
 
 `fa-redact` uses Python's structural typing (protocols). Any class implementing the two-argument `detect(self, original_text: str, normalized_text: str) -> Sequence[Detection]` method can be passed to `detect()`, `redact()`, or `session.pseudonymize()`:
@@ -952,6 +1059,7 @@ Local Hospital / Trusted Boundary
 | **Institutional / Healthcare IDs (MRN, Patient ID)** | ❌ Not Supported | 🧪 Opt-in | Configurable via user-defined `PatternRule` / `PatternDetector` |
 | **Explicit Conflict Resolution** | ❌ Not Supported | 🧪 Opt-in Policy | Resolves overlaps/duplicates via `"longest"` or `"priority"` policy |
 | **Personal Names** | ❌ Not Supported | 🔬 Research | 🧪 Opt-in (Unreleased: `PersianNERDetector` with local ML model) |
+| **Clinical Redaction Profiles** | ❌ Not Supported | ❌ Not Supported | 🧪 Available in Phase 22 (`ClinicalRedactionProfile`, `clinical_profile`) |
 | **Postal Addresses** | ❌ Not Supported | ❌ Not Supported | Unstructured spatial entities |
 | **Dates of Birth / Timestamps** | ❌ Not Supported | ❌ Not Supported | Planned for future versions |
 | **Health Insurance Numbers** | ❌ Not Supported | ❌ Not Supported | Institution-specific |
@@ -1053,6 +1161,7 @@ This project is licensed under the [MIT License](LICENSE).
   - [۱۳. رابط خط فرمان (CLI) (در حال توسعه / منتشرنشده)](#۱۳-رابط-خط-فرمان-cli-در-حال-توسعه--منتشرنشده)
   - [۱۴. پردازش داده‌های ساخت‌یافته (در حال توسعه / منتشرنشده)](#۱۴-پردازش-داده‌های-ساخت‌یافته-در-حال-توسعه--منتشرنشده)
   - [۱۵. تشخیص اختیاری نام اشخاص فارسی (NER) (در حال توسعه / منتشرنشده)](#۱۵-تشخیص-اختیاری-نام-اشخاص-فارسی-ner-در-حال-توسعه--منتشرنشده)
+  - [۱۶. پروفایل‌های پالایش متون بالینی (در حال توسعه / منتشرنشده)](#۱۶-پروفایلهای-پالایش-متون-بالینی-در-حال-توسعه--منتشرنشده)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
 - [جدول پوشش و قابلیت‌ها](#جدول-پوشش-و-قابلیت‌ها)
@@ -1843,6 +1952,111 @@ print(redacted)
 
 ---
 
+#### ۱۶. پروفایل‌های پالایش متون بالینی (در حال توسعه / منتشرنشده)
+
+کتابخانهٔ `fa-redact` لایهٔ ترکیبی سبک، تغییرناپذیر و سطح‌بالایی را برای جریان‌های کاری متون درمانی و بالینی فارسی در قالب کلاس `ClinicalRedactionProfile` و تابع سازندهٔ `clinical_profile(...)` فراهم می‌کند. این لایه تشخیص‌دهنده‌های شناسه‌های مستقیم، قواعد الگوی سازمانی و تشخیص‌دهندهٔ اختیاری نام اشخاص را بدون بازنویسی موتورهای پردازش و بدون تغییر رفتار پیش‌فرض بسته ترکیب می‌کند.
+
+##### ۱. قالب‌های استاندارد جریان کاری
+
+تابع `clinical_profile` از سه برچسب استاندارد گردش کاری (`ClinicalTextTemplate`) پشتیبانی می‌کند:
+- `"outpatient_note"` (یادداشت سرپایی)
+- `"discharge_summary"` (خلاصه ترخیص)
+- `"referral_letter"` (برگه ارجاع)
+
+هر سه قالب بر پایهٔ ترکیب محافظه‌کارانه و یکسان شناسه‌های مستقیم شروع می‌شوند. این نام‌ها صرفاً برچسب‌های استاندارد پیکربندی هستند و فرضیات مخفی یا الگوهای نامشهود در آن‌ها تعبیه نشده است.
+
+##### ۲. ترکیب تشخیص‌دهنده‌ها و تنظیمات پیش‌فرض
+
+- **شناسه‌های مستقیم پایه**: کد ملی (`IranianNationalIDDetector`)، شماره موبایل (`IranianMobileNumberDetector`)، شماره شبا (`IranianIBANDetector`) و ایمیل (`EmailDetector` به صورت پیش‌فرض فعال با `include_email=True`).
+- **کارت بانکی (اختیاری)**: پیش‌فرض `include_bank_card=False` است. در صورت نیاز به پنهان‌سازی کارت بانکی، مقدار `include_bank_card=True` ارسال می‌شود.
+- **شناسه‌های سازمانی و بیمارستانی**: از طریق `institutional_rules=[PatternRule(...)]` الگوهای اختصاصی پرونده پزشکی (MRN)، شناسه بیمار و شناسه ارجاع تعریف می‌شوند.
+- **تشخیص نام اشخاص (اختیاری)**: با ارسال یک شیء `Detector` معتبر (نظیر `PersianNERDetector`) در پارامتر `person_detector`. بدون این پارامتر، نام اشخاص تشخیص داده **نمی‌شود**.
+- **سیاست حل تعارض**: پیش‌فرض `conflict_policy="reject"` است. در صورت نیاز سیاست‌های `"longest"` یا `"priority"` قابل استفاده‌اند.
+
+##### ۳. نمونه‌های کاربردی (داده‌های مصنوعی)
+
+###### نمونه الف: یادداشت سرپایی (شناسه‌های مستقیم استاندارد)
+```python
+from fa_redact import clinical_profile
+
+# پروفایل پایه شامل کد ملی، موبایل، شبا و ایمیل
+profile = clinical_profile("outpatient_note")
+
+text = "بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱ و شماره تماس ۰۹۱۲۳۴۵۶۷۸۹ و ایمیل patient@clinic.ir جهت ویزیت مراجعه کرد."
+redacted = profile.redact(text)
+print(redacted)
+# خروجی: "بیمار با کد ملی [IR_NATIONAL_ID_1] و شماره تماس [IR_MOBILE_1] و ایمیل [EMAIL_1] جهت ویزیت مراجعه کرد."
+```
+
+###### نمونه ب: خلاصه ترخیص با الگوی سازمانی شماره پرونده (MRN)
+```python
+from fa_redact import PatternRule, clinical_profile
+
+# تعریف الگوی اختصاصی شماره پرونده بیمارستان
+mrn_rule = PatternRule(type="MRN", pattern=r"(?<!\w)MRN-[0-9]{6}(?!\w)")
+profile = clinical_profile(
+    "discharge_summary",
+    institutional_rules=[mrn_rule],
+    include_bank_card=True,
+)
+
+text = "خلاصه ترخیص پرونده MRN-123456: پرداخت با کارت ۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۲ انجام شد و با تماس ۰۹۱۲۳۴۵۶۷۸۹ هماهنگ گردید."
+redacted = profile.redact(text)
+print(redacted)
+# خروجی: "خلاصه ترخیص پرونده [MRN_1]: پرداخت با کارت [BANK_CARD_1] انجام شد و با تماس [IR_MOBILE_1] هماهنگ گردید."
+```
+
+###### نمونه ج: برگه ارجاع با تشخیص‌دهندهٔ اختیاری نام اشخاص (NER)
+```python
+from fa_redact import PatternRule, PersianNERDetector, clinical_profile
+
+# بارگذاری مدل محلی آفلاین (نیازمند نصب fa-redact[ner])
+ner = PersianNERDetector("/path/to/trusted/local/model")
+ref_rule = PatternRule(
+    type="REFERRAL_ID", pattern=r"(?<!\w)REF-[A-Z]{2}-[0-9]{4}(?!\w)"
+)
+
+profile = clinical_profile(
+    "referral_letter",
+    institutional_rules=[ref_rule],
+    person_detector=ner,
+)
+
+text = "بیمار سارا محمدی با ارجاع REF-TE-9876 و شماره شبا IR641234567890123456789012 معرفی می‌شود."
+redacted = profile.redact(text)
+print(redacted)
+# خروجی نمونه (با یک مدل سازگارِ آزموده‌شده):
+# "بیمار [PERSON_1] با ارجاع [REFERRAL_ID_1] و شماره شبا [IR_IBAN_1] معرفی می‌شود."
+```
+
+##### ۴. یکپارچگی با توابع داده‌های ساخت‌یافته
+
+پروفایل بالینی متدهای مناسبی را برای اعمال پنهان‌سازی روی فیلدهای ساختاریافته با حفظ یکپارچگی ارجاعی در سطح کل رکورد فراهم می‌کند:
+
+```python
+record = {
+    "patient": {"note": "مراجعه بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱"},
+    "contact": "کد ملی ۱۲۳۴۵۶۷۸۹۱ و ایمیل info@hospital.ir",
+    "unselected": 42,
+}
+
+profile = clinical_profile("outpatient_note")
+redacted_record = profile.redact_fields(record, ["patient.note", "contact"])
+# حفظ یکپارچگی ارجاعی در تمام فیلدهای هدف:
+# redacted_record["patient"]["note"] -> "مراجعه بیمار با کد ملی [IR_NATIONAL_ID_1]"
+# redacted_record["contact"] -> "کد ملی [IR_NATIONAL_ID_1] و ایمیل [EMAIL_1]"
+```
+
+> [!WARNING]
+> - **عدم تضمین دی‌ایدنتیفیکیشن کامل بالینی**: `ClinicalRedactionProfile` صرفاً یک لایهٔ ترکیبی بر روی تشخیص‌دهنده‌های پشتیبانی‌شده است و ناشناس‌سازی قطعی، انطباق خودکار با HIPAA Safe Harbor یا GDPR یا عدم وجود شناسه‌های باقیمانده را تضمین نمی‌کند.
+> - **ضرورت بازبینی انسانی و سازمانی**: پردازش خودکار صرفاً ابزار کمکی است و اسناد بالینی پیش از انتشار یا خروج از مرز امنیتی باید توسط نیروی انسانی بازبینی شوند.
+> - **عدم تشخیص خودکار نام اشخاص**: بدون ارسال صریح `person_detector`، نام اشخاص شناسایی نمی‌شود.
+> - **عدم وجود الگوی جهانی برای شماره پرونده**: شناسه‌های بیمارستانی (MRN، پرونده، پذیرش) در هر سازمان متفاوتند و نیازمند تعریف صریح `PatternRule` توسط کاربر هستند.
+> - **عدم تشخیص تاریخ، آدرس یا مفاهیم پزشکی**: تاریخ‌ها، آدرس‌های مکانی، تشخیص‌های بالینی، داروها و علائم بیماری در فاز ۲۲ تحت پوشش قرار ندارند.
+> - **عدم استنتاج نقش افراد**: موجودیت‌های نام اشخاص به عنوان `PERSON` ثبت می‌شوند و نقشی نظیر بیمار، پزشک، پرستار یا همراه برای آن‌ها حدس زده نمی‌شود.
+
+---
+
 ### تشخیص‌دهنده‌های سفارشی (Custom Detectors)
 
 معماری `fa-redact` مبتنی بر پروتکل‌های ساختاری پایتون (Duck Typing) است. شما می‌توانید کلاسی با متد دوآرگومانی پیاده‌سازی کنید:
@@ -1931,6 +2145,7 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 | **شناسه‌های سازمانی / درمانی (MRN و بیمار)** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | قابل پیکربندی اختصاصی توسط کاربر با `PatternRule` و `PatternDetector` |
 | **حل صریح تعارض تشخیص‌ها** | ❌ پشتیبانی نمی‌شود | 🧪 سیاست اختیاری | حل همپوشانی‌ها و تکرارها با سیاست `"longest"` یا `"priority"` |
 | **نام اشخاص** | ❌ پشتیبانی نمی‌شود | 🔬 ارزیابی پژوهشی | 🧪 اختیاری (در حال توسعه: `PersianNERDetector` با مدل محلی) |
+| **پروفایل‌های پالایش بالینی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | 🧪 ارائه‌شده در فاز ۲۲ (`ClinicalRedactionProfile` و `clinical_profile`) |
 | **آدرس پستی و موقعیت مکانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | موجودیت‌های غیرساختاریافته |
 | **تاریخ تولد و زمان‌ها** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | برنامه‌ریزی‌شده برای نسخه‌های آتی |
 | **شماره بیمه درمانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی |

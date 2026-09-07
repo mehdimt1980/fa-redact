@@ -119,31 +119,31 @@ Executed a real, reproducible Persian PERSON NER benchmark on a held-out corpus:
 
 ---
 
-## Active Phase
-
 ### Phase 21.2 — Opt-in Persian NER Implementation Prototype
-*Status: `ACTIVE / IN PROGRESS`*
+*Status: `MERGED / UNRELEASED` (Merged into `main` via PR #23, commit `836ae09e6a44c9f234e6cc43492f1e0b70e6b4ac`)*
 
-Convert the validated Phase 21.1 research result into a strictly opt-in production-package detector prototype:
-- Implement `PersianNERDetector` satisfying the `Detector` structural protocol.
-- Load model checkpoints and fast tokenizers strictly from local filesystem directories (`local_files_only=True`, `trust_remote_code=False`).
-- Maintain core `fa-redact` zero runtime dependencies (`dependencies = []`) with optional `[project.optional-dependencies] ner = [...]`.
-- Require fast tokenizer with exact character offset mapping; audit offset bounds structurally.
-- Perform NER inference on position-preserving normalized text while slicing original source strings for `Detection.value`.
-- Enforce fail-loud long-text policy rejecting over-length inputs without silent truncation.
-- Preserve existing conservative defaults: `_DEFAULT_DETECTORS` unchanged, explicit `detectors=[...]` required.
-- Do not implement clinical profiles, patient/doctor role inferences, or compliance claims (Phase 22 remains FUTURE).
+Converted the validated Phase 21.1 research result into a strictly opt-in production-package detector prototype:
+- Implemented `PersianNERDetector` satisfying the `Detector` structural protocol.
+- Loads model checkpoints and fast tokenizers strictly from local filesystem directories (`local_files_only=True`, `trust_remote_code=False`).
+- Maintained core `fa-redact` zero runtime dependencies (`dependencies = []`) with optional `[project.optional-dependencies] ner = [...]`.
+- Requires fast tokenizer with exact character offset mapping; audits offset bounds structurally.
+- Performs NER inference on position-preserving normalized text while slicing original source strings for `Detection.value`.
+- Enforces fail-loud long-text policy rejecting over-length inputs without silent truncation.
+- Preserves existing conservative defaults: `_DEFAULT_DETECTORS` unchanged, explicit `detectors=[...]` required.
+- Does not implement clinical profiles, patient/doctor role inferences, or compliance claims.
 
 ---
 
-## Planned Phases
+## Active Phase
 
 ### Phase 22 — Clinical De-identification Layer
-*Status: `FUTURE`*
+*Status: `ACTIVE / IN PROGRESS`*
 
 Provide high-level composite policies and presets for Persian healthcare text workflows:
-- Compose built-in and institutional detectors into coherent clinical profiles.
+- Compose built-in and institutional detectors into coherent clinical redaction profiles (`ClinicalRedactionProfile`, `clinical_profile`).
 - Offer standardized redaction templates for outpatient notes, discharge summaries, and referral letters.
+- Support explicit institutional `PatternRule` integration and optional personal name detector (`person_detector`).
+- Conservative reject conflict policy default; delegate to existing core redaction and structured helpers.
 - Explicit invariant: must NOT be presented as guaranteed clinical de-identification or automated regulatory compliance.
 
 ---

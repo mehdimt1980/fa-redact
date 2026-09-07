@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Clinical redaction profiles (`ClinicalRedactionProfile` and builder `clinical_profile`) composing built-in direct identifier detectors (`IranianNationalIDDetector`, `IranianMobileNumberDetector`, `IranianIBANDetector`), optional email (`EmailDetector`, default True) and bank card (`BankCardDetector`, default False) detectors, institutional pattern rules (`PatternRule`), and optional person detectors into deterministic profiles for Persian healthcare text workflows (Phase 22).
+- Standardized clinical text template workflow labels: `outpatient_note`, `discharge_summary`, and `referral_letter` via `ClinicalTextTemplate` literal type (Phase 22).
+- Profile convenience methods delegating to core pipeline, transformation, and structured helpers (`detect`, `redact`, `report`, `detect_fields`, `redact_fields`, `report_fields`) preserving record-wide referential consistency and value-free reporting guarantees (Phase 22).
+- Conservative reject conflict policy (`conflict_policy="reject"`) default with pass-through support for explicit `longest` and `priority` policies (Phase 22).
+- Public export of `ClinicalRedactionProfile`, `ClinicalTextTemplate`, and `clinical_profile` from `fa_redact` and `fa_redact.clinical` (Phase 22).
 - Experimental, opt-in `PersianNERDetector` performing local Persian personal name (`PERSON`) named entity recognition using explicitly supplied local Hugging Face-compatible token-classification model directories (Phase 21.2).
 - Optional `ner` dependency extra (`torch>=2.7.0,<3`, `transformers>=4.49.0,<5`) preserving zero mandatory runtime dependencies in core package (Phase 21.2).
 - Exact source character offset extraction from position-preserving normalized text, slicing exact raw strings for `Detection.value` and aligned normalized strings for `Detection.normalized_value` without text distortion (Phase 21.2).
@@ -39,6 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public root exports `DetectionReport`, `detection_report`, and `report_detections` from the `fa_redact` package namespace (Phase 18).
 
 ### Limitations
+- `ClinicalRedactionProfile` is a high-level composition layer over supported detectors; it does not guarantee complete clinical de-identification, HIPAA Safe Harbor compliance, GDPR compliance, or absence of residual identifiers (Phase 22).
+- Personal name detection is not performed unless an explicit `person_detector` (such as `PersianNERDetector`) is supplied; news-domain benchmark results (PEYMA) do not guarantee clinical PERSON extraction accuracy (Phase 22).
+- Institutional identifiers (MRN, Patient ID, Encounter ID) are not detected unless explicit application-specific `PatternRule` definitions are provided (Phase 22).
+- No generic date or address detectors are provided; clinical roles (patient, physician, relative) are not inferred (Phase 22).
+- Structured data helpers process explicitly targeted field paths only and do not automatically traverse clinical record schemas (Phase 22).
 - `PersianNERDetector` is an experimental prototype requiring explicit user opt-in and local model assets; it is not enabled by default and does not automatically download models (Phase 21.2).
 - Long documents exceeding configured model token length fail loudly; chunking and sliding-window merging are not implemented in Phase 21.2 (Phase 21.2).
 - Personal name detection predicts `PERSON` entities without inferring clinical or administrative roles (patient, physician, relative) and does not guarantee complete clinical de-identification (Phase 21.2).
