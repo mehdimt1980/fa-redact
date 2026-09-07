@@ -1,12 +1,14 @@
 """Tests for Phase 27 identifier research, decision artifacts, and reference algorithms.
 
 Ensures research artifacts conform strictly to schemas, invariants, determinism,
-isolation rules, and that no production code or dependencies were altered.
+isolation rules, privacy guards against committed real IDs, and that no production
+code or dependencies were altered.
 """
 
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -38,13 +40,18 @@ _VALID_INTEGRATIONS = {
 
 
 @pytest.fixture
-def decision_json_path() -> Path:
-    return (
-        Path(__file__).parent.parent
-        / "research"
-        / "results"
-        / "phase27_identifier_decision.json"
-    )
+def repo_root() -> Path:
+    return Path(__file__).parent.parent
+
+
+@pytest.fixture
+def research_doc_path(repo_root: Path) -> Path:
+    return repo_root / "research" / "phase27_additional_iranian_identifiers.md"
+
+
+@pytest.fixture
+def decision_json_path(repo_root: Path) -> Path:
+    return repo_root / "research" / "results" / "phase27_identifier_decision.json"
 
 
 @pytest.fixture
@@ -124,6 +131,65 @@ class TestDecisionJsonSchema:
             assert pattern.lower() not in raw_text.lower()
 
 
+class TestPrivacyAndRegressionGuards:
+    """Regression tests preventing real identifier exposure in research artifacts."""
+
+    def test_no_standalone_11_digit_numbers_in_research_doc(
+        self, research_doc_path: Path
+    ) -> None:
+        """Ensure no concrete standalone 11-digit numbers are committed in markdown."""
+        content = research_doc_path.read_text(encoding="utf-8")
+        # Match standalone 11-digit numbers
+        matches = re.findall(
+            r"(?<![0-9A-Za-z/_\-])[0-9]{11}(?![0-9A-Za-z/_\-])", content
+        )
+        assert not matches, (
+            f"Found concrete 11-digit numbers in research doc: {matches}"
+        )
+
+    def test_no_standalone_11_digit_numbers_in_decision_json(
+        self, decision_json_path: Path
+    ) -> None:
+        """Ensure no concrete standalone 11-digit numbers exist in decision JSON."""
+        content = decision_json_path.read_text(encoding="utf-8")
+        matches = re.findall(r"(?<![0-9])[0-9]{11}(?![0-9])", content)
+        assert not matches, (
+            f"Found concrete 11-digit numbers in decision json: {matches}"
+        )
+
+    def test_evidence_source_table_reconciliation(
+        self, research_doc_path: Path, decision_data: dict[str, Any]
+    ) -> None:
+        """Ensure source table entries reconcile with decision JSON counts."""
+        doc_text = research_doc_path.read_text(encoding="utf-8")
+
+        # Find all source rows like `SRC-PRI-01`, `SRC-SEC-01`, `SRC-COM-01`
+        pri_sources = re.findall(r"`SRC-PRI-\d+`", doc_text)
+        sec_sources = re.findall(r"`SRC-SEC-\d+`", doc_text)
+        com_sources = re.findall(r"`SRC-COM-\d+`", doc_text)
+
+        unique_pri = set(pri_sources)
+        unique_sec = set(sec_sources)
+        unique_com = set(com_sources)
+
+        assert len(unique_pri) == 4, (
+            f"Expected 4 primary sources, got {len(unique_pri)}"
+        )
+        assert len(unique_sec) == 7, (
+            f"Expected 7 secondary sources, got {len(unique_sec)}"
+        )
+        assert len(unique_com) == 5, (
+            f"Expected 5 community sources, got {len(unique_com)}"
+        )
+
+        # Verify max candidate counts do not exceed total available sources
+        for candidate in decision_data["candidates"]:
+            counts = candidate["evidence_counts"]
+            assert counts["primary"] <= len(unique_pri)
+            assert counts["secondary_technical"] <= len(unique_sec)
+            assert counts["community"] <= len(unique_com)
+
+
 class TestChecksumReferenceAlgorithms:
     """Verify research-only checksum algorithm variants and properties."""
 
@@ -133,6 +199,22 @@ class TestChecksumReferenceAlgorithms:
             prefix = f"{i:010d}"
             check_digit = compute_legal_entity_checksum_variant_a(prefix)
             assert 0 <= check_digit <= 9
+
+    def test_ascii_strict_input_enforcement(self) -> None:
+        """Research reference functions strictly require ASCII numeric digits."""
+        # Non-ASCII Persian digits must be rejected with ValueError
+        persian_10 = "۱۲۳۴۵۶۷۸۹۰"
+        arabic_10 = "١٢٣٤٥٦٧٨٩٠"
+        with pytest.raises(ValueError, match="exactly 10 ASCII digits"):
+            compute_legal_entity_checksum_variant_a(persian_10)
+        with pytest.raises(ValueError, match="exactly 10 ASCII digits"):
+            compute_legal_entity_checksum_variant_a(arabic_10)
+
+        # Verification function returns False on non-ASCII digits
+        persian_11 = "۱۲۳۴۵۶۷۸۹۰۱"
+        arabic_11 = "١٢٣٤٥٦٧٨٩٠١"
+        assert not verify_legal_entity_id_variant_a(persian_11)
+        assert not verify_legal_entity_id_variant_a(arabic_11)
 
     def test_invalid_input_length_raises(self) -> None:
         with pytest.raises(ValueError, match="exactly 10 ASCII digits"):

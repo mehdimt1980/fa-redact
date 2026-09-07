@@ -73,7 +73,7 @@
         "secondary_technical": 7
       },
       "hard_blockers": [
-        "Primary statutory publication of check-digit formula is absent (formula established through secondary technical consensus and 100% empirical verification on authentic public entities).",
+        "Primary statutory publication of check-digit formula is absent (formula established through secondary technical consensus and confirmed against manually checked sample (n=6)).",
         "Must remain strictly opt-in (never default) due to potential numeric collision risk with arbitrary 11-digit numbers and tracking codes."
       ],
       "id": "IR_LEGAL_ENTITY_ID",

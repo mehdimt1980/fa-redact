@@ -55,8 +55,15 @@ def compute_legal_entity_checksum_variant_a(digits_10: str) -> int:
 
     Returns:
         Integer check digit (0-9).
+
+    Raises:
+        ValueError: If input is not exactly 10 ASCII decimal digits.
     """
-    if len(digits_10) != 10 or not digits_10.isdigit():
+    if (
+        not isinstance(digits_10, str)
+        or len(digits_10) != 10
+        or not (digits_10.isascii() and digits_10.isdigit())
+    ):
         raise ValueError("Input must be exactly 10 ASCII digits")
 
     d = [int(c) for c in digits_10]
@@ -68,7 +75,11 @@ def compute_legal_entity_checksum_variant_a(digits_10: str) -> int:
 
 def verify_legal_entity_id_variant_a(candidate: str) -> bool:
     """Verify an 11-digit legal entity national ID using Variant A."""
-    if len(candidate) != 11 or not candidate.isdigit():
+    if (
+        not isinstance(candidate, str)
+        or len(candidate) != 11
+        or not (candidate.isascii() and candidate.isdigit())
+    ):
         return False
     # Reject repeated-digit pseudo-values
     if len(set(candidate)) == 1:
@@ -90,8 +101,15 @@ def compute_legal_entity_checksum_variant_b(digits_10: str) -> int:
 
     Returns:
         Integer check digit (0-9).
+
+    Raises:
+        ValueError: If input is not exactly 10 ASCII decimal digits.
     """
-    if len(digits_10) != 10 or not digits_10.isdigit():
+    if (
+        not isinstance(digits_10, str)
+        or len(digits_10) != 10
+        or not (digits_10.isascii() and digits_10.isdigit())
+    ):
         raise ValueError("Input must be exactly 10 ASCII digits")
 
     d = [int(c) for c in digits_10]
@@ -102,7 +120,11 @@ def compute_legal_entity_checksum_variant_b(digits_10: str) -> int:
 
 def verify_legal_entity_id_variant_b(candidate: str) -> bool:
     """Verify an 11-digit legal entity national ID using Variant B."""
-    if len(candidate) != 11 or not candidate.isdigit():
+    if (
+        not isinstance(candidate, str)
+        or len(candidate) != 11
+        or not (candidate.isascii() and candidate.isdigit())
+    ):
         return False
     if len(set(candidate)) == 1:
         return False
@@ -123,8 +145,15 @@ def compute_legal_entity_checksum_variant_c(digits_10: str) -> int:
 
     Returns:
         Integer check digit (0-9).
+
+    Raises:
+        ValueError: If input is not exactly 10 ASCII decimal digits.
     """
-    if len(digits_10) != 10 or not digits_10.isdigit():
+    if (
+        not isinstance(digits_10, str)
+        or len(digits_10) != 10
+        or not (digits_10.isascii() and digits_10.isdigit())
+    ):
         raise ValueError("Input must be exactly 10 ASCII digits")
 
     d = [int(c) for c in digits_10]
@@ -135,7 +164,11 @@ def compute_legal_entity_checksum_variant_c(digits_10: str) -> int:
 
 def verify_legal_entity_id_variant_c(candidate: str) -> bool:
     """Verify an 11-digit legal entity national ID using Variant C."""
-    if len(candidate) != 11 or not candidate.isdigit():
+    if (
+        not isinstance(candidate, str)
+        or len(candidate) != 11
+        or not (candidate.isascii() and candidate.isdigit())
+    ):
         return False
     if len(set(candidate)) == 1:
         return False
@@ -156,8 +189,15 @@ def compute_legal_entity_checksum_variant_d(digits_10: str) -> int:
 
     Returns:
         Integer check digit (0-9).
+
+    Raises:
+        ValueError: If input is not exactly 10 ASCII decimal digits.
     """
-    if len(digits_10) != 10 or not digits_10.isdigit():
+    if (
+        not isinstance(digits_10, str)
+        or len(digits_10) != 10
+        or not (digits_10.isascii() and digits_10.isdigit())
+    ):
         raise ValueError("Input must be exactly 10 ASCII digits")
 
     d = [int(c) for c in digits_10]
@@ -168,7 +208,11 @@ def compute_legal_entity_checksum_variant_d(digits_10: str) -> int:
 
 def verify_legal_entity_id_variant_d(candidate: str) -> bool:
     """Verify an 11-digit legal entity national ID using Variant D."""
-    if len(candidate) != 11 or not candidate.isdigit():
+    if (
+        not isinstance(candidate, str)
+        or len(candidate) != 11
+        or not (candidate.isascii() and candidate.isdigit())
+    ):
         return False
     if len(set(candidate)) == 1:
         return False
