@@ -255,6 +255,16 @@ class TestPrivacyAndRegressionGuards:
             f"Expected 3 community sources, got {len(com_sources)}"
         )
 
+        # Ensure exact commit-pinned permalinks are preserved for community sources
+        assert (
+            "/blob/2ed0797ba54543035433995ef3ddccb458bfc5fb/src/modules/legalId/index.ts"
+            in sources_by_id["SRC-COM-01"]["url"]
+        ), f"SRC-COM-01 missing commit permalink: {sources_by_id['SRC-COM-01']['url']}"
+        assert (
+            "/blob/18aa49e5f42ceaf9f010f01a396f625100c7aad8/persian_tools/legal_id/__init__.py"
+            in sources_by_id["SRC-COM-02"]["url"]
+        ), f"SRC-COM-02 missing commit permalink: {sources_by_id['SRC-COM-02']['url']}"
+
         # Exact candidate-to-source reconciliation
         for candidate in decision_data["candidates"]:
             cand_id = candidate["id"]
