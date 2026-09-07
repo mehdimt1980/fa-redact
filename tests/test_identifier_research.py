@@ -157,6 +157,48 @@ class TestPrivacyAndRegressionGuards:
             f"Found concrete 11-digit numbers in decision json: {matches}"
         )
 
+    def test_no_false_circular_attribution_in_research_doc(
+        self, research_doc_path: Path, repo_root: Path
+    ) -> None:
+        """Ensure the false tax circular 200/1401/30 is not cited in
+        research artifacts.
+        """
+        doc_content = research_doc_path.read_text(encoding="utf-8")
+        assert "200/1401/30" not in doc_content, (
+            "Found incorrect circular attribution 200/1401/30 in research markdown"
+        )
+
+        for research_file in (repo_root / "research").glob("**/*"):
+            if research_file.is_file() and research_file.suffix in {
+                ".md",
+                ".json",
+                ".py",
+            }:
+                text = research_file.read_text(encoding="utf-8")
+                assert "200/1401/30" not in text, (
+                    f"Found incorrect circular attribution in {research_file.name}"
+                )
+
+    def test_evidence_claims_bounded_to_catalogued_ecosystems(
+        self, research_doc_path: Path
+    ) -> None:
+        """Ensure consensus claims do not reference uncatalogued
+        language ecosystems or blogs.
+        """
+        doc_content = research_doc_path.read_text(encoding="utf-8")
+        uncatalogued_terms = [
+            "DotNetTips",
+            "dntips.ir",
+            "excelengineer",
+            "p30world",
+            "C#",
+            "PHP",
+        ]
+        for term in uncatalogued_terms:
+            assert term not in doc_content, (
+                f"Found uncatalogued ecosystem/source '{term}' in research document"
+            )
+
     def test_evidence_source_table_reconciliation(
         self, research_doc_path: Path, decision_data: dict[str, Any]
     ) -> None:

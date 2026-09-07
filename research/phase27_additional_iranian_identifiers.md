@@ -93,21 +93,20 @@ A critical requirement of Phase 27 was resolving apparent disagreements across t
 
 #### Algorithm Comparison Matrix
 
-| Source / Implementation | Language / Platform | Coefficient Sequence | Offset / Adjustment | Modulo Rule | Status & Empirical Verification |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Persian Tools (`@persian-tools`)** | TypeScript / JS | `[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]` | `d[9] + 2` | `rem == 10 ? 0 : rem` | **Technical Consensus candidate** |
-| **DotNetTips (`dntips.ir`)** | C# (.NET) | `[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]` | `d[9] + 2` (`tens_plus_two`) | `rem == 10 ? 0 : rem` | **Technical Consensus candidate** |
-| **StackOverflow #55122116** | Java | `[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]` | `d[9] + 2` (`tensPlusTwo`) | `rem == 10 ? 0 : rem` | **Technical Consensus candidate** |
-| **Secondary Technical Guide (excelengineer)** | Excel / VBA | `[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]` | `d[9] + 2` | `rem == 10 ? 0 : rem` | **Technical Consensus candidate** |
-| **Conflicting Secondary Article (p30world)** | Text description | `[29, 27, 23, 19, 17, ...]` | Constant `+ 2` | `rem < 2 ? rem : 11 - rem` | **Defective: Fails on authentic entity records** |
-| **Conflicting Code Melli Copy** | Mixed | `[11, 10, 9, 8, 7, 6, 5, 4, 3, 2]` | None | `rem < 2 ? rem : 11 - rem` | **Defective: Fails on authentic entity records** |
+| Source / Implementation | Source ID | Language / Platform | Coefficient Sequence | Offset / Adjustment | Modulo Rule | Evaluation on Manually Checked Sample ($n=6$) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Persian Tools (`verifyIranianLegalId`)** | `SRC-COM-01` | TypeScript | `[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]` | `d[9] + 2` | `rem == 10 ? 0 : rem` | Matched 6/6 ($100\%$) |
+| **py-persian-tools (`persian_tools.legal_id`)** | `SRC-COM-02` | Python | `[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]` | `d[9] + 2` | `rem == 10 ? 0 : rem` | Matched 6/6 ($100\%$) |
+| **StackOverflow #55122116 Q&A** | `SRC-COM-03` | Java | `[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]` | `d[9] + 2` | `rem == 10 ? 0 : rem` | Matched 6/6 ($100\%$) |
+| **Hypothetical Constant +2 Offset (Variant B)** | — | Reference Model | `[29, 27, 23, 19, 17, ...]` | Constant `+ 2` | `rem == 10 ? 0 : rem` | Failed on part/all of the manually checked $n=6$ sample |
+| **Misapplied Code Melli Formula (Variant C)** | — | Reference Model | `[11, 10, 9, 8, 7, 6, 5, 4, 3, 2]` | None | `rem < 2 ? rem : 11 - rem` | Failed on part/all of the manually checked $n=6$ sample |
 
 #### Bounded Empirical Evidence Summary
-Variant A was manually checked against a small set of publicly verifiable legal-entity records ($n = 6$) drawn from official gazette announcements and government portals. Variant A matched all records in that tested sample ($100\%$, 6/6), whereas alternative formulas failed across the majority of the sample. In accordance with the privacy-first principles of `fa-redact`, concrete real identifiers are intentionally omitted from committed artifacts.
+Variant A was manually checked against a small set of publicly verifiable legal-entity records ($n = 6$) drawn from official gazette announcements and government portals. Variant A matched all records in that tested sample ($100\%$, 6/6), whereas alternative formulas (Variants B, C, D) failed on part or all of the manually checked $n=6$ sample. In accordance with the privacy-first principles of `fa-redact`, concrete real identifiers are intentionally omitted from committed artifacts.
 
 **Evidence Boundary Statement:**
 - **Authoritative / Statutory Checksum Publication:** NO primary governmental text published the mathematical formula in statutory regulations.
-- **Technical Implementation Consensus:** YES. Variant A represents the single consistent mathematical formula implemented across independent language ecosystems (JavaScript, Python, C#, Java, PHP).
+- **Technical Implementation Consensus:** YES. Variant A is consistent across the reviewed and catalogued community implementations in TypeScript, Python, and Java.
 - **Empirical Confirmation:** YES on the manually evaluated sample ($n = 6$).
 
 ---
@@ -151,13 +150,13 @@ Variant A was manually checked against a small set of publicly verifiable legal-
 
 ## 6. Secondary Candidate: Economic / Tax Identifier (*کد اقتصادی / شماره اقتصادی*)
 
-### 6.1 Regulatory Background
+### 6.1 Regulatory & Technical Background
 - **Authority:** Iranian National Tax Administration (*سازمان امور مالیاتی کشور* — INTA).
-- **Ecosystem Breakdown & Distinct Regimes:**
-  1. **Legacy Economic Code (*کد اقتصادی قدیمی ۱۲ رقمی*):** Historically issued 12-digit number assigned to commercial entities. Accounting literature and older ERP guides distinguish this legacy 12-digit code from the 11-digit Legal Entity National ID.
-  2. **Current Economic Number Regime (*نظام جدید شماره اقتصادی*):** Under INTA circular No. 200/1401/30 (effective مهر ۱۴۰۱ / Oct 2022) implementing Article 169 of the Direct Taxes Act, the legacy 12-digit economic code was retired for legal persons. Legal entities now officially use their 11-digit Legal Entity National ID (*شناسه ملی*) as their economic number.
-  3. **Natural Persons (*اشخاص حقیقی*):** Taxpayers use their 10-digit National ID (Code Melli) plus a tax file / branch suffix (total 14 digits).
-  4. **Electronic Invoices (*سامانه مودیان / پایانه‌های فروشگاهی*):** Invoices use a 22-character unique tax invoice ID (*شماره منحصر به فرد مالیاتی*) derived from a 6-character Fiscal Memory ID (*شناسه یکتای حافظه مالیاتی*), hex timestamp, sequence number, and check digit.
+- **Layered Tax Ecosystem Breakdown:**
+  1. **Statutory Foundation:** Articles 169 and 169-bis of the Direct Taxes Act establish statutory obligations for taxpayer identification, economic number allocation, invoice issuance, and reciprocal reporting (`SRC-PRI-04`). The statutory text establishes the identity and reporting framework but leaves operational number formats to subsequent administrative regulations.
+  2. **Current Administrative / Technical Practice:** Reviewed later administrative regulations and enterprise technical materials (`SRC-SEC-01`, `SRC-SEC-05`) indicate that corporate legal persons officially use their 11-digit Legal Entity National ID (*شناسه ملی*) as their economic number in tax filings and invoicing.
+  3. **Legacy Economic Code (*کد اقتصادی قدیمی ۱۲ رقمی*):** Older accounting and ERP materials document a historically issued 12-digit number formerly assigned to commercial entities, distinct from the 11-digit Legal Entity National ID (`SRC-SEC-01`).
+  4. **Other Modern Tax Identifiers:** Natural-person formats (e.g. 14-digit extensions) and electronic invoice tokens (e.g. 22-character unique fiscal identifiers) discussed in secondary enterprise guides (`SRC-SEC-05`) remain outside the immediate scope of Phase 27.
 
 ### 6.2 Evaluation & Recommendation
 - **Decision:** `HOLD`
