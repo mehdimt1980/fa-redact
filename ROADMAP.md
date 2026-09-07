@@ -58,108 +58,34 @@ Expanded identifier support, introduced institution-specific pattern configurati
 
 ---
 
-## Features Targeted for v0.3.0 Release
+### v0.3.0 — Detection Reports, CLI, Structured Data, Opt-in Persian NER & Clinical Profiles
+*Status: `RELEASED` (Published on PyPI and GitHub Releases)*
 
-The following phases have been completed, reviewed, merged into `main`, and consolidated for the upcoming `v0.3.0` release:
+Consolidated privacy-safe aggregate reporting, a CLI interface, structured dictionary helpers, an opt-in Persian NER prototype, and clinical redaction profiles:
 
-### Phase 18 — Privacy-Safe Detection Report
-*Status: `MERGED` (Merged into `main` via PR #17, commit `4ce102f95ff683d957f55bea79d393bff8976787`)*
-
-Introduced aggregate, value-free detection reporting:
-- `DetectionReport` immutable data model capturing total counts, deterministic type breakdowns, conflict counts, and duplicate metrics.
-- Pure aggregation function `report_detections(detections)`.
-- High-level pipeline helper `detection_report(text, detectors=...)`.
-- Value-free guarantee: reports contain no raw values, normalized values, source text, character spans, snippets, or PII hashes.
-- Exported publicly from `fa_redact`.
-
----
-
-### Phase 19 — CLI
-*Status: `MERGED` (Merged into `main` via PR #19, commit `5fe894d23424bdb3825bac75ccfbc6c250e79c19`)*
-
-Provided a conservative command-line interface over existing `fa-redact` capabilities:
-- Command-line entry point `fa-redact` and module `python -m fa_redact`.
-- Subcommands `detect`, `report`, and `redact` across `stdin`/`stdout` streams and file paths.
-- Privacy-conscious diagnostics to `stderr` without exposing input text, detected PII, or internal state.
-- In-place overwrite protection and zero external runtime dependencies.
-
----
-
-### Phase 20 — Structured Data Helpers
-*Status: `MERGED` (Merged into `main` via PR #20, commit `5e1023a2e3f9a910cc669569525652098262b2ea`)*
-
-Provided conservative helpers for processing explicitly selected fields within structured dictionaries, mappings, or JSON-like records:
-- Explicit field targeting via `detect_fields()`, `redact_fields()`, and `report_fields()`.
-- Dot-separated path navigation with strict syntax validation and duplicate path rejection.
-- Record-wide referential consistency during redaction across multiple targeted string fields.
-- Non-destructive processing preserving unselected keys, non-string types, booleans, numbers, and lists.
-- Zero external runtime dependencies (no pandas, polars, or dataframe requirements).
-
----
-
-### Phase 21 — Persian Names / NER Research & Evaluation
-*Status: `MERGED` (Merged into `main` via PR #21, commit `9ff013e1b4dddf7f2bd5f21cdf9c9feed480266c`)*
-
-Established the research and evaluation foundation for Persian personal-name named entity recognition:
-- Comprehensive research deliverable evaluating candidate models (ParsBERT, DistilBERT, Stanza), public corpora (PEYMA, ARMAN, MultiNERD, WikiANN), licensing, failure modes, and healthcare domain shift.
-- Standard-library-only exact-span entity evaluation harness with micro-averaging and granular error classification.
-- Synthetic challenge fixture set covering multi-token compound surnames, honorifics, common-word homographs, ZWNJ, and Arabic variants.
-- Verified zero runtime dependencies in core and established packaging design for optional extras.
-- Note: Phase 21 explicitly did not execute a real model benchmark or add a production detector.
-
----
-
-### Phase 21.1 — Persian NER Empirical Benchmark & Prototype
-*Status: `MERGED` (Merged into `main` via PR #22, commit `bf1a71b2e675466cb1bf7ef0ab60eaf5f0bbef0f`)*
-
-Executed a real, reproducible Persian PERSON NER benchmark on a held-out corpus:
-- Benchmarked Apache-2.0 checkpoint `HooshvareLab/bert-fa-base-uncased-ner-peyma` against the PEYMA test split (1,026 sentences, 434 gold PERSON entities).
-- Reproduced exact-span PERSON entity metrics: 99.31% precision, 99.08% recall, 99.19% exact-span F1 (TP=430, FP=3, FN=4).
-- Validated deterministic token-to-span mapping and exact character offset reconstruction without text distortion (0 structural alignment failures).
-- Analyzed error modes (3 boundary errors, 0 duplicate predictions, 0 leading-I recoveries, 0 truncated sentences).
-- Verified zero runtime dependencies in core and reached a CONDITIONAL GO decision for an opt-in implementation prototype.
-
----
-
-### Phase 21.2 — Opt-in Persian NER Implementation Prototype
-*Status: `MERGED` (Merged into `main` via PR #23, commit `836ae09e6a44c9f234e6cc43492f1e0b70e6b4ac`)*
-
-Converted the validated Phase 21.1 research result into a strictly opt-in production-package detector prototype:
-- Implemented `PersianNERDetector` satisfying the `Detector` structural protocol.
-- Loads model checkpoints and fast tokenizers strictly from local filesystem directories (`local_files_only=True`, `trust_remote_code=False`).
-- Maintained core `fa-redact` zero runtime dependencies (`dependencies = []`) with optional `[project.optional-dependencies] ner = [...]`.
-- Requires fast tokenizer with exact character offset mapping; audits offset bounds structurally.
-- Performs NER inference on position-preserving normalized text while slicing original source strings for `Detection.value`.
-- Enforces fail-loud long-text policy rejecting over-length inputs without silent truncation.
-- Preserves existing conservative defaults: `_DEFAULT_DETECTORS` unchanged, explicit `detectors=[...]` required.
-- Does not implement clinical profiles, patient/doctor role inferences, or compliance claims.
-
----
-
-### Phase 22 — Clinical De-identification Layer
-*Status: `MERGED` (Merged into `main` via PR #24, commit `c7bff32cad01f642198b8505c02799ce33235cff`)*
-
-Provided high-level composite policies and presets for Persian healthcare text workflows:
-- Composed built-in direct identifier detectors, optional email and bank card detectors, institutional pattern rules (`PatternRule`), and optional person detectors into deterministic profiles (`ClinicalRedactionProfile`, `clinical_profile`).
-- Standardized redaction templates for `outpatient_note`, `discharge_summary`, and `referral_letter`.
-- Profile convenience methods delegating to core pipeline, transformation, and structured helpers (`detect`, `redact`, `report`, `detect_fields`, `redact_fields`, `report_fields`).
-- Conservative reject conflict policy default preserved.
-- Maintained zero mandatory runtime dependencies and clear anti-claims regarding complete de-identification and regulatory compliance.
+- **Phase 18 — Privacy-Safe Detection Report:** `DetectionReport` immutable data model, `report_detections()`, and `detection_report()` summarizing total detections, type counts, and conflict indicators without storing or leaking raw PII, spans, or hashes.
+- **Phase 19 — CLI:** Command-line interface `fa-redact` (and `python -m fa_redact`) with `detect`, `report`, and `redact` subcommands over streams and files with overwrite protection.
+- **Phase 20 — Structured Data Helpers:** Non-destructive field-targeted processing (`detect_fields()`, `redact_fields()`, `report_fields()`) preserving non-target keys and data types with record-wide referential consistency.
+- **Phase 21 — Persian Names / NER Research & Evaluation:** Research deliverable, exact-span entity evaluation harness, and synthetic Persian NER challenge suite.
+- **Phase 21.1 — Persian NER Empirical Benchmark & Prototype:** Reproducible benchmark on PEYMA test split (99.19% exact-span F1) verifying deterministic character offset reconstruction.
+- **Phase 21.2 — Opt-in Persian NER Implementation Prototype:** Strictly opt-in `PersianNERDetector` for local offline models, fail-loud long-text policy, and zero mandatory runtime dependencies (`fa-redact[ner]`).
+- **Phase 22 — Clinical De-identification Layer:** High-level `ClinicalRedactionProfile` and `clinical_profile(...)` composing direct identifiers, opt-in email/card detectors, institutional `PatternRule` sets, and optional person detectors with document workflow presets (`outpatient_note`, `discharge_summary`, `referral_letter`).
+- **Phase 23 — v0.3.0 Release Preparation & Publication:** Package version alignment, CHANGELOG `0.3.0` cut, distribution audits, isolated wheel smoke tests, and PyPI/GitHub release publication.
 
 ---
 
 ## Active Phase
 
-### Phase 23 — v0.3.0 Release Preparation
+### Phase 24 — Batch Processing Helpers
 *Status: `ACTIVE / IN PROGRESS`*
 
-Prepare the `v0.3.0` minor release package, verify version alignment, update documentation and release smoke tests, and open release preparation PR:
-- Align package version across `pyproject.toml`, `src/fa_redact/__init__.py`, tests, and documentation to `0.3.0`.
-- Cut `CHANGELOG.md` entry `[0.3.0] - 2026-09-07` and initialize a fresh `[Unreleased]` section.
-- Expand release wheel smoke test in `.github/workflows/release.yml` covering base-wheel public APIs from Phases 18–22.
-- Update `RELEASING.md` operational release guide.
-- Audit wheel and sdist distribution packaging.
-- Note: Release publication to GitHub Releases and PyPI remains a separate gate after PR merge and post-merge CI verification.
+Add lightweight, lazy streaming batch-processing helpers over Python iterables of strings:
+- Implement `detect_many()`, `redact_many()`, and `report_many()` in `src/fa_redact/batch.py`.
+- Enforce lazy streaming without materializing the document collection in memory.
+- Snapshot caller-supplied mutable configuration (`detectors`, `type_priority`) immutably at helper creation time.
+- Treat each document as an independent call (`redact_many` restarts placeholder counters per document without cross-document session state).
+- Return one value-free `DetectionReport` per document in `report_many()`.
+- Maintain zero new runtime dependencies, Python >=3.10 support, and position/offset safety guarantees.
 
 ---
 
@@ -167,7 +93,6 @@ Prepare the `v0.3.0` minor release package, verify version alignment, update doc
 
 The following topics represent potential future directions after the core planned phases:
 
-- **Batch Processing Helpers:** Safe multi-document or chunked streaming utilities.
 - **Benchmark & Evaluation Corpus Tooling:** Offline evaluation harnesses using synthetic test suites.
 - **Optional Structured Serialization:** Format adapters for specific healthcare interchange formats.
 - **Additional Iranian Identifier Types:** Research into other standardized national numbers (e.g., postal codes, registration numbers) where unambiguous formats and checksums exist.

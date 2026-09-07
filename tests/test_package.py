@@ -57,6 +57,7 @@ def test_package_all_export() -> None:
         "clinical_profile",
         "detect",
         "detect_fields",
+        "detect_many",
         "detection_report",
         "is_valid_bank_card_number",
         "is_valid_email",
@@ -68,8 +69,10 @@ def test_package_all_export() -> None:
         "normalize_text",
         "redact",
         "redact_fields",
+        "redact_many",
         "report_detections",
         "report_fields",
+        "report_many",
         "resolve_detection_conflicts",
     }
     assert expected_exports.issubset(set(fa_redact.__all__))
@@ -79,6 +82,15 @@ def test_package_all_export() -> None:
 
 def test_pipeline_and_protocols_imports() -> None:
     """Verify direct imports from core submodules."""
+    from fa_redact.batch import (
+        detect_many as sub_detect_many,
+    )
+    from fa_redact.batch import (
+        redact_many as sub_redact_many,
+    )
+    from fa_redact.batch import (
+        report_many as sub_report_many,
+    )
     from fa_redact.clinical import (
         ClinicalRedactionProfile as SubClinicalProfileClass,
     )
@@ -121,6 +133,9 @@ def test_pipeline_and_protocols_imports() -> None:
 
     assert callable(sub_detect)
     assert callable(sub_redact)
+    assert callable(sub_detect_many)
+    assert callable(sub_redact_many)
+    assert callable(sub_report_many)
     assert callable(sub_resolve)
     assert callable(sub_detection_report)
     assert callable(sub_report_detections)

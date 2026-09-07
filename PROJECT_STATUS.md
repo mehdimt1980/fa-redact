@@ -7,11 +7,11 @@
 
 ## Current State
 
-- **Latest published release:** `v0.2.0`
+- **Latest published release:** `v0.3.0`
 - **Current source version:** `0.3.0`
-- **Development status:** `v0.3.0 RELEASE PREPARATION` (Phases 18, 19, 20, 21, 21.1, and 22 merged; v0.3.0 release candidate preparation in progress)
-- **Last closed phase:** Phase 22 — Clinical De-identification Layer
-- **Current active phase:** Phase 23 — v0.3.0 Release Preparation (In Progress)
+- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 24 Batch Processing Helpers in progress)
+- **Last closed phase:** Phase 23 — v0.3.0 Release Preparation & Publication
+- **Current active phase:** Phase 24 — Batch Processing Helpers (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -85,6 +85,13 @@ The following built-in detectors remain strictly **opt-in**:
 - Dot-separated path navigation (e.g. `"note"`, `"meta.contact"`, `"patient.info.note"`) with strict path syntax validation and duplicate path rejection.
 - Record-wide referential consistency in `redact_fields()` across multiple targeted fields within a single record.
 - Preserves all unselected keys, non-string values, booleans, numbers, None, and lists without blind recursive traversal.
+
+### Batch Processing Helpers
+- Lightweight, lazy streaming generators for multi-document workflows: `detect_many()`, `redact_many()`, and `report_many()`.
+- Sequential one-document-at-a-time processing preserving exact input order without materializing the document collection in memory.
+- Caller-supplied configuration (`detectors`, `type_priority`) snapshotted immutably at generator creation time.
+- Independent per-document redaction semantics (`redact_many`): placeholder counters restart independently for each document with no cross-document session state.
+- One value-free `DetectionReport` yielded per document in `report_many()`.
 
 ---
 
@@ -198,25 +205,18 @@ A development phase transitions through three discrete states:
 
 ## Last Closed Phase
 
-- **Phase:** Phase 22 — Clinical De-identification Layer
+- **Phase:** Phase 23 — v0.3.0 Release Preparation & Publication
 - **Status:** `CLOSED`
-- **PR:** #24
-- **Merge Commit:** `c7bff32cad01f642198b8505c02799ce33235cff`
-- **Verified Post-Merge Main CI:** Run `34089912023` (push to `main`, conclusion: success, 5 jobs passed)
-- **Phase 22 Baseline:** 825 passing tests.
-- **Unreleased Scope:** Phase 18, 19, 20, 21, 21.1, 21.2, and 22 are merged into `main` and prepared for release in `v0.3.0`.
-- **Key Phase 22 Result:**
-  - High-level composition layer: `ClinicalRedactionProfile`, `ClinicalTextTemplate`, and `clinical_profile(...)` factory.
-  - Standardized clinical text templates: `outpatient_note`, `discharge_summary`, `referral_letter`.
-  - Explicit institutional `PatternRule` composition.
-  - `EmailDetector` included in clinical profiles by default (`include_email=True`).
-  - `BankCardDetector` explicit opt-in (`include_bank_card=False` by default).
-  - Explicit `person_detector` parameter (opt-in; no automatic `PersianNERDetector` instantiation).
-  - No role inference (patient, physician, relative).
-  - Profile convenience methods delegate to existing core APIs (`detect`, `redact`, `report`, `detect_fields`, `redact_fields`, `report_fields`).
-  - Conservative default conflict policy preserved (`conflict_policy="reject"`).
-  - Zero mandatory runtime dependencies preserved in core package.
-  - Explicit anti-claims: no complete clinical de-identification guarantee, no HIPAA/GDPR compliance claims, not a certified medical device.
+- **PR:** #25
+- **Merge Commit:** `ad2f6723db29f27f86d2ece833ff244a6e4864dd`
+- **Verified Post-Merge Main CI:** Run `34091770461` (push to `main`, conclusion: success, 5 jobs passed)
+- **Published Release:** `v0.3.0` (GitHub Release ID `383881404`, Release workflow `34092778623`, conclusion: `success`, PyPI `fa-redact 0.3.0`)
+- **Phase 23 Baseline:** 825 passing tests.
+- **Key Phase 23 Result:**
+  - Prepared and published `v0.3.0` minor release encompassing capabilities from Phases 18–22 (Detection Reports, CLI, Structured Data Helpers, Persian NER evaluation/prototype, Clinical Redaction Profiles).
+  - Version aligned across `pyproject.toml`, `src/fa_redact/__init__.py`, tests, and documentation to `0.3.0`.
+  - Finalized `CHANGELOG.md` entry `[0.3.0] - 2026-09-07`.
+  - Expanded release distribution audits and isolated wheel smoke tests.
 - **Stable Historical Anchors:**
   - `v0.2.0` release commit: `227577deeb899de9593efb296659822f1ec0bf20`
   - Phase 18 merge commit: `4ce102f95ff683d957f55bea79d393bff8976787` (PR #17)
@@ -226,15 +226,17 @@ A development phase transitions through three discrete states:
   - Phase 21.1 merge commit: `bf1a71b2e675466cb1bf7ef0ab60eaf5f0bbef0f` (PR #22)
   - Phase 21.2 merge commit: `836ae09e6a44c9f234e6cc43492f1e0b70e6b4ac` (PR #23)
   - Phase 22 merge commit: `c7bff32cad01f642198b8505c02799ce33235cff` (PR #24)
+  - Phase 23 merge commit: `ad2f6723db29f27f86d2ece833ff244a6e4864dd` (PR #25)
+  - `v0.3.0` release commit: `ad2f6723db29f27f86d2ece833ff244a6e4864dd`
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
 ## Active Phase
 
-- **Phase:** Phase 23 — v0.3.0 Release Preparation
+- **Phase:** Phase 24 — Batch Processing Helpers
 - **Status:** `IN PROGRESS`
-- **Scope:** Prepare `v0.3.0` minor release encompassing public capabilities from Phases 18–22 (Detection Reports, CLI, Structured Data Helpers, Persian NER evaluation/prototype, Clinical Redaction Profiles). Update package version to `0.3.0`, cut CHANGELOG `0.3.0` entry, align bilingual documentation and coverage tables, expand release wheel smoke test in `.github/workflows/release.yml`, update `RELEASING.md`, audit distribution contents, and open release preparation PR against `main`. Release publication remains a separate explicit gate after PR merge.
+- **Scope:** Add lightweight, lazy streaming batch-processing helpers (`detect_many`, `redact_many`, `report_many`) over Python iterables of strings. Process documents sequentially one at a time, preserving input order without materializing the document collection in memory. Snapshot caller configuration immutably at creation. Treat each document as an independent call (restart placeholder numbering per document; no cross-document session sharing). Maintain zero new runtime dependencies and Python >=3.10 support.
 
 ---
 

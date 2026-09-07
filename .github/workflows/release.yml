@@ -123,6 +123,7 @@ jobs:
           required_wheel_entries = [
               'fa_redact/__init__.py',
               'fa_redact/__main__.py',
+              'fa_redact/batch.py',
               'fa_redact/cli.py',
               'fa_redact/clinical.py',
               'fa_redact/conflicts.py',
@@ -161,6 +162,7 @@ jobs:
               'pyproject.toml',
               'src/fa_redact/__init__.py',
               'src/fa_redact/__main__.py',
+              'src/fa_redact/batch.py',
               'src/fa_redact/cli.py',
               'src/fa_redact/clinical.py',
               'src/fa_redact/reporting.py',
@@ -387,6 +389,19 @@ jobs:
           assert "[EMAIL_1]" in clinical_redacted
           # Ensure profile execution did not pull in heavy ML modules
           assert "torch" not in sys.modules
+
+          # 13. Phase 24: Batch Processing Helpers
+          assert callable(fa_redact.detect_many)
+          assert callable(fa_redact.redact_many)
+          assert callable(fa_redact.report_many)
+          batch_docs = [
+              "سند اول کد ملی ۱۲۳۴۵۶۷۸۹۱",
+              "سند دوم شماره ۰۹۱۲۳۴۵۶۷۸۹",
+          ]
+          batch_out = list(fa_redact.redact_many(batch_docs))
+          assert len(batch_out) == 2
+          assert "[IR_NATIONAL_ID_1]" in batch_out[0]
+          assert "[IR_MOBILE_1]" in batch_out[1]
 
           print("Release wheel smoke test passed for the current fa-redact release candidate.")
           PY

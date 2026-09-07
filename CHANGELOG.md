@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Batch Processing Helpers (Phase 24):**
+  - Lazy, streaming batch-processing helpers `detect_many()`, `redact_many()`, and `report_many()` in `fa_redact.batch` and exported from top-level `fa_redact`.
+  - Sequential, one-document-at-a-time processing preserving exact input order without materializing the document collection in memory (`len()`, `list()`, or `tuple()` conversions are avoided).
+  - Support for any Python `Iterable[str]` including generators, iterators, lists, tuples, and one-shot streams.
+  - Immutable configuration snapshotting: caller-supplied mutable sequences (`detectors`, `type_priority`) are snapshotted to immutable tuples at helper invocation time, preventing caller mutations from affecting in-flight iteration.
+  - Independent per-document redaction semantics: `redact_many()` treats each document as an independent call, restarting placeholder numbering from `1` per document without maintaining cross-document pseudonymization state.
+  - Privacy-safe aggregate reporting: `report_many()` yields one value-free `DetectionReport` per document.
+  - Zero mandatory runtime dependencies preserved in the base package (`dependencies = []`).
+
+### Limitations
+- **No Automatic Cross-Document Consistency:** `redact_many()` does not maintain or share a `PseudonymizationSession` across documents; use `PseudonymizationSession` explicitly if stable cross-document aliases are required.
+- **No Whole-Batch Rollback:** Iterators stream results lazily; if an error occurs on document $N$, earlier yielded results remain valid and no batch-wide rollback is performed.
+- **No NER Chunking:** Batch helpers process distinct documents; they do not partition single long documents into token windows or stitch overlapping NER inference chunks.
+- **No Concurrency or Asynchronous Execution:** Processing is strictly sequential, synchronous, and deterministic.
+- **No Filesystem / JSONL Batch Interfaces:** Batch helpers operate on in-memory/in-process Python iterables of strings only; directory traversal, globbing, and JSONL/CSV parsing are not included.
+- **No Batch Aggregate Report:** `report_many()` yields one `DetectionReport` per input document; cross-document aggregate metrics are not computed in this phase.
+
 ## [0.3.0] - 2026-09-07
 
 ### Added

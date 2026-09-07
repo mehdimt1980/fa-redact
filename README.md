@@ -46,6 +46,7 @@
   - [14. Structured Data Helpers (v0.3.0)](#14-structured-data-helpers-v030)
   - [15. Experimental Opt-in Persian PERSON NER (v0.3.0)](#15-experimental-opt-in-persian-person-ner-v030)
   - [16. Clinical Redaction Profiles (v0.3.0)](#16-clinical-redaction-profiles-v030)
+  - [17. Batch Processing Helpers (v0.3.0)](#17-batch-processing-helpers-v030)
 - [Custom Detectors](#custom-detectors)
 - [Healthcare & AI/LLM Usage Pattern](#healthcare--aillm-usage-pattern)
 - [Current Coverage & Limitations](#current-coverage--limitations)
@@ -983,6 +984,48 @@ redacted_record = profile.redact_fields(record, ["patient.note", "contact"])
 
 ---
 
+#### 17. Batch Processing Helpers (v0.3.0)
+
+> [!NOTE]
+> **Introduced in v0.3.0**: Lazy batch-processing helpers (`detect_many`, `redact_many`, and `report_many`) are provided in `fa-redact` v0.3.0.
+
+`fa-redact` provides lightweight, lazy streaming helpers for processing multiple independent text documents sequentially without loading the entire collection into memory:
+
+- `detect_many(texts, *, detectors=...)`: Yields a list of raw `Detection` instances for each document.
+- `redact_many(texts, *, detectors=..., conflict_policy=..., type_priority=...)`: Yields a redacted string for each document.
+- `report_many(texts, *, detectors=...)`: Yields a value-free `DetectionReport` for each document.
+
+##### 1. Basic Batch Redaction
+
+```python
+from fa_redact import redact_many
+
+documents = (
+    "بیمار اول با کد ملی ۱۲۳۴۵۶۷۸۹۱ مراجعه کرد.",
+    "بیمار دوم با شماره تماس ۰۹۱۲۳۴۵۶۷۸۹ هماهنگ شد.",
+)
+
+for redacted in redact_many(documents):
+    print(redacted)
+# Output:
+# "بیمار اول با کد ملی [IR_NATIONAL_ID_1] مراجعه کرد."
+# "بیمار دوم با شماره تماس [IR_MOBILE_1] هماهنگ شد."
+```
+
+##### 2. Key Architectural Guarantees
+
+1. **Lazy & Streaming**: Documents are processed one at a time as the returned iterator is consumed. Memory usage scales with the current document, not total document count. Any Python `Iterable[str]` (generators, iterators, lists, tuples) is supported.
+2. **Input-Order Preserving**: Output results match the exact sequence of input documents.
+3. **Independent Per-Document Redaction**: Each document is redacted independently. Placeholder counters restart from `1` for each document (e.g., `[IR_NATIONAL_ID_1]` in document 1 and `[IR_NATIONAL_ID_1]` in document 2). There is no cross-document pseudonymization state.
+4. **Immutable Configuration Snapshotting**: Caller-supplied `detectors` and `type_priority` sequences are snapshotted at helper creation, preventing caller mutations from affecting in-flight iteration.
+5. **Partial Iteration & Errors**: If an invalid item or processing error occurs at document $N$, earlier yielded results remain valid and processing halts at document $N$ without whole-batch rollback.
+
+> [!WARNING]
+> - **No Shared Cross-Document Pseudonymization**: `redact_many()` does not maintain shared entity mappings across documents. If you need stable entity aliases across multiple messages, use `PseudonymizationSession` explicitly.
+> - **No Text Chunking**: Batch helpers process distinct documents; they do not partition long documents into token windows or perform NER token-window overlap stitching.
+
+---
+
 ### Custom Detectors
 
 `fa-redact` uses Python's structural typing (protocols). Any class implementing the two-argument `detect(self, original_text: str, normalized_text: str) -> Sequence[Detection]` method can be passed to `detect()`, `redact()`, or `session.pseudonymize()`:
@@ -1072,6 +1115,7 @@ Local Hospital / Trusted Boundary
 | **Structured Data Helpers** | ❌ Not Supported | ❌ Not Supported | ✅ Supported | Explicit field targeting (`detect_fields`, `redact_fields`, `report_fields`) |
 | **Personal Names (NER)** | ❌ Not Supported | 🔬 Research | 🧪 Opt-in | Experimental opt-in `PersianNERDetector` with caller-supplied local ML model |
 | **Clinical Redaction Profiles** | ❌ Not Supported | ❌ Not Supported | 🧪 Supported | High-level presets (`ClinicalRedactionProfile`, `clinical_profile`) |
+| **Batch Processing Helpers** | ❌ Not Supported | ❌ Not Supported | ✅ Supported | Lazy streaming multi-document helpers (`detect_many`, `redact_many`, `report_many`) |
 | **Postal Addresses** | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported | Unstructured spatial entities |
 | **Dates of Birth / Timestamps** | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported | Planned for future versions |
 | **Health Insurance Numbers** | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported | Institution-specific |
@@ -1174,6 +1218,7 @@ This project is licensed under the [MIT License](LICENSE).
   - [۱۴. پردازش داده‌های ساخت‌یافته (v0.3.0)](#۱۴-پردازش-داده‌های-ساخت‌یافته-v030)
   - [۱۵. تشخیص اختیاری نام اشخاص فارسی (NER) (v0.3.0)](#۱۵-تشخیص-اختیاری-نام-اشخاص-فارسی-ner-v030)
   - [۱۶. پروفایل‌های پالایش متون بالینی (v0.3.0)](#۱۶-پروفایلهای-پالایش-متون-بالینی-v030)
+  - [۱۷. پردازش دسته‌ای اسناد (v0.3.0)](#۱۷-پردازش-دسته‌ای-اسناد-v030)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
 - [جدول پوشش و قابلیت‌ها](#جدول-پوشش-و-قابلیت‌ها)
@@ -2078,6 +2123,48 @@ redacted_record = profile.redact_fields(record, ["patient.note", "contact"])
 
 ---
 
+#### ۱۷. پردازش دسته‌ای اسناد (v0.3.0)
+
+> [!NOTE]
+> **معرفی‌شده در نسخهٔ v0.3.0**: توابع پردازش دسته‌ای تنبل و جریانی (`detect_many`، `redact_many` و `report_many`) در نسخهٔ v0.3.0 ارائه شده‌اند.
+
+کتابخانهٔ `fa-redact` توابع سبک و بدون نگه‌داری حافظه‌ای غیرضروری (Lazy Streaming) را برای پردازش چندین سند متنی مستقل به‌صورت ترتیبی و آیتم‌به‌آیتم فراهم می‌کند:
+
+- `detect_many(texts, *, detectors=...)`: یک ژنراتور برمی‌گرداند که برای هر سند، فهرستی از اشیای شواهد خام `Detection` را تولید می‌کند.
+- `redact_many(texts, *, detectors=..., conflict_policy=..., type_priority=...)`: یک ژنراتور برمی‌گرداند که برای هر سند، متن پالایش‌شده با نشان‌گذارهای نوع‌دار را تولید می‌کند.
+- `report_many(texts, *, detectors=...)`: یک ژنراتور برمی‌گرداند که برای هر سند، یک شیء بدون مقدار `DetectionReport` تولید می‌کند.
+
+##### ۱. نمونهٔ کاربرد ساده
+
+```python
+from fa_redact import redact_many
+
+documents = (
+    "بیمار اول با کد ملی ۱۲۳۴۵۶۷۸۹۱ مراجعه کرد.",
+    "بیمار دوم با شماره تماس ۰۹۱۲۳۴۵۶۷۸۹ هماهنگ شد.",
+)
+
+for redacted in redact_many(documents):
+    print(redacted)
+# خروجی:
+# "بیمار اول با کد ملی [IR_NATIONAL_ID_1] مراجعه کرد."
+# "بیمار دوم با شماره تماس [IR_MOBILE_1] هماهنگ شد."
+```
+
+##### ۲. ویژگی‌ها و تضمین‌های معماری
+
+۱. **پردازش تنبل و جریانی (Lazy / Streaming)**: اسناد فقط در زمان مصرف شمارنده (Iterator) و به‌صورت تک‌به‌تک پردازش می‌شوند. کل مجموعه در حافظه بارگذاری نمی‌شود و توابع از تمام انواع Iterable (ژنراتورها، لیست‌ها، تاپل‌ها) پشتیبانی می‌کنند.
+۲. **حفظ دقیق ترتیب ورودی**: خروجی‌ها دقیقاً به همان ترتیبی که اسناد در ورودی آمده‌اند تولید می‌شوند.
+۳. **استقلال کامل اسناد در پنهان‌سازی**: هر سند به‌صورت مستقل پالایش می‌شود و شمارندهٔ نشان‌گذارها در هر سند مجدداً از `1` آغاز می‌گردد. هیچ نگاشت یا حالت مشترکی بین اسناد مختلف به اشتراک گذاشته نمی‌شود.
+۴. **عکس‌برداری تغییرناپذیر از پیکربندی (Config Snapshotting)**: تنظیمات ارسالی مانند `detectors` یا `type_priority` در زمان فراخوانی تابع ثبت می‌شوند تا تغییرات بعدی در لیست‌های ارسالی کاربر روی فرایند پردازش اثر نگذارد.
+۵. **رفتار در زمان بروز خطا**: در صورت بروز خطا در سند $N$-ام، خروجی‌های قبلی معتبر باقی مانده و پردازش بدون عقب‌گرد کل بسته (No Whole-Batch Rollback) متوقف می‌شود.
+
+> [!WARNING]
+> - **عدم نام‌مستعارسازی مشترک میان اسناد**: تابع `redact_many()` وضعیت نشست مشترکی نگه‌داری نمی‌کند. در صورتی که به شناسه‌های پایدار در چند سند یا پیام نیاز دارید، صریحاً از `PseudonymizationSession` استفاده فرمایید.
+> - **عدم تکه‌تکه‌سازی اسناد طولانی (Chunking)**: توابع دسته‌ای اسناد مجزا را پردازش می‌کنند و متن طولانی یک سند را برای مدل‌های زبانی تکه‌تکه نمی‌کنند.
+
+---
+
 ### تشخیص‌دهنده‌های سفارشی (Custom Detectors)
 
 معماری `fa-redact` مبتنی بر پروتکل‌های ساختاری پایتون (Duck Typing) است. شما می‌توانید کلاسی با متد دوآرگومانی پیاده‌سازی کنید:
@@ -2170,6 +2257,7 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 | **پردازش داده‌های ساخت‌یافته** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | ✅ پشتیبانی می‌شود | هدف‌گیری صریح مسیرهای دیکشنری (`detect_fields`، `redact_fields`، `report_fields`) |
 | **نام اشخاص (NER)** | ❌ پشتیبانی نمی‌شود | 🔬 ارزیابی پژوهشی | 🧪 اختیاری | تشخیص‌دهندهٔ اختیاری `PersianNERDetector` با مدل محلی کاربر |
 | **پروفایل‌های پالایش بالینی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | 🧪 پشتیبانی می‌شود | پروفایل‌های سطح‌بالا (`ClinicalRedactionProfile` و `clinical_profile`) |
+| **پردازش دسته‌ای اسناد (Batch)** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | ✅ پشتیبانی می‌شود | پردازش تنبل و جریانی اسناد (`detect_many`، `redact_many`، `report_many`) |
 | **آدرس پستی و موقعیت مکانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | موجودیت‌های غیرساختاریافته |
 | **تاریخ تولد و زمان‌ها** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | برنامه‌ریزی‌شده برای نسخه‌های آتی |
 | **شماره بیمه درمانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی |
