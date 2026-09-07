@@ -100,17 +100,30 @@ Built a deterministic, offline, standard-library-only synthetic regression corpu
 
 ---
 
+### Phase 26 — Privacy-Safe Structured Serialization
+*Status: `COMPLETED`*
+
+Provided small, explicit, standard-library-only serialization helpers for fa-redact detection metadata and DetectionReport objects in `src/fa_redact/serialization.py`:
+- Implemented `detection_to_dict()`, `detections_to_list()`, and `dumps_detections()` exporting structural metadata (`type`, `start`, `end`) without raw or normalized values.
+- Implemented `report_to_dict()`, `reports_to_dict()`, `dumps_report()`, and `dumps_reports()` exporting aggregate metrics with value-free and span-free privacy guarantees.
+- Refactored CLI `detect` and `report` subcommands to reuse shared serialization helpers while preserving byte-for-byte backward compatibility.
+- Enforced strict negative scope: no generic arbitrary-object serializer, no raw PII export, no deserialization, no unselected record serialization, and no FHIR/HL7 adapters.
+- Maintained zero new runtime dependencies (`dependencies = []`), Python >=3.10 support, and package version `0.3.0`.
+
+---
+
 ## Active Phase
 
-### Phase 26 — Privacy-Safe Structured Serialization
+### Phase 27 — Additional Iranian Identifier Research & Decision Gate
 *Status: `ACTIVE / IN PROGRESS`*
 
-Provide small, explicit, standard-library-only serialization helpers for fa-redact detection metadata and DetectionReport objects in `src/fa_redact/serialization.py`:
-- Implement `detection_to_dict()`, `detections_to_list()`, and `dumps_detections()` exporting structural metadata (`type`, `start`, `end`) without raw or normalized values.
-- Implement `report_to_dict()`, `reports_to_dict()`, `dumps_report()`, and `dumps_reports()` exporting aggregate metrics with value-free and span-free privacy guarantees.
-- Refactor CLI `detect` and `report` subcommands to reuse shared serialization helpers while preserving byte-for-byte backward compatibility.
-- Enforce strict negative scope: no generic arbitrary-object serializer, no raw PII export, no deserialization, no unselected record serialization, and no FHIR/HL7 adapters.
-- Maintain zero new runtime dependencies (`dependencies = []`), Python >=3.10 support, and package version `0.3.0`.
+Research candidate additional Iranian identifiers to determine suitability for deterministic, offline, privacy-first implementation in fa-redact:
+- Evaluate candidate identifiers: Iranian Legal Entity National ID (*شناسه ملی اشخاص حقوقی*), Iranian Postal Code (*کد پستی ده رقمی*), Company Registration Number (*شماره ثبت شرکت‌ها*), and Economic/Tax Identifier (*کد اقتصادی*).
+- Resolve checksum algorithm disagreements across technical implementations and empirical public data.
+- Establish an 8-dimension deterministic scoring rubric and decision bands.
+- Provide a research-only reference implementation comparing candidate formulas without modifying `src/fa_redact/`.
+- Produce a deterministic decision JSON artifact (`research/results/phase27_identifier_decision.json`) and comprehensive research deliverable (`research/phase27_additional_iranian_identifiers.md`).
+- Maintain zero production source changes, zero new runtime dependencies (`dependencies = []`), package version `0.3.0`, and default detectors unchanged.
 
 ---
 
@@ -118,7 +131,6 @@ Provide small, explicit, standard-library-only serialization helpers for fa-reda
 
 The following topics represent potential future directions after the core planned phases:
 
-- **Additional Iranian Identifier Types:** Research into other standardized national numbers (e.g., postal codes, registration numbers) where unambiguous formats and checksums exist.
 - **Performance Profiling & Optimization:** Micro-benchmarking regex execution and normalization throughput on large corpora.
 
 ---

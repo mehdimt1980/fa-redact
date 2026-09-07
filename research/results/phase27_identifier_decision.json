@@ -1,0 +1,134 @@
+{
+  "candidates": [
+    {
+      "decision": "NO-GO",
+      "evidence_counts": {
+        "community": 0,
+        "primary": 1,
+        "secondary_technical": 3
+      },
+      "hard_blockers": [
+        "Variable length (1 to 6 digits) depending on registration era.",
+        "Not unique at the national level (scoped only to local registry jurisdiction / county).",
+        "No mathematical checksum specification was identified in reviewed materials.",
+        "Cannot be validated offline."
+      ],
+      "id": "IR_COMPANY_REGISTRATION_NUMBER",
+      "max_score": 16,
+      "name_en": "Company / Organization Registration Number",
+      "name_fa": "شماره ثبت شرکت‌ها و موسسات",
+      "proposed_detector_name": null,
+      "proposed_entity_type": "IR_REGISTRATION_NUMBER",
+      "proposed_validator_name": null,
+      "recommended_integration": "PATTERN RULE",
+      "rubric_scores": {
+        "detector_boundary_clarity": 0,
+        "false_positive_resistance": 0,
+        "local_checksum_strength": 0,
+        "normalization_compatibility": 2,
+        "official_specification_strength": 1,
+        "offline_validation_feasibility": 0,
+        "privacy_anti_claim_clarity": 1,
+        "stable_fixed_structure": 0
+      },
+      "score": 4
+    },
+    {
+      "decision": "HOLD",
+      "evidence_counts": {
+        "community": 0,
+        "primary": 1,
+        "secondary_technical": 2
+      },
+      "hard_blockers": [
+        "Evolving and fragmented tax regulatory regime in Iran.",
+        "Corporate taxpayers use 11-digit Legal Entity ID (Shenase Melli) as their economic number under current INTA regulations, making a separate detector redundant.",
+        "Natural person tax numbers (14 digits) and electronic invoice identifiers (22 alphanumeric characters) require separate dedicated research and distinct specifications."
+      ],
+      "id": "IR_ECONOMIC_TAX_ID",
+      "max_score": 16,
+      "name_en": "Economic / Tax Identifier",
+      "name_fa": "کد اقتصادی / شماره اقتصادی",
+      "proposed_detector_name": null,
+      "proposed_entity_type": "IR_TAX_ID",
+      "proposed_validator_name": null,
+      "recommended_integration": "RESEARCH ONLY",
+      "rubric_scores": {
+        "detector_boundary_clarity": 0,
+        "false_positive_resistance": 0,
+        "local_checksum_strength": 1,
+        "normalization_compatibility": 1,
+        "official_specification_strength": 1,
+        "offline_validation_feasibility": 1,
+        "privacy_anti_claim_clarity": 1,
+        "stable_fixed_structure": 0
+      },
+      "score": 5
+    },
+    {
+      "decision": "CONDITIONAL GO",
+      "evidence_counts": {
+        "community": 3,
+        "primary": 2,
+        "secondary_technical": 3
+      },
+      "hard_blockers": [
+        "Primary statutory publication of check-digit formula is absent (formula established through secondary technical consensus and confirmed against manually checked sample (n=6)).",
+        "Must remain strictly opt-in (never default) due to potential numeric collision risk with arbitrary 11-digit numbers and tracking codes."
+      ],
+      "id": "IR_LEGAL_ENTITY_ID",
+      "max_score": 16,
+      "name_en": "Iranian Legal Entity National ID",
+      "name_fa": "شناسه ملی اشخاص حقوقی",
+      "proposed_detector_name": "IranianLegalEntityIDDetector",
+      "proposed_entity_type": "IR_LEGAL_ENTITY_ID",
+      "proposed_validator_name": "is_valid_iranian_legal_entity_id",
+      "recommended_integration": "OPT-IN DETECTOR",
+      "rubric_scores": {
+        "detector_boundary_clarity": 2,
+        "false_positive_resistance": 1,
+        "local_checksum_strength": 2,
+        "normalization_compatibility": 2,
+        "official_specification_strength": 2,
+        "offline_validation_feasibility": 2,
+        "privacy_anti_claim_clarity": 2,
+        "stable_fixed_structure": 2
+      },
+      "score": 15
+    },
+    {
+      "decision": "HOLD",
+      "evidence_counts": {
+        "community": 0,
+        "primary": 1,
+        "secondary_technical": 1
+      },
+      "hard_blockers": [
+        "No mathematical checksum specification was identified in the authoritative Iranian 10-digit postal code standard.",
+        "Offline validation cannot distinguish valid postal codes from arbitrary 10-digit numeric sequences or National IDs without online database lookup.",
+        "Standalone 10-digit numeric detector would cause severe false-positive rates across arbitrary Persian text."
+      ],
+      "id": "IR_POSTAL_CODE",
+      "max_score": 16,
+      "name_en": "Iranian Postal Code",
+      "name_fa": "کد پستی ده رقمی",
+      "proposed_detector_name": null,
+      "proposed_entity_type": "IR_POSTAL_CODE",
+      "proposed_validator_name": null,
+      "recommended_integration": "PATTERN RULE",
+      "rubric_scores": {
+        "detector_boundary_clarity": 1,
+        "false_positive_resistance": 0,
+        "local_checksum_strength": 0,
+        "normalization_compatibility": 2,
+        "official_specification_strength": 2,
+        "offline_validation_feasibility": 0,
+        "privacy_anti_claim_clarity": 1,
+        "stable_fixed_structure": 2
+      },
+      "score": 8
+    }
+  ],
+  "phase": 27,
+  "schema_version": 1
+}

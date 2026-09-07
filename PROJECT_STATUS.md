@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.3.0`
 - **Current source version:** `0.3.0`
-- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 26 Privacy-Safe Structured Serialization in progress)
-- **Last closed phase:** Phase 25 — Synthetic Benchmark & Evaluation Corpus Tooling
-- **Current active phase:** Phase 26 — Privacy-Safe Structured Serialization (In Progress)
+- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 27 Additional Iranian Identifier Research in progress)
+- **Last closed phase:** Phase 26 — Privacy-Safe Structured Serialization
+- **Current active phase:** Phase 27 — Additional Iranian Identifier Research & Decision Gate (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -205,19 +205,18 @@ A development phase transitions through three discrete states:
 
 ## Last Closed Phase
 
-- **Phase:** Phase 25 — Synthetic Benchmark & Evaluation Corpus Tooling
+- **Phase:** Phase 26 — Privacy-Safe Structured Serialization
 - **Status:** `CLOSED`
-- **PR:** #27
-- **Phase Branch Head:** `9c6019f012eb50162e93190297bc1160e1a02f9f`
-- **Merge Commit:** `0350280a6c0f276904f59dd57b313872e7d74cd0`
-- **Verified Post-Merge Main CI:** Run `34098651219` (push to `main`, conclusion: success, 5 jobs passed)
-- **Phase 25 Baseline:** 919 passing tests.
-- **Key Phase 25 Result:**
-  - 62 synthetic cases across 4 detection suites (`default`, `email`, `bank_card`, `pattern`).
-  - 54 gold entity spans evaluated with exact character offsets.
-  - Deterministic offline exact-span regression benchmark (`research/detection_corpus.py`, `research/detection_corpus_benchmark.py`).
-  - TP=54, FP=0, FN=0, F1=1.0 on synthetic curated fixtures only.
-  - No real-world accuracy claims; no runtime dependency or API behavior changes.
+- **PR:** #28
+- **Phase Branch Head:** `6eea4c7038f44e8c1ebb43c9e90d65643b22e080`
+- **Merge Commit:** `17a02bc7cf56f92067cf0214b07027a49cdea23f`
+- **Verified Post-Merge Main CI:** Run `34100537979` (push to `main`, conclusion: success, 5 jobs passed)
+- **Phase 26 Baseline:** 983 passing tests.
+- **Key Phase 26 Result:**
+  - Explicit structural Detection serialization (`detection_to_dict`, `detections_to_list`, `dumps_detections`) omitting raw and normalized values.
+  - Value-free and span-free aggregate DetectionReport serialization (`report_to_dict`, `reports_to_dict`, `dumps_report`, `dumps_reports`).
+  - CLI `detect` and `report` subcommands refactored to reuse shared serialization helpers with byte-for-byte backward compatibility.
+  - Zero mandatory runtime dependencies preserved in the base package (`dependencies = []`).
 - **Stable Historical Anchors:**
   - `v0.2.0` release commit: `227577deeb899de9593efb296659822f1ec0bf20`
   - Phase 18 merge commit: `4ce102f95ff683d957f55bea79d393bff8976787` (PR #17)
@@ -231,15 +230,16 @@ A development phase transitions through three discrete states:
   - `v0.3.0` release commit: `ad2f6723db29f27f86d2ece833ff244a6e4864dd`
   - Phase 24 merge commit: `350590d296e6a7f88be75a3ffc268ee56367fcee` (PR #26)
   - Phase 25 merge commit: `0350280a6c0f276904f59dd57b313872e7d74cd0` (PR #27)
+  - Phase 26 merge commit: `17a02bc7cf56f92067cf0214b07027a49cdea23f` (PR #28)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
 ## Active Phase
 
-- **Phase:** Phase 26 — Privacy-Safe Structured Serialization
+- **Phase:** Phase 27 — Additional Iranian Identifier Research & Decision Gate
 - **Status:** `IN PROGRESS`
-- **Scope:** Provide small, explicit, standard-library-only serialization helpers for fa-redact detection metadata and DetectionReport objects in `src/fa_redact/serialization.py`. Detection structural metadata is strictly value-free (omits raw and normalized values) while retaining exact character offsets (`start`, `end`). DetectionReport serialization is value-free and span-free. Refactor CLI `detect` and `report` subcommands to reuse serialization helpers while preserving byte-for-byte backward compatibility. Maintain zero new runtime dependencies, version 0.3.0, and Python >=3.10 support.
+- **Scope:** Researching candidate additional Iranian identifiers (Legal Entity National ID, Iranian postal code, company registration number, economic/tax identifier) to determine suitability for deterministic, offline, privacy-first implementation in fa-redact. Evaluate authority, structure, checksum algorithms, conflicting implementations, and collision risks. Create comprehensive research deliverable and deterministic decision JSON artifact. Maintain zero production source changes, zero new runtime dependencies, package version 0.3.0, and default detectors unchanged.
 
 ---
 
