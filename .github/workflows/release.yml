@@ -86,6 +86,109 @@ jobs:
         run: |
           python -m twine check dist/*
 
+      - name: Verify distribution contents
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          EXPECTED_VERSION="${TAG#v}"
+          python - "$EXPECTED_VERSION" <<'PY'
+          import re
+          import sys
+          import tarfile
+          import zipfile
+          from pathlib import Path
+
+          expected_ver = sys.argv[1]
+          wheels = list(Path('dist').glob('*.whl'))
+          sdists = list(Path('dist').glob('*.tar.gz'))
+
+          assert len(wheels) == 1, f"Expected exactly 1 wheel, found {len(wheels)}"
+          assert len(sdists) == 1, f"Expected exactly 1 sdist, found {len(sdists)}"
+
+          wheel_path = wheels[0]
+          sdist_path = sdists[0]
+          print(f"Auditing sdist: {sdist_path.name}")
+          print(f"Auditing wheel: {wheel_path.name}")
+
+          # Verify matching package version in filenames and expected version
+          wheel_match = re.search(r'fa_redact-([0-9]+\.[0-9]+\.[0-9]+)', wheel_path.name)
+          sdist_match = re.search(r'fa_redact-([0-9]+\.[0-9]+\.[0-9]+)', sdist_path.name)
+          assert wheel_match and sdist_match, "Could not parse version from filenames"
+          assert wheel_match.group(1) == expected_ver, f"Wheel version {wheel_match.group(1)} != {expected_ver}"
+          assert sdist_match.group(1) == expected_ver, f"Sdist version {sdist_match.group(1)} != {expected_ver}"
+
+          # 1. Audit wheel contents
+          with zipfile.ZipFile(wheel_path, 'r') as z:
+              wheel_names = z.namelist()
+
+          required_wheel_entries = [
+              'fa_redact/__init__.py',
+              'fa_redact/__main__.py',
+              'fa_redact/cli.py',
+              'fa_redact/clinical.py',
+              'fa_redact/conflicts.py',
+              'fa_redact/reporting.py',
+              'fa_redact/structured.py',
+              'fa_redact/detectors/persian_ner.py',
+              'fa_redact/py.typed',
+          ]
+          for req in required_wheel_entries:
+              assert req in wheel_names, f"Required module {req} missing from wheel: {wheel_path.name}"
+
+          forbidden_wheel_patterns = [
+              'tests/',
+              'research/',
+              '.safetensors',
+              '.pt',
+              '.pth',
+              '.onnx',
+              '.env',
+              '.gemini',
+              'antigravity',
+              'credentials',
+          ]
+          for name in wheel_names:
+              for pattern in forbidden_wheel_patterns:
+                  assert pattern not in name.lower(), f"Forbidden pattern '{pattern}' found in wheel entry: {name}"
+
+          # 2. Audit sdist contents
+          with tarfile.open(sdist_path, 'r:gz') as archive:
+              sdist_names = archive.getnames()
+
+          required_sdist_files = [
+              'CHANGELOG.md',
+              'README.md',
+              'LICENSE',
+              'pyproject.toml',
+              'src/fa_redact/__init__.py',
+              'src/fa_redact/__main__.py',
+              'src/fa_redact/cli.py',
+              'src/fa_redact/clinical.py',
+              'src/fa_redact/reporting.py',
+              'src/fa_redact/structured.py',
+              'src/fa_redact/detectors/persian_ner.py',
+          ]
+          for req in required_sdist_files:
+              assert any(name.endswith('/' + req) or name == req for name in sdist_names), (
+                  f"Required file {req} missing from sdist archive: {sdist_path.name}"
+              )
+
+          forbidden_sdist_patterns = [
+              '.safetensors',
+              '.pt',
+              '.pth',
+              '.onnx',
+              '.env',
+              '.gemini',
+              'antigravity',
+              'credentials',
+          ]
+          for name in sdist_names:
+              for pattern in forbidden_sdist_patterns:
+                  assert pattern not in name.lower(), f"Forbidden pattern '{pattern}' found in sdist entry: {name}"
+
+          print("Release distribution content audit passed successfully.")
+          PY
+
       - name: Release wheel smoke test in isolated environment
         run: |
           mkdir -p /tmp/release_smoke
@@ -98,7 +201,12 @@ jobs:
           ./smoke_venv/bin/python -m pip install --upgrade pip
           ./smoke_venv/bin/python -m pip install "$GITHUB_WORKSPACE"/dist/*.whl
 
+          # Verify installed console script directly
+          ./smoke_venv/bin/fa-redact --help
+          ./smoke_venv/bin/fa-redact --version
+
           ./smoke_venv/bin/python - "$EXPECTED_VERSION" <<'PY'
+          import subprocess
           import sys
           from importlib.metadata import version
           import fa_redact
@@ -191,7 +299,96 @@ jobs:
           )
           assert resolved_redacted == "[EMAIL_1]"
 
-          print("Release wheel smoke test passed on all v0.2.0 features.")
+          # 8. Phase 18: DetectionReport / report_detections / detection_report
+          assert fa_redact.DetectionReport is not None
+          assert callable(fa_redact.report_detections)
+          assert callable(fa_redact.detection_report)
+          sample_report_text = "کد ملی: ۱۲۳۴۵۶۷۸۹۱ و همراه: ۰۹۱۲۳۴۵۶۷۸۹"
+          rep = fa_redact.detection_report(sample_report_text)
+          assert rep.total_detections == 2
+          assert rep.distinct_types == 2
+          assert rep.counts["IR_NATIONAL_ID"] == 1
+          assert rep.counts["IR_MOBILE"] == 1
+          assert not rep.has_conflicts
+          assert "۱۲۳۴۵۶۷۸۹۱" not in repr(rep)
+          assert "۰۹۱۲۳۴۵۶۷۸۹" not in repr(rep)
+
+          # 9. Phase 19: CLI console script and module execution
+          res_console_help = subprocess.run(
+              ["./smoke_venv/bin/fa-redact", "--help"],
+              capture_output=True,
+              text=True,
+              check=True,
+          )
+          assert "detect" in res_console_help.stdout
+          assert "redact" in res_console_help.stdout
+          assert "report" in res_console_help.stdout
+
+          res_console_ver = subprocess.run(
+              ["./smoke_venv/bin/fa-redact", "--version"],
+              capture_output=True,
+              text=True,
+              check=True,
+          )
+          assert expected_ver in res_console_ver.stdout
+
+          res_cli_help = subprocess.run(
+              [sys.executable, "-m", "fa_redact", "--help"],
+              capture_output=True,
+              text=True,
+              check=True,
+          )
+          assert "detect" in res_cli_help.stdout
+          assert "redact" in res_cli_help.stdout
+          assert "report" in res_cli_help.stdout
+
+          res_cli_redact = subprocess.run(
+              [sys.executable, "-m", "fa_redact", "redact"],
+              input="کد ملی: ۱۲۳۴۵۶۷۸۹۱",
+              capture_output=True,
+              text=True,
+              encoding="utf-8",
+              check=True,
+          )
+          assert "[IR_NATIONAL_ID_1]" in res_cli_redact.stdout
+
+          # 10. Phase 20: Structured Data Helpers
+          assert callable(fa_redact.detect_fields)
+          assert callable(fa_redact.redact_fields)
+          assert callable(fa_redact.report_fields)
+          orig_record = {
+              "patient": {"note": "کد ملی ۱۲۳۴۵۶۷۸۹۱"},
+              "contact": "کد ملی ۱۲۳۴۵۶۷۸۹۱ و موبایل ۰۹۱۲۳۴۵۶۷۸۹",
+              "age": 45,
+          }
+          redacted_record = fa_redact.redact_fields(orig_record, ["patient.note", "contact"])
+          assert "[IR_NATIONAL_ID_1]" in redacted_record["patient"]["note"]
+          assert "[IR_NATIONAL_ID_1]" in redacted_record["contact"]
+          assert "[IR_MOBILE_1]" in redacted_record["contact"]
+          assert redacted_record["age"] == 45
+          # Verify non-destructive guarantee (original record unchanged)
+          assert orig_record["patient"]["note"] == "کد ملی ۱۲۳۴۵۶۷۸۹۱"
+
+          # 11. Phase 21.2: Persian NER public packaging boundary
+          assert fa_redact.PersianNERDetector is not None
+          # Verify importing fa_redact or PersianNERDetector does not require torch or load models
+          assert "torch" not in sys.modules, "torch should not be imported unconditionally!"
+          assert "transformers" not in sys.modules, "transformers should not be imported unconditionally!"
+
+          # 12. Phase 22: Clinical Redaction Profiles
+          assert fa_redact.ClinicalRedactionProfile is not None
+          assert fa_redact.ClinicalTextTemplate is not None
+          assert callable(fa_redact.clinical_profile)
+          clinic_prof = fa_redact.clinical_profile("outpatient_note")
+          assert isinstance(clinic_prof, fa_redact.ClinicalRedactionProfile)
+          clinical_sample = "بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱ و ایمیل clinic@example.com مراجعه کرد."
+          clinical_redacted = clinic_prof.redact(clinical_sample)
+          assert "[IR_NATIONAL_ID_1]" in clinical_redacted
+          assert "[EMAIL_1]" in clinical_redacted
+          # Ensure profile execution did not pull in heavy ML modules
+          assert "torch" not in sys.modules
+
+          print("Release wheel smoke test passed for the current fa-redact release candidate.")
           PY
 
       - name: Upload distribution artifacts

@@ -10,13 +10,13 @@ This document outlines the release process and PyPI Trusted Publishing setup for
 
 The release process follows this flow:
 ```text
-GitHub Release published (e.g. tag v0.1.0)
+GitHub Release published (tag vX.Y.Z, e.g. v0.3.0)
         ↓
-Trigger .github/workflows/release.yml
+Trigger .github/workflows/release.yml (on: release: types: [published])
         ↓
 Build sdist and wheel on Python 3.13
         ↓
-Verify tag matches fa_redact.__version__
+Verify release tag matches pyproject.toml and fa_redact.__version__
         ↓
 Validate package metadata via twine
         ↓
@@ -24,78 +24,79 @@ Execute isolated wheel smoke test
         ↓
 Upload distribution artifacts
         ↓
-Publish job requests PyPI OIDC token (environment: pypi)
+Publish job requests PyPI OIDC token (environment: pypi, id-token: write)
         ↓
 pypa/gh-action-pypi-publish uploads to PyPI
 ```
 
 ---
 
-## 1. PyPI Pending Trusted Publisher Setup
+## 1. PyPI Trusted Publisher Configuration
 
-Before publishing the first release (`v0.1.0`), set up a **Pending Publisher** on PyPI:
+`fa-redact` uses PyPI OIDC Trusted Publishing configured under the project on PyPI:
 
-1. Log in to your account on [pypi.org](https://pypi.org).
-2. Go to **Account Settings** → **Publishing**.
-3. Under **Add a publisher**, configure:
-   - **PyPI Project Name**: `fa-redact`
-   - **Owner**: `mehdimt1980`
-   - **Repository Name**: `fa-redact`
-   - **Workflow name**: `release.yml`
-   - **Environment name**: `pypi`
-4. Click **Add publisher**.
+- **PyPI Project**: `fa-redact`
+- **Owner**: `mehdimt1980`
+- **Repository**: `fa-redact`
+- **Workflow name**: `release.yml`
+- **Environment name**: `pypi`
 
-> [!IMPORTANT]
-> **Name Reservation Notice**: Adding a Pending Publisher on PyPI links publishing credentials for the repository, but it does **not** reserve or lock the package name on PyPI until the first package release is successfully published.
+> [!NOTE]
+> Do **NOT** add any PyPI API tokens or passwords to repository secrets or environment variables. The `release.yml` workflow uses OpenID Connect (OIDC) authentication (`id-token: write`).
 
 ---
 
 ## 2. GitHub Environment Configuration
 
-Create the deployment environment in GitHub:
+The GitHub deployment environment is configured as follows:
 
 1. In the repository on GitHub, navigate to **Settings** → **Environments**.
-2. Click **New environment** and enter the name: `pypi`.
-3. *(Optional / Plan-dependent)*: If supported by your GitHub plan, configure deployment protection rules such as required reviewers or restricting deployments to release tags.
-
-> [!NOTE]
-> Do **NOT** add any PyPI API tokens or passwords to the repository or environment secrets. The `release.yml` workflow uses OpenID Connect (OIDC) authentication (`id-token: write`).
+2. Environment name: `pypi`.
+3. Required deployment permissions: `id-token: write`, `contents: read`.
 
 ---
 
-## 3. Pre-Release Checklist (Before Publication)
+## 3. Pre-Release Checklist (Release Preparation Gate)
+
+Before creating and publishing any release tag (`vX.Y.Z`, e.g. `v0.3.0`):
 
 - [ ] `main` branch CI is completely green (`.github/workflows/ci.yml`).
-- [ ] `.github/workflows/release.yml` is merged into `main`.
-- [ ] Package version is set to `0.1.0` in `pyproject.toml` and `src/fa_redact/__init__.py`.
-- [ ] `CHANGELOG.md` has an entry for `[0.1.0] - 2026-09-05`.
-- [ ] PyPI name availability preflight confirmed (`fa-redact` is available).
-- [ ] GitHub `pypi` environment is created in repository settings.
-- [ ] PyPI Pending Trusted Publisher is configured with exact repository and workflow details.
-- [ ] No PyPI tokens or publishing credentials exist in repository secrets.
-- [ ] Release notes and documentation are reviewed.
-- [ ] Git tag `v0.1.0` does not already exist locally or remotely.
-- [ ] PyPI `fa-redact` `0.1.0` does not already exist.
+- [ ] Release preparation PR (e.g. `release/v0.3.0`) is reviewed and merged to `main`.
+- [ ] Post-merge CI on `main` for the release preparation merge commit is verified green.
+- [ ] Package version is aligned across `pyproject.toml` and `src/fa_redact/__init__.py` (`0.3.0`).
+- [ ] `CHANGELOG.md` has a finalized section `[0.3.0] - 2026-09-07` and a fresh `[Unreleased]` section.
+- [ ] Release notes in `CHANGELOG.md` accurately document Added capabilities, Important behaviors, and Limitations.
+- [ ] Documentation (`README.md`, `PROJECT_STATUS.md`, `ROADMAP.md`) reflects the target release version.
+- [ ] No PyPI tokens, passwords, or publishing credentials exist in repository secrets.
+- [ ] Git tag `v0.3.0` does NOT already exist locally or remotely (`git tag -l`, `git ls-remote --tags origin`).
+- [ ] Target version `0.3.0` is NOT already published on PyPI.
+- [ ] Local quality suite passes cleanly (`pytest`, `ruff`, `mypy`, `build`, `twine`).
 
 ---
 
-## 4. Publication Process (Phase 10B)
+## 4. Publication Process (Release Gate)
 
-1. Draft a new GitHub Release targeting `main`:
-   - Tag: `v0.1.0`
-   - Release Title: `fa-redact v0.1.0`
-   - Description: Copy release notes from `CHANGELOG.md`.
-2. Click **Publish release**.
-3. The `.github/workflows/release.yml` workflow will trigger automatically.
+> [!IMPORTANT]
+> **Separate Review Gate**: Release publication occurs **only after** the release preparation PR has been merged into `main` and post-merge `main` CI is verified. Never tag or publish from unmerged branches.
+
+1. Navigate to repository **Releases** on GitHub.
+2. Click **Draft a new release**.
+3. Configure the release:
+   - **Target**: `main` (authoritative merge commit)
+   - **Tag**: `v0.3.0` (must match exact lowercase `v<version>` syntax)
+   - **Title**: `fa-redact v0.3.0`
+   - **Description**: Copy release notes directly from `CHANGELOG.md` `[0.3.0]` section.
+4. Click **Publish release**.
+5. The `.github/workflows/release.yml` workflow will trigger automatically.
 
 ---
 
 ## 5. Post-Release Verification Checklist
 
 - [ ] GitHub `Release` workflow completes successfully (`build` and `publish-pypi` jobs).
-- [ ] Project page is live at `https://pypi.org/project/fa-redact/0.1.0/`.
+- [ ] Target release is live on PyPI at `https://pypi.org/project/fa-redact/0.3.0/`.
 - [ ] Both binary wheel (`.whl`) and source distribution (`.tar.gz`) are visible on PyPI.
-- [ ] Clean installation from PyPI works in a fresh environment:
+- [ ] Clean installation from PyPI works in a fresh isolated environment:
   ```bash
   pip install fa-redact
   ```
@@ -103,7 +104,13 @@ Create the deployment environment in GitHub:
   ```python
   import fa_redact
 
-  assert fa_redact.__version__ == "0.1.0"
+  assert fa_redact.__version__ == "0.3.0"
   assert callable(fa_redact.detect)
   assert callable(fa_redact.redact)
+  assert callable(fa_redact.detection_report)
+  assert callable(fa_redact.detect_fields)
+  assert callable(fa_redact.redact_fields)
+  assert callable(fa_redact.report_fields)
+  assert callable(fa_redact.clinical_profile)
   ```
+- [ ] Update `PROJECT_STATUS.md` to reflect `v0.3.0` as the latest published release.

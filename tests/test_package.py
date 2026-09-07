@@ -4,9 +4,9 @@ import fa_redact
 
 
 def test_package_import_and_version() -> None:
-    """Verify that the package imports successfully and exposes version 0.2.0."""
+    """Verify that the package imports successfully and exposes version 0.3.0."""
     assert hasattr(fa_redact, "__version__")
-    assert fa_redact.__version__ == "0.2.0"
+    assert fa_redact.__version__ == "0.3.0"
     assert isinstance(fa_redact.__version__, str)
 
 
@@ -15,7 +15,7 @@ def test_version_consistency() -> None:
     import re
     from pathlib import Path
 
-    assert fa_redact.__version__ == "0.2.0"
+    assert fa_redact.__version__ == "0.3.0"
 
     # 1. Check pyproject.toml version
     pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"

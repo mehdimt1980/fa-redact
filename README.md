@@ -14,8 +14,8 @@
 
 `fa-redact` is a lightweight, zero-dependency, privacy-first Python toolkit for Persian/Iranian Personally Identifiable Information (PII) detection, redaction, and pseudonymization, designed especially for healthcare and AI/LLM applications.
 
-> **Status: Alpha**  
-> Package version in this source tree: `v0.2.0`.  
+> **Status: Alpha**<br>
+> Package version in this source tree: `v0.3.0`.<br>
 > Published releases are available on [PyPI](https://pypi.org/project/fa-redact/) and [GitHub Releases](https://github.com/mehdimt1980/fa-redact/releases). The PyPI badge above reflects the latest published PyPI version.
 
 ---
@@ -39,13 +39,13 @@
   - [7. Bank Card / PAN Validation & Detection (Opt-in)](#7-bank-card--pan-validation--detection-opt-in)
   - [8. Configurable Institutional / Healthcare Identifiers (Opt-in)](#8-configurable-institutional--healthcare-identifiers-opt-in)
   - [9. Explicit Detection Conflict Resolution (Opt-in)](#9-explicit-detection-conflict-resolution-opt-in)
-  - [10. Privacy-Safe Detection Reports (Unreleased)](#10-privacy-safe-detection-reports-unreleased)
+  - [10. Privacy-Safe Detection Reports (v0.3.0)](#10-privacy-safe-detection-reports-v030)
   - [11. Redaction Semantics](#11-redaction-semantics)
   - [12. Stateful Pseudonymization Sessions](#12-stateful-pseudonymization-sessions)
-  - [13. Command-Line Interface (CLI) (Unreleased)](#13-command-line-interface-cli-unreleased)
-  - [14. Structured Data Helpers (Unreleased)](#14-structured-data-helpers-unreleased)
-  - [15. Experimental Opt-in Persian PERSON NER (Unreleased)](#15-experimental-opt-in-persian-person-ner-unreleased)
-  - [16. Clinical Redaction Profiles (Unreleased)](#16-clinical-redaction-profiles-unreleased)
+  - [13. Command-Line Interface (CLI) (v0.3.0)](#13-command-line-interface-cli-v030)
+  - [14. Structured Data Helpers (v0.3.0)](#14-structured-data-helpers-v030)
+  - [15. Experimental Opt-in Persian PERSON NER (v0.3.0)](#15-experimental-opt-in-persian-person-ner-v030)
+  - [16. Clinical Redaction Profiles (v0.3.0)](#16-clinical-redaction-profiles-v030)
 - [Custom Detectors](#custom-detectors)
 - [Healthcare & AI/LLM Usage Pattern](#healthcare--aillm-usage-pattern)
 - [Current Coverage & Limitations](#current-coverage--limitations)
@@ -537,10 +537,10 @@ resolved_detections = resolve_detection_conflicts(
 > - **Substring Exposure Risk**: Selecting `longest` or `priority` may discard a detection that covers characters extending outside the winning detection. For example, selecting a shorter `BANK_CARD` over an `EMAIL` leaves `@example.com` unredacted in the output.
 > - **Conservative Recommendation**: In cases of uncertainty or high-risk privacy requirements, keep the default `reject` policy.
 
-#### 10. Privacy-Safe Detection Reports (Unreleased)
+#### 10. Privacy-Safe Detection Reports (v0.3.0)
 
 > [!NOTE]
-> **Unreleased / Development**: Privacy-safe detection reporting (`DetectionReport`, `detection_report`, and `report_detections`) is in active development in this repository and is not included in published release v0.2.0.
+> **Introduced in v0.3.0**: Privacy-safe detection reporting (`DetectionReport`, `detection_report`, and `report_detections`) is introduced in `fa-redact` v0.3.0.
 
 `fa-redact` provides a dedicated value-free reporting layer that summarizes detection evidence without retaining, storing, or returning detected PII values, normalized values, source text, character offsets, spans, snippets, or PII hashes.
 
@@ -639,10 +639,10 @@ resolved_report = report_detections(resolved_detections)
 - **Historical Literal Token Reservation**: Literal placeholder-like tokens observed in prior calls remain reserved so they are never assigned to real PII in later calls.
 - **Unknown Placeholders**: Unmapped placeholders (e.g., `[IR_MOBILE_99]`) are left untouched without error.
 
-#### 13. Command-Line Interface (CLI) (Unreleased)
+#### 13. Command-Line Interface (CLI) (v0.3.0)
 
 > [!NOTE]
-> **Unreleased / Development**: The command-line interface (`fa-redact` and `python -m fa_redact`) is in active development in this repository and is not included in published release v0.2.0.
+> **Introduced in v0.3.0**: The command-line interface (`fa-redact` and `python -m fa_redact`) is introduced in `fa-redact` v0.3.0.
 
 `fa-redact` provides a conservative, privacy-conscious command-line interface using only the Python standard library (`argparse`). The CLI exposes detection, redaction, and aggregate reporting without modifying core library semantics.
 
@@ -728,7 +728,10 @@ fa-redact redact input.txt --detectors email,bank_card --conflict-policy priorit
 
 ---
 
-#### 14. Structured Data Helpers (Unreleased)
+#### 14. Structured Data Helpers (v0.3.0)
+
+> [!NOTE]
+> **Introduced in v0.3.0**: Structured data helpers (`detect_fields`, `redact_fields`, and `report_fields`) are introduced in `fa-redact` v0.3.0.
 
 `fa-redact` provides conservative, non-destructive helpers for scanning, redacting, and summarizing explicitly selected string fields inside Python mappings and JSON-like dictionaries:
 
@@ -797,7 +800,10 @@ print(reports["note"].counts)
 
 ---
 
-#### 15. Experimental Opt-in Persian PERSON NER (Unreleased)
+#### 15. Experimental Opt-in Persian PERSON NER (v0.3.0)
+
+> [!NOTE]
+> **Introduced in v0.3.0**: Experimental opt-in Persian personal name NER (`PersianNERDetector`) and the optional `fa-redact[ner]` extra are introduced in `fa-redact` v0.3.0.
 
 `fa-redact` provides an experimental, strictly opt-in detector `PersianNERDetector` for local Persian personal name (`PERSON`) named-entity recognition using offline Hugging Face-compatible token-classification model checkpoints.
 
@@ -868,7 +874,10 @@ print(redacted)
 
 ---
 
-#### 16. Clinical Redaction Profiles (Unreleased)
+#### 16. Clinical Redaction Profiles (v0.3.0)
+
+> [!NOTE]
+> **Introduced in v0.3.0**: Clinical redaction profiles (`ClinicalRedactionProfile` and `clinical_profile`) are introduced in `fa-redact` v0.3.0.
 
 `fa-redact` provides a small, immutable high-level composition layer for Persian healthcare text workflows through `ClinicalRedactionProfile` and the `clinical_profile(...)` builder. This layer composes existing direct identifier detectors, institutional regular expression rules, and optional person detectors without creating a duplicate detection engine or altering global default detectors.
 
@@ -1049,20 +1058,23 @@ Local Hospital / Trusted Boundary
 
 ### Current Coverage & Limitations
 
-| Identifier / Capability | v0.1.0 | v0.2.0 | Notes |
-| :--- | :---: | :---: | :--- |
-| **Iranian National ID (`کد ملی`)** | ✅ Supported | ✅ Default | Strict 10-digit modulo-11 checksum validation |
-| **Iranian Mobile Number** | ✅ Supported | ✅ Default | Prefix-aware validation against 2026 CRA numbering plan |
-| **Iranian IBAN / Sheba (`شبا`)** | ❌ Not Supported | ✅ Default | Strict 26-char MOD-97 checksum validation (`IR` + 24 digits) |
-| **Email Addresses** | ❌ Not Supported | 🧪 Opt-in | Conservative ASCII email validation and detection (`detectors=[EmailDetector()]`) |
-| **16-digit Bank Card (PAN)** | ❌ Not Supported | 🧪 Opt-in | 16-digit compact PAN + Luhn checksum validation (`detectors=[BankCardDetector()]`) |
-| **Institutional / Healthcare IDs (MRN, Patient ID)** | ❌ Not Supported | 🧪 Opt-in | Configurable via user-defined `PatternRule` / `PatternDetector` |
-| **Explicit Conflict Resolution** | ❌ Not Supported | 🧪 Opt-in Policy | Resolves overlaps/duplicates via `"longest"` or `"priority"` policy |
-| **Personal Names** | ❌ Not Supported | 🔬 Research | 🧪 Opt-in (Unreleased: `PersianNERDetector` with local ML model) |
-| **Clinical Redaction Profiles** | ❌ Not Supported | ❌ Not Supported | 🧪 Available in Phase 22 (`ClinicalRedactionProfile`, `clinical_profile`) |
-| **Postal Addresses** | ❌ Not Supported | ❌ Not Supported | Unstructured spatial entities |
-| **Dates of Birth / Timestamps** | ❌ Not Supported | ❌ Not Supported | Planned for future versions |
-| **Health Insurance Numbers** | ❌ Not Supported | ❌ Not Supported | Institution-specific |
+| Identifier / Capability | v0.1.0 | v0.2.0 | v0.3.0 | Notes |
+| :--- | :---: | :---: | :---: | :--- |
+| **Iranian National ID (`کد ملی`)** | ✅ Supported | ✅ Default | ✅ Default | Strict 10-digit modulo-11 checksum validation |
+| **Iranian Mobile Number** | ✅ Supported | ✅ Default | ✅ Default | Prefix-aware validation against 2026 CRA numbering plan |
+| **Iranian IBAN / Sheba (`شبا`)** | ❌ Not Supported | ✅ Default | ✅ Default | Strict 26-char MOD-97 checksum validation (`IR` + 24 digits) |
+| **Email Addresses** | ❌ Not Supported | 🧪 Opt-in | 🧪 Opt-in | Conservative ASCII email validation and detection (`detectors=[EmailDetector()]`) |
+| **16-digit Bank Card (PAN)** | ❌ Not Supported | 🧪 Opt-in | 🧪 Opt-in | 16-digit compact PAN + Luhn checksum validation (`detectors=[BankCardDetector()]`) |
+| **Institutional / Healthcare IDs (MRN, Patient ID)** | ❌ Not Supported | 🧪 Opt-in | 🧪 Opt-in | Configurable via user-defined `PatternRule` / `PatternDetector` |
+| **Explicit Conflict Resolution** | ❌ Not Supported | 🧪 Opt-in Policy | 🧪 Opt-in Policy | Resolves overlaps/duplicates via `"longest"` or `"priority"` policy |
+| **Privacy-Safe Detection Reports** | ❌ Not Supported | ❌ Not Supported | ✅ Supported | Value-free aggregate reporting (`DetectionReport`, `detection_report`) |
+| **Command-Line Interface (CLI)** | ❌ Not Supported | ❌ Not Supported | ✅ Supported | Console command `fa-redact` with `detect`, `report`, `redact` subcommands |
+| **Structured Data Helpers** | ❌ Not Supported | ❌ Not Supported | ✅ Supported | Explicit field targeting (`detect_fields`, `redact_fields`, `report_fields`) |
+| **Personal Names (NER)** | ❌ Not Supported | 🔬 Research | 🧪 Opt-in | Experimental opt-in `PersianNERDetector` with caller-supplied local ML model |
+| **Clinical Redaction Profiles** | ❌ Not Supported | ❌ Not Supported | 🧪 Supported | High-level presets (`ClinicalRedactionProfile`, `clinical_profile`) |
+| **Postal Addresses** | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported | Unstructured spatial entities |
+| **Dates of Birth / Timestamps** | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported | Planned for future versions |
+| **Health Insurance Numbers** | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported | Institution-specific |
 
 ---
 
@@ -1130,8 +1142,8 @@ This project is licensed under the [MIT License](LICENSE).
 
 `fa-redact` یک کتابخانهٔ پایتونی سبک، مستقل (بدون وابستگی خارجی / Zero-dependency) و مبتنی بر حریم خصوصی (Privacy-first) است که با هدف **تشخیص (Detection)**، **پنهان‌سازی (Redaction)** و **نام‌مستعارسازی (Pseudonymization)** اطلاعات هویتی و حساس در متون فارسی و داده‌های مرتبط با ایران طراحی شده است.
 
-> **وضعیت: آلفا (Alpha)**  
-> نسخه بسته در این درخت منبع: `v0.2.0`  
+> **وضعیت: آلفا (Alpha)**<br>
+> نسخه بسته در این درخت منبع: `v0.3.0`<br>
 > نسخه‌های منتشرشده در [PyPI](https://pypi.org/project/fa-redact/) و [گیت‌هاب](https://github.com/mehdimt1980/fa-redact/releases) در دسترس هستند. نشان (Badge) بالای صفحه آخرین نسخهٔ منتشرشده در PyPI را نمایش می‌دهد.
 
 ---
@@ -1155,13 +1167,13 @@ This project is licensed under the [MIT License](LICENSE).
   - [۷. اعتبارسنجی و تشخیص شماره کارت بانکی / PAN (اختیاری)](#۷-اعتبارسنجی-و-تشخیص-شماره-کارت-بانکی--pan-اختیاری)
   - [۸. شناسه‌های سازمانی / درمانی قابل پیکربندی (اختیاری)](#۸-شناسه‌های-سازمانی--درمانی-قابل-پیکربندی-اختیاری)
   - [۹. حل صریح تعارض تشخیص‌ها (اختیاری)](#۹-حل-صریح-تعارض-تشخیص‌ها-اختیاری)
-  - [۱۰. گزارش امن‌تر از نظر حریم خصوصی برای تشخیص‌ها (در حال توسعه / منتشرنشده)](#۱۰-گزارش-امنتر-از-نظر-حریم-خصوصی-برای-تشخیصها-در-حال-توسعه--منتشرنشده)
+  - [۱۰. گزارش امن‌تر از نظر حریم خصوصی برای تشخیص‌ها (v0.3.0)](#۱۰-گزارش-امنتر-از-نظر-حریم-خصوصی-برای-تشخیصها-v030)
   - [۱۱. بازسازی دقیق بر اساس span در پنهان‌سازی](#۱۱-بازسازی-دقیق-بر-اساس-span-در-پنهان‌سازی)
   - [۱۲. ویژگی‌های امنیتی و رفتاری نشست نام‌مستعارسازی](#۱۲-ویژگی‌های-امنیتی-و-رفتاری-نشست-نام‌مستعارسازی)
-  - [۱۳. رابط خط فرمان (CLI) (در حال توسعه / منتشرنشده)](#۱۳-رابط-خط-فرمان-cli-در-حال-توسعه--منتشرنشده)
-  - [۱۴. پردازش داده‌های ساخت‌یافته (در حال توسعه / منتشرنشده)](#۱۴-پردازش-داده‌های-ساخت‌یافته-در-حال-توسعه--منتشرنشده)
-  - [۱۵. تشخیص اختیاری نام اشخاص فارسی (NER) (در حال توسعه / منتشرنشده)](#۱۵-تشخیص-اختیاری-نام-اشخاص-فارسی-ner-در-حال-توسعه--منتشرنشده)
-  - [۱۶. پروفایل‌های پالایش متون بالینی (در حال توسعه / منتشرنشده)](#۱۶-پروفایلهای-پالایش-متون-بالینی-در-حال-توسعه--منتشرنشده)
+  - [۱۳. رابط خط فرمان (CLI) (v0.3.0)](#۱۳-رابط-خط-فرمان-cli-v030)
+  - [۱۴. پردازش داده‌های ساخت‌یافته (v0.3.0)](#۱۴-پردازش-داده‌های-ساخت‌یافته-v030)
+  - [۱۵. تشخیص اختیاری نام اشخاص فارسی (NER) (v0.3.0)](#۱۵-تشخیص-اختیاری-نام-اشخاص-فارسی-ner-v030)
+  - [۱۶. پروفایل‌های پالایش متون بالینی (v0.3.0)](#۱۶-پروفایلهای-پالایش-متون-بالینی-v030)
 - [تشخیص‌دهنده‌های سفارشی (Custom Detectors)](#تشخیص‌دهنده‌های-سفارشی-custom-detectors)
 - [کاربرد در حوزهٔ سلامت و هوش مصنوعی](#کاربرد-در-حوزهٔ-سلامت-و-هوش-مصنوعی-healthcare--aillm)
 - [جدول پوشش و قابلیت‌ها](#جدول-پوشش-و-قابلیت‌ها)
@@ -1630,10 +1642,10 @@ redacted_priority = redact(
 > - **خطر باقی‌ماندن بخشی از شناسه در متن**: انتخاب `longest` یا `priority` ممکن است یک تشخیص همپوشان دیگر را حذف کند و بخشی از span آن تشخیص (مانند پسوند ایمیل) در متن باقی بماند.
 > - **توصیهٔ امنیتی**: در صورت هرگونه تردید، استفاده از سیاست پیش‌فرض `reject` توصیه می‌شود.
 
-#### ۱۰. گزارش امن‌تر از نظر حریم خصوصی برای تشخیص‌ها (در حال توسعه / منتشرنشده)
+#### ۱۰. گزارش امن‌تر از نظر حریم خصوصی برای تشخیص‌ها (v0.3.0)
 
 > [!NOTE]
-> **در حال توسعه / منتشرنشده**: قابلیت گزارش‌گیری امن‌تر از نظر حریم خصوصی (`DetectionReport`، `detection_report` و `report_detections`) در این مخزن در حال توسعه است و در نسخهٔ منتشرشدهٔ v0.2.0 در PyPI وجود ندارد.
+> **معرفی‌شده در نسخهٔ v0.3.0**: قابلیت گزارش‌گیری امن‌تر از نظر حریم خصوصی (`DetectionReport`، `detection_report` و `report_detections`) در نسخهٔ v0.3.0 ارائه شده است.
 
 کتابخانهٔ `fa-redact` یک لایهٔ گزارش‌گیری تجمیعی و مستقل ارائه می‌دهد که شواهد خروجی تشخیص‌دهنده‌ها را بدون ذخیره‌سازی، نگهداری یا بازگرداندن مقادیر خام PII، مقادیر نرمال‌شده، متن منبع، بازه‌های کاراکتری (spans)، بخش‌های متنی مجاور (snippets) یا هش‌های PII خلاصه می‌کند.
 
@@ -1728,10 +1740,10 @@ resolved_report = report_detections(resolved_detections)
 - **محافظت در برابر تداخل تاریخی با نشان‌گذارهای متنی**: اگر در متون قبلی عبارتی مانند `[IR_MOBILE_2]` به عنوان متن عادی وجود داشته باشد، سیستم آن شماره را رزرو کرده و برای شناسه‌های واقعی جدید اختصاص نمی‌دهد.
 - **عدم دستکاری نشان‌گذارهای ناشناخته**: نشان‌گذارهایی که در نگاشت نشست ثبت نشده‌اند (مانند `[IR_MOBILE_99]`) بدون خطا و دست‌نخورده باقی می‌مانند.
 
-#### ۱۳. رابط خط فرمان (CLI) (در حال توسعه / منتشرنشده)
+#### ۱۳. رابط خط فرمان (CLI) (v0.3.0)
 
 > [!NOTE]
-> **در حال توسعه / منتشرنشده**: رابط خط فرمان (`fa-redact` و `python -m fa_redact`) در حال حاضر در مخزن در حال توسعه است و در نسخهٔ منتشرشدهٔ v0.2.0 موجود نیست.
+> **معرفی‌شده در نسخهٔ v0.3.0**: رابط خط فرمان (`fa-redact` و `python -m fa_redact`) در نسخهٔ v0.3.0 ارائه شده است.
 
 کتابخانهٔ `fa-redact` یک رابط خط فرمان سبک، مستقل و مبتنی بر حریم خصوصی ارائه می‌دهد که بدون وابستگی خارجی (با استفاده از کتابخانهٔ استاندارد `argparse`)، امکان تشخیص، پنهان‌سازی و گزارش‌گیری را فراهم می‌سازد.
 
@@ -1812,7 +1824,10 @@ fa-redact redact input.txt --detectors email,bank_card --conflict-policy priorit
 
 ---
 
-#### ۱۴. پردازش داده‌های ساخت‌یافته (در حال توسعه / منتشرنشده)
+#### ۱۴. پردازش داده‌های ساخت‌یافته (v0.3.0)
+
+> [!NOTE]
+> **معرفی‌شده در نسخهٔ v0.3.0**: توابع پردازش داده‌های ساخت‌یافته (`detect_fields`، `redact_fields` و `report_fields`) در نسخهٔ v0.3.0 ارائه شده است.
 
 کتابخانهٔ `fa-redact` توابع کمکی محافظه‌کارانه و غیرمخربی را برای تشخیص، پنهان‌سازی و گزارش‌گیری از فیلدهای متنی صریح در ساختارهای داده‌ای پایتون (دیکشنری‌ها و رکوردهای شبیه JSON) ارائه می‌دهد:
 
@@ -1881,7 +1896,10 @@ print(reports["note"].counts)
 
 ---
 
-#### ۱۵. تشخیص اختیاری نام اشخاص فارسی (NER) (در حال توسعه / منتشرنشده)
+#### ۱۵. تشخیص اختیاری نام اشخاص فارسی (NER) (v0.3.0)
+
+> [!NOTE]
+> **معرفی‌شده در نسخهٔ v0.3.0**: تشخیص‌دهندهٔ اختیاری نام اشخاص فارسی (`PersianNERDetector`) و اکسترای `fa-redact[ner]` در نسخهٔ v0.3.0 به صورت آزمایشی ارائه شده است.
 
 کتابخانهٔ `fa-redact` تشخیص‌دهندهٔ آزمایشی و کاملاً اختیاری `PersianNERDetector` را برای تشخیص موجودیت‌های نام اشخاص (`PERSON`) با استفاده از مدل‌های آفلاین سازگار با Hugging Face فراهم می‌کند.
 
@@ -1952,7 +1970,10 @@ print(redacted)
 
 ---
 
-#### ۱۶. پروفایل‌های پالایش متون بالینی (در حال توسعه / منتشرنشده)
+#### ۱۶. پروفایل‌های پالایش متون بالینی (v0.3.0)
+
+> [!NOTE]
+> **معرفی‌شده در نسخهٔ v0.3.0**: پروفایل‌های پالایش متون بالینی (`ClinicalRedactionProfile` و `clinical_profile`) در نسخهٔ v0.3.0 ارائه شده است.
 
 کتابخانهٔ `fa-redact` لایهٔ ترکیبی سبک، تغییرناپذیر و سطح‌بالایی را برای جریان‌های کاری متون درمانی و بالینی فارسی در قالب کلاس `ClinicalRedactionProfile` و تابع سازندهٔ `clinical_profile(...)` فراهم می‌کند. این لایه تشخیص‌دهنده‌های شناسه‌های مستقیم، قواعد الگوی سازمانی و تشخیص‌دهندهٔ اختیاری نام اشخاص را بدون بازنویسی موتورهای پردازش و بدون تغییر رفتار پیش‌فرض بسته ترکیب می‌کند.
 
@@ -2135,20 +2156,23 @@ detections = detect(text, detectors=[MedicalRecordNumberDetector()])
 
 ### جدول پوشش و قابلیت‌ها
 
-| نوع شناسه هویتی / قابلیت | v0.1.0 | v0.2.0 | توضیحات |
-| :--- | :---: | :---: | :--- |
-| **کد ملی ایران** | ✅ پشتیبانی می‌شود | ✅ پیش‌فرض | اعتبارسنجی دقیق ۱۰ رقمی با قاعدهٔ چکسام Modulo-11 |
-| **شماره تلفن همراه ایران** | ✅ پشتیبانی می‌شود | ✅ پیش‌فرض | اعتبارسنجی پیش‌شماره‌های مصوب رگولاتوری ایران (CRA 2026) |
-| **شماره شبا (IBAN)** | ❌ پشتیبانی نمی‌شود | ✅ پیش‌فرض | اعتبارسنجی دقیق ۲۶ کاراکتری با قاعدهٔ چکسام MOD-97 (`IR` + ۲۴ رقم) |
-| **آدرس ایمیل** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | اعتبارسنجی و تشخیص ایمیل‌های اسکی محافظه‌کارانه (`detectors=[EmailDetector()]`) |
-| **شماره کارت بانکی (PAN)** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | فرمت فشردهٔ ۱۶ رقمی + Luhn؛ بدون استعلام BIN/IIN یا صادرکننده (`detectors=[BankCardDetector()]`) |
-| **شناسه‌های سازمانی / درمانی (MRN و بیمار)** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | قابل پیکربندی اختصاصی توسط کاربر با `PatternRule` و `PatternDetector` |
-| **حل صریح تعارض تشخیص‌ها** | ❌ پشتیبانی نمی‌شود | 🧪 سیاست اختیاری | حل همپوشانی‌ها و تکرارها با سیاست `"longest"` یا `"priority"` |
-| **نام اشخاص** | ❌ پشتیبانی نمی‌شود | 🔬 ارزیابی پژوهشی | 🧪 اختیاری (در حال توسعه: `PersianNERDetector` با مدل محلی) |
-| **پروفایل‌های پالایش بالینی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | 🧪 ارائه‌شده در فاز ۲۲ (`ClinicalRedactionProfile` و `clinical_profile`) |
-| **آدرس پستی و موقعیت مکانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | موجودیت‌های غیرساختاریافته |
-| **تاریخ تولد و زمان‌ها** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | برنامه‌ریزی‌شده برای نسخه‌های آتی |
-| **شماره بیمه درمانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی |
+| نوع شناسه هویتی / قابلیت | v0.1.0 | v0.2.0 | v0.3.0 | توضیحات |
+| :--- | :---: | :---: | :---: | :--- |
+| **کد ملی ایران** | ✅ پشتیبانی می‌شود | ✅ پیش‌فرض | ✅ پیش‌فرض | اعتبارسنجی دقیق ۱۰ رقمی با قاعدهٔ چکسام Modulo-11 |
+| **شماره تلفن همراه ایران** | ✅ پشتیبانی می‌شود | ✅ پیش‌فرض | ✅ پیش‌فرض | اعتبارسنجی پیش‌شماره‌های مصوب رگولاتوری ایران (CRA 2026) |
+| **شماره شبا (IBAN)** | ❌ پشتیبانی نمی‌شود | ✅ پیش‌فرض | ✅ پیش‌فرض | اعتبارسنجی دقیق ۲۶ کاراکتری با قاعدهٔ چکسام MOD-97 (`IR` + ۲۴ رقم) |
+| **آدرس ایمیل** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | 🧪 اختیاری | اعتبارسنجی و تشخیص ایمیل‌های اسکی محافظه‌کارانه (`detectors=[EmailDetector()]`) |
+| **شماره کارت بانکی (PAN)** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | 🧪 اختیاری | فرمت فشردهٔ ۱۶ رقمی + Luhn؛ بدون استعلام BIN/IIN یا صادرکننده (`detectors=[BankCardDetector()]`) |
+| **شناسه‌های سازمانی / درمانی (MRN و بیمار)** | ❌ پشتیبانی نمی‌شود | 🧪 اختیاری | 🧪 اختیاری | قابل پیکربندی اختصاصی توسط کاربر با `PatternRule` و `PatternDetector` |
+| **حل صریح تعارض تشخیص‌ها** | ❌ پشتیبانی نمی‌شود | 🧪 سیاست اختیاری | 🧪 سیاست اختیاری | حل همپوشانی‌ها و تکرارها با سیاست `"longest"` یا `"priority"` |
+| **گزارش امن تشخیص‌ها** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | ✅ پشتیبانی می‌شود | گزارش‌گیری تجمیعی و بدون مقدار (`DetectionReport` و `detection_report`) |
+| **رابط خط فرمان (CLI)** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | ✅ پشتیبانی می‌شود | دستور `fa-redact` با زیردستورهای `detect`، `report` و `redact` |
+| **پردازش داده‌های ساخت‌یافته** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | ✅ پشتیبانی می‌شود | هدف‌گیری صریح مسیرهای دیکشنری (`detect_fields`، `redact_fields`، `report_fields`) |
+| **نام اشخاص (NER)** | ❌ پشتیبانی نمی‌شود | 🔬 ارزیابی پژوهشی | 🧪 اختیاری | تشخیص‌دهندهٔ اختیاری `PersianNERDetector` با مدل محلی کاربر |
+| **پروفایل‌های پالایش بالینی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | 🧪 پشتیبانی می‌شود | پروفایل‌های سطح‌بالا (`ClinicalRedactionProfile` و `clinical_profile`) |
+| **آدرس پستی و موقعیت مکانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | موجودیت‌های غیرساختاریافته |
+| **تاریخ تولد و زمان‌ها** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | برنامه‌ریزی‌شده برای نسخه‌های آتی |
+| **شماره بیمه درمانی** | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | ❌ پشتیبانی نمی‌شود | فرمت سازمانی |
 
 ---
 
