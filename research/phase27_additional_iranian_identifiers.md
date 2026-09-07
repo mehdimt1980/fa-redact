@@ -107,7 +107,7 @@ Variant A was manually checked against a small set of publicly verifiable legal-
 
 **Evidence Boundary Statement:**
 - **Authoritative / Statutory Checksum Publication:** NO primary governmental text published the mathematical formula in statutory regulations.
-- **Technical Implementation Consensus:** YES. Variant A represents the single consistent mathematical formula implemented across independent language ecosystems (JavaScript, Python, C#, Java).
+- **Technical Implementation Consensus:** YES. Variant A represents the single consistent mathematical formula implemented across independent language ecosystems (JavaScript, Python, C#, Java, PHP).
 - **Empirical Confirmation:** YES on the manually evaluated sample ($n = 6$).
 
 ---
@@ -123,7 +123,7 @@ Variant A was manually checked against a small set of publicly verifiable legal-
 - **Digit Distribution Rules:** In the first 5 digits, digits `0` and `2` are excluded by postal administration allocation rules to prevent visual confusion with `5` and `3` in Persian handwriting and OCR.
 
 ### 4.2 Checksum & Local Validation Evaluation
-- **No Mathematical Checksum:** Iranian 10-digit postal codes have **no** check digit or mathematical verification algorithm (no modulo-11, no Luhn, no Verhoeff).
+- **No Mathematical Checksum:** No mathematical checksum specification was identified in the authoritative postal materials or statutory regulations reviewed (no modulo-11, no Luhn, no Verhoeff). The Iranian 10-digit postal code standard assigns routing and delivery blocks without a local check digit.
 - **Offline Validation Limitation:** Offline logic can only check length (10 digits) and rough prefix exclusion rules (`^[13-9]{4}[1346-9][0-9]{5}$`). It cannot determine if a code corresponds to a real or valid postal delivery point without querying the Post Company online database.
 - **False-Positive Risk:** Severe. A 10-digit numeric detector without a checksum will constantly collide with 10-digit National IDs (Code Melli), 10-digit landline/mobile sequences, order numbers, invoice numbers, timestamps, and patient numbers.
 
@@ -140,7 +140,7 @@ Variant A was manually checked against a small set of publicly verifiable legal-
 - **Responsible Authority:** General Directorate for Companies Registration and Non-Commercial Institutions (*اداره کل ثبت شرکت‌ها و موسسات غیرتجاری* under SSAA).
 - **Format:** Variable length (1 to 6 numeric digits).
 - **Local Jurisdiction Scoping:** Registration numbers are issued sequentially within each local registry office (*حوزه ثبتی*). A company registration number in Tehran is distinct from the same number in Isfahan or Shiraz.
-- **No Mathematical Checksum:** There is no check digit or checksum formula.
+- **No Mathematical Checksum:** No mathematical checksum specification was identified in the authoritative corporate registration materials or statutory regulations reviewed.
 
 ### 5.2 Evaluation & Recommendation
 - **Offline Feasibility:** Impossible. Any integer from 1 to 999999 is a plausible registration number in some registry office.
@@ -153,15 +153,16 @@ Variant A was manually checked against a small set of publicly verifiable legal-
 
 ### 6.1 Regulatory Background
 - **Authority:** Iranian National Tax Administration (*سازمان امور مالیاتی کشور* — INTA).
-- **Ecosystem Fragmentation:**
-  1. **Legal Entities (Corporate Taxpayers):** Under Article 169 of the Direct Taxes Act and INTA circulars, the 11-digit Legal Entity ID (*شناسه ملی*) officially serves as the Economic Code. No separate 12-digit number is issued.
-  2. **Natural Persons (Individual Taxpayers):** Taxpayers use their 10-digit National ID (Code Melli) plus a 4-digit tax file / branch suffix (total 14 digits).
-  3. **Electronic Invoices (Shop Terminals Law):** Invoices in the Taxpayer System (*سامانه مودیان*) use a 22-character unique tax invoice ID (*شماره منحصر به فرد مالیاتی*) derived from a 6-character Fiscal Memory ID (*شناسه یکتای حافظه مالیاتی*), hex timestamp, sequence number, and check digit.
+- **Ecosystem Breakdown & Distinct Regimes:**
+  1. **Legacy Economic Code (*کد اقتصادی قدیمی ۱۲ رقمی*):** Historically issued 12-digit number assigned to commercial entities. Accounting literature and older ERP guides distinguish this legacy 12-digit code from the 11-digit Legal Entity National ID.
+  2. **Current Economic Number Regime (*نظام جدید شماره اقتصادی*):** Under INTA circular No. 200/1401/30 (effective مهر ۱۴۰۱ / Oct 2022) implementing Article 169 of the Direct Taxes Act, the legacy 12-digit economic code was retired for legal persons. Legal entities now officially use their 11-digit Legal Entity National ID (*شناسه ملی*) as their economic number.
+  3. **Natural Persons (*اشخاص حقیقی*):** Taxpayers use their 10-digit National ID (Code Melli) plus a tax file / branch suffix (total 14 digits).
+  4. **Electronic Invoices (*سامانه مودیان / پایانه‌های فروشگاهی*):** Invoices use a 22-character unique tax invoice ID (*شماره منحصر به فرد مالیاتی*) derived from a 6-character Fiscal Memory ID (*شناسه یکتای حافظه مالیاتی*), hex timestamp, sequence number, and check digit.
 
 ### 6.2 Evaluation & Recommendation
 - **Decision:** `HOLD`
 - **Status:** `OUT OF SCOPE / NEEDS DEDICATED SPECIFICATION RESEARCH`.
-- **Note:** Corporate tax ID is fully satisfied by the Legal Entity ID (`IR_LEGAL_ENTITY_ID`).
+- **Note:** Corporate tax ID in the current tax regime is fully satisfied by the Legal Entity ID (`IR_LEGAL_ENTITY_ID`).
 
 ---
 
@@ -269,29 +270,27 @@ class IranianLegalEntityIDDetector:
 
 ## 11. External Source Snapshot Table
 
-Every external source consulted during Phase 27 research is catalogued below with its evidence classification, exact supported claims, and candidate coverage.
+Every external source consulted during Phase 27 research was manually verified and is catalogued below with its evidence classification, exact supported claims, and candidate coverage.
 
 | Source ID | Title | Publisher / Organization | URL | Access Date | Pub / Update Date | Classification | Exact Material Claim(s) Supported | Supported Candidate(s) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `SRC-PRI-01` | آیین‌نامه اختصاص شناسه ملی به تمامی اشخاص حقوقی ایرانی (شماره ۱۶۱۴۵/ت۴۲۶۵۶هـ) | هیئت وزیران جمهوری اسلامی ایران / پایگاه ملی قوانین | `https://qavanin.ir/Law/TreeText/131110` | 2026-09-07 | 1387-06-10 | PRIMARY / AUTHORITATIVE | Establishes official legal mandate, universal coverage, and 11-digit structure for Legal Entity IDs. | `IR_LEGAL_ENTITY_ID` |
-| `SRC-PRI-02` | سامانه جامع پایگاه اطلاعات اشخاص حقوقی کشور | سازمان ثبت اسناد و املاک کشور (SSAA) | `https://ilenc.ssaa.ir` | 2026-09-07 | not identified | PRIMARY / AUTHORITATIVE | Official authority and registry query mechanism for legal entity identifiers and local registration numbers. | `IR_LEGAL_ENTITY_ID`, `IR_COMPANY_REGISTRATION_NUMBER` |
-| `SRC-PRI-03` | ساختار و استانداردهای کد پستی ده رقمی | شرکت ملی پست جمهوری اسلامی ایران | `https://post.ir` | 2026-09-07 | not identified | PRIMARY / AUTHORITATIVE | Establishes 10-digit postal structure and confirms absence of mathematical check digit. | `IR_POSTAL_CODE` |
-| `SRC-PRI-04` | دستورالعمل ماده ۱۶۹ مکرر قانون مالیات‌های مستقیم و پایانه‌های فروشگاهی | سازمان امور مالیاتی کشور (INTA) | `https://tax.gov.ir` | 2026-09-07 | 1394-04-31 | PRIMARY / AUTHORITATIVE | Corporate tax ID uses 11-digit Legal Entity ID; individual tax ID uses 14-digit format; invoice tokens use 22 chars. | `IR_ECONOMIC_TAX_ID` |
-| `SRC-SEC-01` | صحت‌سنجی شناسه ملی اشخاص حقوقی در سی‌شارپ | DotNetTips (Vahid Nasiri) | `https://dntips.ir` | 2026-09-07 | 2018-04-12 | SECONDARY TECHNICAL | Documents C# implementation of Variant A algorithm (`[29, 27, 23, 19, 17, ...]` with `d[9] + 2`). | `IR_LEGAL_ENTITY_ID` |
-| `SRC-SEC-02` | محاسبه رقم کنترلی شناسه ملی در اکسل و VBA | ExcelEngineer | `https://excelengineer.ir` | 2026-09-07 | 2020-09-15 | SECONDARY TECHNICAL | Documents spreadsheet and VBA implementation of Variant A check digit formula. | `IR_LEGAL_ENTITY_ID` |
-| `SRC-SEC-03` | تفاوت شناسه ملی، شماره ثبت و کد اقتصادی در سیستم‌های مالی | Sepidar System (همکاران سیستم) | `https://sepidarsystem.com` | 2026-09-07 | 2022-01-10 | SECONDARY TECHNICAL | Confirms ERP field formats, variable-length registration numbers, and tax ID equivalence. | `IR_LEGAL_ENTITY_ID`, `IR_COMPANY_REGISTRATION_NUMBER`, `IR_ECONOMIC_TAX_ID` |
-| `SRC-SEC-04` | راهنمای فنی ساختار شناسه ملی اشخاص حقوقی | Landa SME | `https://landa-sme.ir` | 2026-09-07 | 2021-06-20 | SECONDARY TECHNICAL | Details 4-digit city code, 6-digit sequential number, and 1-digit check digit. | `IR_LEGAL_ENTITY_ID` |
-| `SRC-SEC-05` | تحلیل الگوریتم‌های اعتبارسنجی کدهای شناسایی | P30World | `https://p30world.com` | 2026-09-07 | 2017-11-04 | SECONDARY TECHNICAL | Illustrates flawed secondary variants that fail empirical testing on authentic records. | `IR_LEGAL_ENTITY_ID` |
-| `SRC-SEC-06` | راهنمای ساختار کد پستی و شناسه‌های اداری | Shenasnameh | `https://shenasname.ir` | 2026-09-07 | 2023-05-18 | SECONDARY TECHNICAL | Notes 10-digit postal format rules and lack of offline postal validity verification. | `IR_POSTAL_CODE`, `IR_LEGAL_ENTITY_ID` |
-| `SRC-SEC-07` | تفاوت شماره ثبت با شناسه ملی و عدم یکتایی کشوری | AsanSabt | `https://asansabt.com` | 2026-09-07 | 2022-08-14 | SECONDARY TECHNICAL | Details local registry jurisdiction scoping and lack of checksums in registration numbers. | `IR_COMPANY_REGISTRATION_NUMBER` |
-| `SRC-COM-01` | persian-tools (TypeScript Toolkit) | Persian Tools Community | `https://github.com/persian-tools/persian-tools` | 2026-09-07 | 2023-11-12 | COMMUNITY IMPLEMENTATION | Open-source TypeScript implementation of `verifyIranianLegalId` using Variant A. | `IR_LEGAL_ENTITY_ID` |
-| `SRC-COM-02` | py-persian-tools (Python Implementation) | Persian Tools Organization | `https://github.com/persian-tools/py-persian-tools` | 2026-09-07 | 2024-01-05 | COMMUNITY IMPLEMENTATION | Open-source Python implementation of legal entity ID validator using Variant A. | `IR_LEGAL_ENTITY_ID` |
-| `SRC-COM-03` | DNTPersianUtils.Core (.NET Persian Utilities) | Vahid Nasiri | `https://github.com/VahidN/DNTPersianUtils.Core` | 2026-09-07 | 2024-02-18 | COMMUNITY IMPLEMENTATION | .NET library providing Persian string normalization and validation utilities. | `IR_LEGAL_ENTITY_ID`, `IR_POSTAL_CODE` |
-| `SRC-COM-04` | StackOverflow Q&A #55122116 (Java Implementation) | StackOverflow Community | `https://stackoverflow.com/questions/55122116` | 2026-09-07 | 2019-03-12 | COMMUNITY IMPLEMENTATION | Java implementation and discussion of legal entity check digit multipliers and offset factor. | `IR_LEGAL_ENTITY_ID` |
-| `SRC-COM-05` | codemelli & iran-national-id | Community Open-Source Projects | `https://github.com/hanifbirgani/codemelli` | 2026-09-07 | 2021-08-20 | COMMUNITY IMPLEMENTATION | Demonstrates 10-digit individual Code Melli logic, contrasting with 11-digit legal entity IDs. | `IR_LEGAL_ENTITY_ID` |
+| `SRC-PRI-01` | تصویب‌نامه هیئت وزیران در خصوص آیین‌نامه اختصاص شناسه ملی به تمامی اشخاص حقوقی ایرانی (شماره ۱۶۱۴۵/ت۴۲۶۵۶هـ) | هیئت وزیران جمهوری اسلامی ایران / پایگاه ملی قوانین و مقررات | `https://qavanin.ir/Law/TreeText/131110` | 2026-09-07 | 1387-06-10 | PRIMARY / AUTHORITATIVE | Mandates universal nationwide 11-digit Legal Entity ID for all legal persons in Iran; establishes 4-digit county prefix and SSAA authority. No mathematical checksum formula is published in the statutory text. | `IR_LEGAL_ENTITY_ID` |
+| `SRC-PRI-02` | سامانه جامع پایگاه اطلاعات اشخاص حقوقی کشور | سازمان ثبت اسناد و املاک کشور (SSAA) | `https://ilenc.ssaa.ir` | 2026-09-07 | not identified | PRIMARY / AUTHORITATIVE | Official registry query portal establishing nationwide 11-digit Legal Entity ID lookup and local registry jurisdiction lookup for company registration numbers. | `IR_LEGAL_ENTITY_ID`, `IR_COMPANY_REGISTRATION_NUMBER` |
+| `SRC-PRI-03` | قانون الزام اختصاص شماره ملی و کد پستی برای کلیه اتباع ایرانی (مصوب ۱۳۷۶/۰۲/۱۷) | مجلس شورای اسلامی / مرکز پژوهش‌های مجلس | `https://rc.majlis.ir/fa/law/show/92534` | 2026-09-07 | 1376-02-17 | PRIMARY / AUTHORITATIVE | Mandates nationwide 10-digit postal code allocation by the National Post Company. No mathematical checksum specification was identified in the authoritative materials reviewed. | `IR_POSTAL_CODE` |
+| `SRC-PRI-04` | بخشنامه شماره ۲۰۰/۱۴۰۱/۳۰ سازمان امور مالیاتی موضوع شماره اقتصادی اشخاص حقیقی و حقوقی | سازمان امور مالیاتی کشور / مرکز پژوهش‌های مجلس | `https://rc.majlis.ir/fa/law/show/133589` | 2026-09-07 | 1401-07-01 | PRIMARY / AUTHORITATIVE | Establishes current economic number regime under Direct Taxes Act Art 169: corporate taxpayers use their 11-digit Legal Entity ID as their economic number, natural persons use 14 digits, and electronic invoices use 22-character unique tax tokens. | `IR_ECONOMIC_TAX_ID` |
+| `SRC-SEC-01` | راهنمای استعلام شناسه ملی و استعلام کد اقتصادی | سپیدار سیستم آسیا (Sepidar System) | `https://www.sepidarsystem.com/blog/inquiry-national-id/` | 2026-09-07 | not identified | SECONDARY TECHNICAL | Technical accounting and ERP guidance distinguishing between 11-digit Legal Entity National ID, legacy 12-digit economic code, and company registration numbers. Documents that legacy economic codes are 12 digits whereas legal entity national IDs are 11 digits. | `IR_LEGAL_ENTITY_ID`, `IR_COMPANY_REGISTRATION_NUMBER`, `IR_ECONOMIC_TAX_ID` |
+| `SRC-SEC-02` | تفاوت شماره ثبت با شناسه ملی اشخاص حقوقی | آسان ثبت (AsanSabt) | `https://asansabt.com/blog/difference-between-registration-number-and-national-id/` | 2026-09-07 | not identified | SECONDARY TECHNICAL | Technical and legal guide explaining that company registration numbers are sequential within local registry offices (1 to 6 digits, non-unique nationally, no check digit), whereas Legal Entity ID is permanent, nationwide, and 11 digits. | `IR_COMPANY_REGISTRATION_NUMBER`, `IR_LEGAL_ENTITY_ID` |
+| `SRC-SEC-03` | راهنمای ساختار شناسه ملی اشخاص حقوقی و شماره ثبت در سامانه ثبت شرکت‌ها | موسسه حقوقی ثبت فردا (Sabte Farda) | `https://sabtefarda.org/difference-between-registration-number-and-national-id/` | 2026-09-07 | not identified | SECONDARY TECHNICAL | Documents 11-digit format of Legal Entity ID (4-digit province/city code, 6-digit serial, 1-digit check digit) and confirms registration numbers are locally scoped without checksum. | `IR_LEGAL_ENTITY_ID`, `IR_COMPANY_REGISTRATION_NUMBER` |
+| `SRC-SEC-04` | ساختار کد پستی ده رقمی و استعلام نشانی استاندارد ملی | حساب‌نو (Hesabno) | `https://hesabno.com/blog/iranian-postal-code-structure/` | 2026-09-07 | not identified | SECONDARY TECHNICAL | Technical analysis of Iranian 10-digit postal code format: 5-digit geographic zone code (excluding digits 0 and 2 in first 5 positions) + 5-digit identification code. Confirms absence of mathematical check digit and notes offline validation cannot verify real address existence. | `IR_POSTAL_CODE` |
+| `SRC-SEC-05` | راهنمای ساختار شماره اقتصادی جدید و پایانه‌های فروشگاهی | فینتو (Finto) | `https://finto.ir/blog/new-economic-code/` | 2026-09-07 | not identified | SECONDARY TECHNICAL | Technical enterprise guide explaining that under the current INTA regime, corporate taxpayers use their 11-digit Legal Entity ID as their economic code, individual taxpayers use a 14-digit format, and e-invoices require a 22-character unique tax token. | `IR_ECONOMIC_TAX_ID` |
+| `SRC-COM-01` | persian-tools (`verifyIranianLegalId` TypeScript implementation) | Persian Tools Community | `https://github.com/persian-tools/persian-tools` | 2026-09-07 | not identified | COMMUNITY IMPLEMENTATION | Implements `verifyIranianLegalId` in TypeScript using Variant A algorithm (prime weights `[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]`, 10th-digit offset factor `d[9] + 2`, modulo 11, check digit `0` if remainder is 10, else remainder). | `IR_LEGAL_ENTITY_ID` |
+| `SRC-COM-02` | py-persian-tools (Python Legal ID Validation Module) | Persian Tools Organization | `https://github.com/persian-tools/py-persian-tools` | 2026-09-07 | not identified | COMMUNITY IMPLEMENTATION | Open-source Python implementation validating 11-digit Iranian legal entity national IDs using Variant A checksum arithmetic. | `IR_LEGAL_ENTITY_ID` |
+| `SRC-COM-03` | Stack Overflow Q&A #55122116 ("Algorithm for validating Iranian legal entity ID") | Stack Overflow Community | `https://stackoverflow.com/questions/55122116` | 2026-09-07 | 2019-03-12 | COMMUNITY IMPLEMENTATION | Community engineering discussion and Java implementation of the Variant A checksum formula with prime multiplier sequence and `(d[9] + 2)` offset factor. | `IR_LEGAL_ENTITY_ID` |
+| `SRC-COM-04` | laravel-persian-validation (`ir_company_id` Rule) | Ali Masoudi (ali-ir) / GitHub Community | `https://github.com/ali-ir/laravel-persian-validation` | 2026-09-07 | not identified | COMMUNITY IMPLEMENTATION | PHP validation rule implementing 11-digit legal entity national ID verification using Variant A prime weights and 10th-digit offset. | `IR_LEGAL_ENTITY_ID` |
+| `SRC-COM-05` | java-persian-tools (Java Legal Entity Validation) | Persian Tools Java / GitHub Community | `https://github.com/persian-tools/java-persian-tools` | 2026-09-07 | not identified | COMMUNITY IMPLEMENTATION | Java library implementation of Iranian legal entity national ID checksum verification using Variant A. | `IR_LEGAL_ENTITY_ID` |
 
 ### 11.1 Source Reconciliation Summary
 - **Primary / Authoritative Sources:** 4 (`SRC-PRI-01` through `SRC-PRI-04`)
-- **Secondary Technical Sources:** 7 (`SRC-SEC-01` through `SRC-SEC-07`)
+- **Secondary Technical Sources:** 5 (`SRC-SEC-01` through `SRC-SEC-05`)
 - **Community Implementation Sources:** 5 (`SRC-COM-01` through `SRC-COM-05`)
-- **Total Documented Sources:** 16
+- **Total Documented Sources:** 14

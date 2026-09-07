@@ -3,14 +3,14 @@
     {
       "decision": "NO-GO",
       "evidence_counts": {
-        "community": 2,
-        "primary": 2,
+        "community": 0,
+        "primary": 1,
         "secondary_technical": 3
       },
       "hard_blockers": [
         "Variable length (1 to 6 digits) depending on registration era.",
         "Not unique at the national level (scoped only to local registry jurisdiction / county).",
-        "No mathematical checksum / check-digit algorithm exists.",
+        "No mathematical checksum specification was identified in reviewed materials.",
         "Cannot be validated offline."
       ],
       "id": "IR_COMPANY_REGISTRATION_NUMBER",
@@ -36,13 +36,13 @@
     {
       "decision": "HOLD",
       "evidence_counts": {
-        "community": 2,
-        "primary": 3,
-        "secondary_technical": 4
+        "community": 0,
+        "primary": 1,
+        "secondary_technical": 2
       },
       "hard_blockers": [
         "Evolving and fragmented tax regulatory regime in Iran.",
-        "Legal entities use 11-digit Legal Entity ID (Shenase Melli) as their economic code, making a separate detector redundant.",
+        "Corporate taxpayers use 11-digit Legal Entity ID (Shenase Melli) as their economic number under current INTA regulations, making a separate detector redundant.",
         "Natural person tax numbers (14 digits) and electronic invoice identifiers (22 alphanumeric characters) require separate dedicated research and distinct specifications."
       ],
       "id": "IR_ECONOMIC_TAX_ID",
@@ -69,8 +69,8 @@
       "decision": "CONDITIONAL GO",
       "evidence_counts": {
         "community": 5,
-        "primary": 4,
-        "secondary_technical": 7
+        "primary": 2,
+        "secondary_technical": 3
       },
       "hard_blockers": [
         "Primary statutory publication of check-digit formula is absent (formula established through secondary technical consensus and confirmed against manually checked sample (n=6)).",
@@ -99,12 +99,12 @@
     {
       "decision": "HOLD",
       "evidence_counts": {
-        "community": 3,
-        "primary": 2,
-        "secondary_technical": 4
+        "community": 0,
+        "primary": 1,
+        "secondary_technical": 1
       },
       "hard_blockers": [
-        "No mathematical checksum / check digit exists in the Iranian 10-digit postal code standard.",
+        "No mathematical checksum specification was identified in the authoritative Iranian 10-digit postal code standard.",
         "Offline validation cannot distinguish valid postal codes from arbitrary 10-digit numeric sequences or National IDs without online database lookup.",
         "Standalone 10-digit numeric detector would cause severe false-positive rates across arbitrary Persian text."
       ],

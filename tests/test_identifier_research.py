@@ -163,31 +163,111 @@ class TestPrivacyAndRegressionGuards:
         """Ensure source table entries reconcile with decision JSON counts."""
         doc_text = research_doc_path.read_text(encoding="utf-8")
 
-        # Find all source rows like `SRC-PRI-01`, `SRC-SEC-01`, `SRC-COM-01`
-        pri_sources = re.findall(r"`SRC-PRI-\d+`", doc_text)
-        sec_sources = re.findall(r"`SRC-SEC-\d+`", doc_text)
-        com_sources = re.findall(r"`SRC-COM-\d+`", doc_text)
-
-        unique_pri = set(pri_sources)
-        unique_sec = set(sec_sources)
-        unique_com = set(com_sources)
-
-        assert len(unique_pri) == 4, (
-            f"Expected 4 primary sources, got {len(unique_pri)}"
+        # Parse markdown table rows: | Source ID | Title | Publisher | URL | ... |
+        table_pattern = (
+            r"^\|\s*`(SRC-[A-Z]+-\d+)`\s*\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|"
+            r"\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|"
+            r"\s*([^|]+)\s*\|\s*([^|]+)\s*\|"
         )
-        assert len(unique_sec) == 7, (
-            f"Expected 7 secondary sources, got {len(unique_sec)}"
-        )
-        assert len(unique_com) == 5, (
-            f"Expected 5 community sources, got {len(unique_com)}"
+        table_rows = re.findall(table_pattern, doc_text, re.MULTILINE)
+        assert len(table_rows) == 14, (
+            f"Expected 14 source table entries, found {len(table_rows)}"
         )
 
-        # Verify max candidate counts do not exceed total available sources
+        sources_by_id: dict[str, dict[str, Any]] = {}
+        for (
+            src_id,
+            title,
+            publisher,
+            url_str,
+            access_date,
+            pub_date,
+            classification,
+            claim,
+            candidates_str,
+        ) in table_rows:
+            assert src_id not in sources_by_id, f"Duplicate source ID found: {src_id}"
+
+            clean_url = url_str.strip().strip("`").strip()
+            assert clean_url.startswith("https://") or clean_url.startswith(
+                "http://"
+            ), f"Invalid URL for {src_id}: {clean_url}"
+
+            clean_class = classification.strip()
+            assert clean_class in {
+                "PRIMARY / AUTHORITATIVE",
+                "SECONDARY TECHNICAL",
+                "COMMUNITY IMPLEMENTATION",
+                "UNVERIFIED",
+            }, f"Unknown classification for {src_id}: {clean_class}"
+
+            cands = [
+                c.strip("`").strip()
+                for c in re.findall(r"`(IR_[A-Z_]+)`", candidates_str)
+            ]
+            assert len(cands) > 0, (
+                f"Source {src_id} does not list any supported candidates"
+            )
+
+            sources_by_id[src_id] = {
+                "title": title.strip(),
+                "publisher": publisher.strip(),
+                "url": clean_url,
+                "access_date": access_date.strip(),
+                "pub_date": pub_date.strip(),
+                "classification": clean_class,
+                "claim": claim.strip(),
+                "candidates": cands,
+            }
+
+        pri_sources = [
+            s
+            for s in sources_by_id.values()
+            if s["classification"] == "PRIMARY / AUTHORITATIVE"
+        ]
+        sec_sources = [
+            s
+            for s in sources_by_id.values()
+            if s["classification"] == "SECONDARY TECHNICAL"
+        ]
+        com_sources = [
+            s
+            for s in sources_by_id.values()
+            if s["classification"] == "COMMUNITY IMPLEMENTATION"
+        ]
+
+        assert len(pri_sources) == 4, (
+            f"Expected 4 primary sources, got {len(pri_sources)}"
+        )
+        assert len(sec_sources) == 5, (
+            f"Expected 5 secondary sources, got {len(sec_sources)}"
+        )
+        assert len(com_sources) == 5, (
+            f"Expected 5 community sources, got {len(com_sources)}"
+        )
+
+        # Exact candidate-to-source reconciliation
         for candidate in decision_data["candidates"]:
-            counts = candidate["evidence_counts"]
-            assert counts["primary"] <= len(unique_pri)
-            assert counts["secondary_technical"] <= len(unique_sec)
-            assert counts["community"] <= len(unique_com)
+            cand_id = candidate["id"]
+            expected_counts = candidate["evidence_counts"]
+
+            actual_pri = [s for s in pri_sources if cand_id in s["candidates"]]
+            actual_sec = [s for s in sec_sources if cand_id in s["candidates"]]
+            actual_com = [s for s in com_sources if cand_id in s["candidates"]]
+
+            assert expected_counts["primary"] == len(actual_pri), (
+                f"Candidate {cand_id} primary count mismatch: "
+                f"JSON={expected_counts['primary']} vs Table={len(actual_pri)}"
+            )
+            sec_exp = expected_counts["secondary_technical"]
+            assert sec_exp == len(actual_sec), (
+                f"Candidate {cand_id} secondary mismatch: "
+                f"JSON={sec_exp} vs Table={len(actual_sec)}"
+            )
+            assert expected_counts["community"] == len(actual_com), (
+                f"Candidate {cand_id} community count mismatch: "
+                f"JSON={expected_counts['community']} vs Table={len(actual_com)}"
+            )
 
 
 class TestChecksumReferenceAlgorithms:
