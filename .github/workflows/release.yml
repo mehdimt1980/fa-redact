@@ -130,6 +130,8 @@ jobs:
               'fa_redact/reporting.py',
               'fa_redact/serialization.py',
               'fa_redact/structured.py',
+              'fa_redact/detectors/_ner_utils.py',
+              'fa_redact/detectors/onnx_persian_ner.py',
               'fa_redact/detectors/persian_ner.py',
               'fa_redact/detectors/legal_entity_id.py',
               'fa_redact/validators/legal_entity_id.py',
@@ -171,6 +173,8 @@ jobs:
               'src/fa_redact/reporting.py',
               'src/fa_redact/serialization.py',
               'src/fa_redact/structured.py',
+              'src/fa_redact/detectors/_ner_utils.py',
+              'src/fa_redact/detectors/onnx_persian_ner.py',
               'src/fa_redact/detectors/persian_ner.py',
               'src/fa_redact/detectors/legal_entity_id.py',
               'src/fa_redact/validators/legal_entity_id.py',
@@ -448,6 +452,12 @@ jobs:
           assert explicit_dets[0].type == "IR_LEGAL_ENTITY_ID"
           assert explicit_dets[0].value == _synth_id
           assert "research" not in sys.modules, "Research package must not be imported in production"
+
+          # 16. Phase 31: ONNX Persian NER public packaging boundary
+          assert fa_redact.ONNXPersianNERDetector is not None
+          assert "onnxruntime" not in sys.modules, "onnxruntime should not be imported unconditionally!"
+          assert "torch" not in sys.modules, "torch should not be imported unconditionally!"
+          assert "transformers" not in sys.modules, "transformers should not be imported unconditionally!"
 
           print("Release wheel smoke test passed for the current fa-redact release candidate.")
           PY

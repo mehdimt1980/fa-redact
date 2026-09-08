@@ -409,11 +409,11 @@ def test_core_dependencies_remain_empty() -> None:
     assert "dependencies = []" in content
 
 
-def test_package_version_remains_0_3_0() -> None:
-    """Verify package version remains 0.3.0."""
+def test_package_version_remains_0_4_0() -> None:
+    """Verify package version is 0.4.0."""
     import fa_redact
 
-    assert fa_redact.__version__ == "0.3.0"
+    assert fa_redact.__version__ == "0.4.0"
 
 
 def test_defaults_unchanged() -> None:

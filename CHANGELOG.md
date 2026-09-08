@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-08
+
 ### Added
 - **Performance Profiling & Evidence-Based Optimization (Phase 33):**
   - Comprehensive empirical profiling deliverable (`research/phase33_performance.md`) and aggregate benchmark artifact (`research/results/phase33_performance.json`) measuring CPU latency, throughput, long-document sliding-window scaling, model initialization, and process resident memory (RSS) across lifecycle.

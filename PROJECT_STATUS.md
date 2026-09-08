@@ -8,10 +8,10 @@
 ## Current State
 
 - **Latest published release:** `v0.3.0`
-- **Current source version:** `0.3.0`
-- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 32 Persian NER Backend Validation Gate completed; Phase 33 Performance Profiling active)
-- **Last closed phase:** Phase 32 — Persian NER Backend Validation & Production Readiness Gate
-- **Current active phase:** Phase 33 — Performance Profiling & Evidence-Based Optimization (Active)
+- **Current source version:** `0.4.0`
+- **Development status:** `v0.4.0 release preparation` (feature freeze begins after successful publication)
+- **Last closed phase:** Phase 33 — Performance Profiling & Evidence-Based Optimization
+- **Current active phase:** Phase 34 — v0.4.0 Release Preparation
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -100,9 +100,9 @@ The following built-in detectors remain strictly **opt-in**:
 
 ## Active Phase
 
-- **Phase:** Phase 33 — Performance Profiling & Evidence-Based Optimization
+- **Phase:** Phase 34 — v0.4.0 Release Preparation
 - **Status:** `IN PROGRESS`
-- **Scope:** Profile CPU/memory throughput, single-document and batch latency, sliding-window overhead, model initialization, and scaling characteristics for both production backends. Enforce strict evidence-based optimization gate: zero production code modifications unless a verified Python bottleneck yields >=10% gain with <=5% collateral regression and 100% exact output equality. Maintain base dependencies as `dependencies = []` and package version `0.3.0`.
+- **Scope:** Prepare package version 0.4.0, cut CHANGELOG.md for v0.4.0, update release documentation and release workflow packaging audits, add release-readiness tests, and conduct full verification across test suite and distribution builds.
 
 ---
 
@@ -217,19 +217,20 @@ A development phase transitions through three discrete states:
 
 ## Last Closed Phase
 
-- **Phase:** Phase 27 — Additional Iranian Identifier Research & Decision Gate
+- **Phase:** Phase 33 — Performance Profiling & Evidence-Based Optimization
 - **Status:** `CLOSED`
-- **PR:** #29
-- **Phase Branch Head:** `ea3f27e7ff7488c589a4c11b94806121529e5f12`
-- **Merge Commit:** `9c50721db0bc70dbfc925326979e70136533cc23`
-- **Verified Post-Merge Main CI:** Run `34106995892` (push to `main`, conclusion: success, 5 jobs passed)
-- **Phase 27 Baseline:** 1004 passing tests.
-- **Key Phase 27 Result:**
-  - Evaluated four candidate Iranian identifier types: Legal Entity National ID (*شناسه ملی اشخاص حقوقی*), Iranian Postal Code (*کد پستی ده رقمی*), Company Registration Number (*شماره ثبت شرکت‌ها*), and Economic/Tax Identifier (*کد اقتصادی*).
-  - Evaluated Iranian Legal Entity National ID with score 15 / 16 (CONDITIONAL GO, recommended as opt-in detector with entity type `IR_LEGAL_ENTITY_ID`).
-  - Evaluated postal codes (REJECT: high collision), registration numbers (REJECT: lack of registry namespace), and economic identifiers (HOLD: 1401 regime transition).
-  - Selected Variant A consensus formula (`[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]`, `d[9] + 2`, modulo 11, remainder 10 $\to$ 0) with documented research limitation (no primary statutory arithmetic publication identified).
-  - Maintained zero production changes in Phase 27.
+- **PR:** #35
+- **Phase Branch Head:** `23360b622ece0fb77568bbbf2b3c45e97094f1b9`
+- **Merge Commit:** `c6573bd549ce9f84e022b49ffaf5eb41f292a124`
+- **Verified Post-Merge Main CI:** Push to `main`, conclusion: success
+- **Phase 33 Baseline:** 1188 passing tests.
+- **Key Phase 33 Result:**
+  - Comprehensive empirical profiling deliverable (`research/phase33_performance.md`) and aggregate benchmark artifact (`research/results/phase33_performance.json`).
+  - Evaluated zero-dependency core (~2.8M chars/sec throughput on synthetic workload).
+  - PEYMA PyTorch backend achieved lower document latency and lower measured peak RSS than TookaBERT ONNX candidate on measured Windows CPU environment.
+  - Recommendation: No universal performance winner; PEYMA recommended as reference PERSON backend; ONNX retained as optional alternative for non-PyTorch environments.
+  - Optimization gate: No production optimization justified (no fa-redact bottleneck demonstrated).
+  - Maintained zero production code changes, zero new runtime dependencies (`dependencies = []`), and package version remaining `0.3.0` in Phase 33.
 - **Stable Historical Anchors:**
   - `v0.2.0` release commit: `227577deeb899de9593efb296659822f1ec0bf20`
   - Phase 18 merge commit: `4ce102f95ff683d957f55bea79d393bff8976787` (PR #17)
@@ -250,6 +251,7 @@ A development phase transitions through three discrete states:
   - Phase 30 merge commit: `d17f7960d20d936784938de0e24a6e082a12ac95` (PR #32, Branch HEAD `8e2cc74040878a539b86f2c2d5585b729d45e0f4`, Baseline 1103 tests)
   - Phase 31 merge commit: `bebf8b1965e5e33d45c50ff3411516dbf8b0fae0` (PR #33, Branch HEAD `77a5eb40825f3c92ce945f8e5b4105a90184ca0b`, Baseline 1139 tests)
   - Phase 32 merge commit: `23360b622ece0fb77568bbbf2b3c45e97094f1b9` (PR #34, Branch HEAD `bd48a268eef92723bb7190d7aa393f9c64673fe6`, Baseline 1164 tests)
+  - Phase 33 merge commit: `c6573bd549ce9f84e022b49ffaf5eb41f292a124` (PR #35, Baseline 1188 tests)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---

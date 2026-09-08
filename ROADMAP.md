@@ -192,7 +192,7 @@ Independently validate the two production `PERSON` backends (`PersianNERDetector
 - Maintain strict research boundary: zero changes to `src/fa_redact/**`, zero new base dependencies (`dependencies = []`), and zero network calls.
 
 ### Phase 33 — Performance Profiling & Evidence-Based Optimization
-*Status: `ACTIVE / IN PROGRESS`*
+*Status: `COMPLETED`*
 
 Profile CPU/memory throughput, single-document and batch latency, sliding-window overhead, model initialization, and scaling characteristics for both production backends to formulate final deployment recommendations:
 - Measure deterministic standard-library core throughput and latency across short, medium, and long tiers.
@@ -201,12 +201,12 @@ Profile CPU/memory throughput, single-document and batch latency, sliding-window
 - Measure cold model constructor times and process working set / peak RSS footprints.
 - Measure streaming batch helper (`detect_many`) orchestration overhead.
 - Enforce strict evidence-based optimization gate: zero production code modifications unless a verified Python bottleneck yields $\ge 10\%$ gain with $\le 5\%$ collateral regression and 100% exact output equality.
-- Maintain base dependencies as `dependencies = []` and package version `0.3.0`.
+- Maintained base dependencies as `dependencies = []` and package version `0.3.0`.
 
-### Phase 34 — v0.4.0 Release
-*Status: `PLANNED`*
+### Phase 34 — v0.4.0 Release Preparation
+*Status: `ACTIVE / RELEASE PREPARATION`*
 
-Consolidate documentation, release notes, packaging validation, and publish `v0.4.0`.
+Consolidate documentation, release notes, packaging validation, distribution audits, isolated smoke tests, and prepare `v0.4.0` release candidate.
 
 ### Feature Freeze & Feedback Period
 *Status: `PLANNED`*

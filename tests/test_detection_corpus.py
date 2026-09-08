@@ -581,8 +581,8 @@ class TestArchitecturalInvariants:
         assert not hasattr(fa_redact, "run_detection_corpus_benchmark")
         assert "SyntheticDetectionCase" not in fa_redact.__all__
 
-    def test_package_version_remains_0_3_0(self) -> None:
-        assert fa_redact.__version__ == "0.3.0"
+    def test_package_version_remains_0_4_0(self) -> None:
+        assert fa_redact.__version__ == "0.4.0"
 
     def test_no_heavy_ml_imported_during_standard_benchmark(self) -> None:
         """Verify torch and transformers are not imported by the benchmark."""

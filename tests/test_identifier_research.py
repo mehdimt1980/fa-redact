@@ -414,11 +414,11 @@ class TestProjectInvariants:
         )
         assert tuple(type(d) for d in _DEFAULT_DETECTORS) == expected_default_types
 
-    def test_package_version_remains_0_3_0(self) -> None:
-        assert fa_redact.__version__ == "0.3.0"
+    def test_package_version_remains_0_4_0(self) -> None:
+        assert fa_redact.__version__ == "0.4.0"
 
     def test_pyproject_dependencies_empty(self) -> None:
         pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
         content = pyproject_path.read_text(encoding="utf-8")
         assert "dependencies = []" in content
-        assert 'version = "0.3.0"' in content
+        assert 'version = "0.4.0"' in content

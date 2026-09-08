@@ -932,9 +932,9 @@ def test_no_fhir_or_hl7_modules() -> None:
     assert not hasattr(fa_redact, "hl7")
 
 
-def test_package_version_remains_0_3_0() -> None:
-    """Verify package version remains 0.3.0 without bumping."""
-    assert fa_redact.__version__ == "0.3.0"
+def test_package_version_remains_0_4_0() -> None:
+    """Verify package version is 0.4.0."""
+    assert fa_redact.__version__ == "0.4.0"
 
 
 # ============================================================================
