@@ -583,9 +583,9 @@ def test_helper_retains_no_history() -> None:
     assert "processed_texts" not in src
 
 
-# 46. source version remains 0.3.0
-def test_source_version_remains_0_3_0() -> None:
-    assert fa_redact.__version__ == "0.3.0"
+# 46. source version remains 0.4.0
+def test_source_version_remains_0_4_0() -> None:
+    assert fa_redact.__version__ == "0.4.0"
 
 
 # 47. root exports detect_many

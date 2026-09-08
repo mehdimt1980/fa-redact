@@ -67,7 +67,7 @@ from fa_redact.validators import (
     is_valid_national_id,
 )
 
-__version__: str = "0.3.0"
+__version__: str = "0.4.0"
 __all__: list[str] = [
     "__version__",
     "BankCardDetector",

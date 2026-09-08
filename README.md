@@ -15,7 +15,7 @@
 `fa-redact` is a lightweight, zero-dependency, privacy-first Python toolkit for Persian/Iranian Personally Identifiable Information (PII) detection, redaction, and pseudonymization, designed especially for healthcare and AI/LLM applications.
 
 > **Status: Alpha**<br>
-> Package version in this source tree: `v0.3.0`.<br>
+> Package version in this source tree: `v0.4.0`.<br>
 > Published releases are available on [PyPI](https://pypi.org/project/fa-redact/) and [GitHub Releases](https://github.com/mehdimt1980/fa-redact/releases). The PyPI badge above reflects the latest published PyPI version.
 
 ---
@@ -809,8 +809,15 @@ print(reports["note"].counts)
 > **Introduced in v0.3.0**: Experimental opt-in Persian personal name NER (`PersianNERDetector`) and the optional `fa-redact[ner]` extra are introduced in `fa-redact` v0.3.0.
 
 `fa-redact` provides experimental, strictly opt-in detectors for local Persian personal name (`PERSON`) named-entity recognition using offline models:
-- `PersianNERDetector`: PyTorch backend using Hugging Face token-classification checkpoints (`fa-redact[ner]`).
-- `ONNXPersianNERDetector`: ONNX Runtime backend for fast offline CPU inference on exported ONNX graphs (`fa-redact[onnx]`).
+- `PersianNERDetector`: Validated reference PyTorch backend using Hugging Face token-classification checkpoints (`fa-redact[ner]`).
+- `ONNXPersianNERDetector`: Validated optional local ONNX Runtime alternative on exported ONNX graphs (`fa-redact[onnx]`).
+
+> [!NOTE]
+> **Performance & Backend Guidance**:
+> - `PersianNERDetector` (with PEYMA checkpoint) remains the validated reference `PERSON` backend.
+> - `ONNXPersianNERDetector` is a validated optional local ONNX alternative for environments without PyTorch.
+> - On the measured Phase 33 Windows CPU environment, PEYMA achieved lower document latency and lower measured peak RSS than the TookaBERT ONNX candidate.
+> - There is no universal performance winner across all hardware; furthermore, different tokenizers make cross-backend `tokens/sec` non-comparable.
 
 ##### Installation Extras
 
@@ -1378,7 +1385,7 @@ This project is licensed under the [MIT License](LICENSE).
 `fa-redact` یک کتابخانهٔ پایتونی سبک، مستقل (بدون وابستگی خارجی / Zero-dependency) و مبتنی بر حریم خصوصی (Privacy-first) است که با هدف **تشخیص (Detection)**، **پنهان‌سازی (Redaction)** و **نام‌مستعارسازی (Pseudonymization)** اطلاعات هویتی و حساس در متون فارسی و داده‌های مرتبط با ایران طراحی شده است.
 
 > **وضعیت: آلفا (Alpha)**<br>
-> نسخه بسته در این درخت منبع: `v0.3.0`<br>
+> نسخه بسته در این درخت منبع: `v0.4.0`<br>
 > نسخه‌های منتشرشده در [PyPI](https://pypi.org/project/fa-redact/) و [گیت‌هاب](https://github.com/mehdimt1980/fa-redact/releases) در دسترس هستند. نشان (Badge) بالای صفحه آخرین نسخهٔ منتشرشده در PyPI را نمایش می‌دهد.
 
 ---
@@ -2140,8 +2147,15 @@ print(reports["note"].counts)
 > **معرفی‌شده در نسخهٔ v0.3.0**: تشخیص‌دهندهٔ اختیاری نام اشخاص فارسی (`PersianNERDetector`) و اکسترای `fa-redact[ner]` در نسخهٔ v0.3.0 به صورت آزمایشی ارائه شده است.
 
 کتابخانهٔ `fa-redact` دو تشخیص‌دهندهٔ آزمایشی و کاملاً اختیاری برای شناسایی نام اشخاص (`PERSON`) با استفاده از مدل‌های محلی و آفلاین فراهم می‌کند:
-- `PersianNERDetector`: بک‌اند PyTorch با استفاده از مدل‌های توکن‌بندی Hugging Face (اکسترای `fa-redact[ner]`).
-- `ONNXPersianNERDetector`: بک‌اند ONNX Runtime برای استنتاج سریع و بهینه روی CPU (اکسترای `fa-redact[onnx]`).
+- `PersianNERDetector`: بک‌اند مرجع و اعتبارسنجی‌شدهٔ PyTorch با استفاده از مدل‌های توکن‌بندی Hugging Face (اکسترای `fa-redact[ner]`).
+- `ONNXPersianNERDetector`: بک‌اند اختیاری و اعتبارسنجی‌شدهٔ ONNX Runtime برای استنتاج محلی روی گراف‌های ONNX (اکسترای `fa-redact[onnx]`).
+
+> [!NOTE]
+> **راهنمای عملکرد و انتخاب بک‌اند**:
+> - `PersianNERDetector` (با مدل PEYMA) به عنوان بک‌اند مرجع و استاندارد `PERSON` باقی می‌ماند.
+> - `ONNXPersianNERDetector` یک جایگزین محلی و اختیاری معتبر برای محیط‌های فاقد PyTorch است.
+> - در محیط آزمایشی و ارزیابی‌شدهٔ ویندوز CPU در فاز ۳۳، مدل PEYMA زمان تأخیر کمتر و اوج مصرف حافظه (Peak RSS) کمتری نسبت به گزینهٔ TookaBERT ONNX نشان داد.
+> - برندهٔ قطعی یا همگانی عملکرد میان بک‌اندها وجود ندارد؛ علاوه بر این، به دلیل تفاوت توکنایزرها، مقایسهٔ خام شاخص `tokens/sec` میان دو بک‌اند از نظر علمی مستقیم و یکسان نیست.
 
 ##### نصب وابستگی‌های اختیاری
 

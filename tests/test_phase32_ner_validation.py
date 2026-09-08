@@ -104,15 +104,15 @@ class MockDetector:
 
 
 def test_package_metadata_and_zero_runtime_dependencies() -> None:
-    """Verify package version remains 0.3.0 and base dependencies remain empty."""
-    assert __version__ == "0.3.0"
+    """Verify package version is 0.4.0 and base dependencies remain empty."""
+    assert __version__ == "0.4.0"
 
     pyproject_path = Path("pyproject.toml")
     assert pyproject_path.exists()
     content = pyproject_path.read_text(encoding="utf-8")
 
     assert "dependencies = []" in content
-    assert 'version = "0.3.0"' in content
+    assert 'version = "0.4.0"' in content
 
 
 def test_production_src_unmodified_and_isolated() -> None:
