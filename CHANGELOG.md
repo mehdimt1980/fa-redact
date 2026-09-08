@@ -8,7 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Optional ONNX Persian PERSON Backend (Phase 31):**
+- **Persian NER Backend Validation & Production Readiness Gate (Phase 32):**
+  - Independent validation gate deliverable (`research/phase32_ner_validation.md`) evaluating both production `PERSON` backends: `PersianNERDetector` (PEYMA reference) and `ONNXPersianNERDetector` (TookaBERT ONNX candidate).
+  - Executed reproducible benchmarks against synthetic Challenge Sets B (150 documents, 30 gold PERSON) and C (120 documents, 255 gold PERSON) using exact character-span matching.
+  - PEYMA backend validated at 1.0000 Precision, 1.0000 Recall, and 1.0000 F1 on both Dataset B and Dataset C with zero false positives.
+  - ONNX backend validated at 0.8485 Precision, 0.9333 Recall, 0.8889 F1 on Dataset B (exceeding Phase 29 wrapper baseline of 0.8710) and 1.0000 Precision, 1.0000 Recall, 1.0000 F1 on Dataset C.
+  - Zero offset failures across all predictions and chunk boundaries; 100% adherence to `0 <= start < end <= len(text)` and `text[start:end] == d.value`.
+  - Zero adapter/runtime errors across all evaluations.
+  - Determinism verified: 100% identical predictions across 3 independent runs on sample documents.
+  - Sliding-window long-document validation passed on ~256, ~512, and ~1000 token documents with 100% planted entity recall.
+  - Negative-document false-positive rate: 0.0% for PEYMA and 1.67% for ONNX on Dataset B (2/120 documents); N/A on Dataset C (no PERSON-negative documents in Dataset C; 0 total PERSON false positives across Dataset C).
+  - Overall gate decision: **PASS** (all 8 mandatory quality and integrity gates passed).
+  - Production recommendation: PEYMA remains the validated reference PERSON backend; ONNX is a validated optional alternative; runtime/performance recommendations deferred to Phase 33.
+  - Aggregate metadata-only results artifact saved at `research/results/phase32_ner_validation.json` with zero PII, snippets, or local workstation paths.
+  - Strict research boundary maintained: zero modifications to `src/fa_redact/**`, zero new base dependencies (`dependencies = []`), and package version remaining `0.3.0`.
   - Added public detector `ONNXPersianNERDetector(model_path, *, max_length=512)` under `fa_redact.detectors` (and exported from top-level `fa_redact`) for local-only Persian `PERSON` named-entity recognition using ONNX Runtime.
   - Added strictly optional dependency extra `fa-redact[onnx]` (`onnxruntime>=1.16.0`, `transformers>=4.49.0,<5`) while keeping core package base dependencies empty (`dependencies = []`).
   - Strict local-only artifact resolution (`local_files_only=True`, `trust_remote_code=False`), rejecting network downloads or automatic Hugging Face Hub resolution.

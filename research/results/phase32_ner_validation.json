@@ -1,0 +1,321 @@
+{
+  "benchmark_name": "Phase 32 Persian NER Backend Validation & Production Readiness Gate",
+  "timestamp": "2026-09-08T10:10:28.187147+00:00",
+  "environment": {
+    "python_version": "3.10.11",
+    "platform_family": "Windows",
+    "platform_release": "10"
+  },
+  "models": {
+    "peyma": {
+      "model_id": "HooshvareLab/bert-fa-base-uncased-ner-peyma",
+      "revision": "8b7b63371aa8f1fdad62c0f82d462a22b91b37ab",
+      "license": "Apache-2.0",
+      "backend_class": "fa_redact.detectors.persian_ner.PersianNERDetector"
+    },
+    "onnx_tookabert": {
+      "model_id": "Reza2kn/openmed-persian-pii-tookabert-large-onnx-int4",
+      "revision": "27dc2a6eacea263ae325dcb18e6751cfabbbfe74",
+      "license": "CC-BY-4.0",
+      "backend_class": "fa_redact.detectors.onnx_persian_ner.ONNXPersianNERDetector"
+    }
+  },
+  "locked_phase29_baselines": {
+    "peyma": {
+      "dataset_b": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dataset_c": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    "tookabert_wrapper": {
+      "dataset_b": {
+        "precision": 0.8438,
+        "recall": 0.9,
+        "f1": 0.871
+      },
+      "dataset_c": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    }
+  },
+  "locked_quality_gate_thresholds": {
+    "peyma": {
+      "dataset_b": {
+        "min_precision": 0.98,
+        "min_recall": 0.98,
+        "min_f1": 0.98
+      },
+      "dataset_c": {
+        "min_precision": 0.98,
+        "min_recall": 0.98,
+        "min_f1": 0.98
+      }
+    },
+    "onnx": {
+      "dataset_b": {
+        "min_precision": 0.81,
+        "min_recall": 0.87,
+        "min_f1": 0.84
+      },
+      "dataset_c": {
+        "min_precision": 0.97,
+        "min_recall": 0.97,
+        "min_f1": 0.97
+      }
+    }
+  },
+  "results": {
+    "peyma": {
+      "dataset_b": {
+        "dataset_name": "Dataset B (Independent)",
+        "document_count": 150,
+        "total_gold": 30,
+        "total_predicted": 30,
+        "true_positives": 30,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "entity_leakage_rate": 0.0,
+        "negative_document_count": 120,
+        "negative_documents_with_fp": 0,
+        "negative_document_fp_rate": 0.0,
+        "total_fp_in_negative_docs": 0,
+        "offset_failures": 0,
+        "adapter_error_count": 0,
+        "exception_type_counts": {},
+        "quality_gate_passed": true
+      },
+      "dataset_c": {
+        "dataset_name": "Dataset C (Clinical)",
+        "document_count": 120,
+        "total_gold": 255,
+        "total_predicted": 255,
+        "true_positives": 255,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "entity_leakage_rate": 0.0,
+        "negative_document_count": 0,
+        "negative_documents_with_fp": 0,
+        "negative_document_fp_rate": null,
+        "total_fp_in_negative_docs": 0,
+        "offset_failures": 0,
+        "adapter_error_count": 0,
+        "exception_type_counts": {},
+        "quality_gate_passed": true
+      },
+      "determinism": {
+        "sample_document_count": 24,
+        "subset_b_count": 12,
+        "subset_c_count": 12,
+        "runs_per_document": 3,
+        "is_deterministic": true
+      },
+      "long_document_validation": {
+        "document_count": 3,
+        "all_passed": true,
+        "total_offset_failures": 0,
+        "total_adapter_errors": 0,
+        "document_details": [
+          {
+            "doc_id": "VAL_LONG_256",
+            "whitespace_word_count": 207,
+            "full_token_count": 245,
+            "configured_max_length": 512,
+            "requires_sliding_window": false,
+            "inference_call_count": 1,
+            "max_model_input_tokens": 245,
+            "deterministic": true,
+            "planted_gold_count": 4,
+            "planted_detected_count": 4,
+            "total_predicted_person": 4,
+            "offset_failures": 0,
+            "error_type": null,
+            "passed": true
+          },
+          {
+            "doc_id": "VAL_LONG_512",
+            "whitespace_word_count": 478,
+            "full_token_count": 543,
+            "configured_max_length": 512,
+            "requires_sliding_window": true,
+            "inference_call_count": 2,
+            "max_model_input_tokens": 512,
+            "deterministic": true,
+            "planted_gold_count": 5,
+            "planted_detected_count": 5,
+            "total_predicted_person": 5,
+            "offset_failures": 0,
+            "error_type": null,
+            "passed": true
+          },
+          {
+            "doc_id": "VAL_LONG_1000",
+            "whitespace_word_count": 895,
+            "full_token_count": 1001,
+            "configured_max_length": 512,
+            "requires_sliding_window": true,
+            "inference_call_count": 3,
+            "max_model_input_tokens": 512,
+            "deterministic": true,
+            "planted_gold_count": 7,
+            "planted_detected_count": 7,
+            "total_predicted_person": 7,
+            "offset_failures": 0,
+            "error_type": null,
+            "passed": true
+          }
+        ]
+      },
+      "targeted_normalization": {
+        "cases_count": 4,
+        "cases_passed": 4,
+        "all_passed": true,
+        "total_offset_failures": 0
+      },
+      "total_offset_failures": 0,
+      "total_adapter_errors": 0
+    },
+    "onnx_tookabert": {
+      "dataset_b": {
+        "dataset_name": "Dataset B (Independent)",
+        "document_count": 150,
+        "total_gold": 30,
+        "total_predicted": 33,
+        "true_positives": 28,
+        "false_positives": 5,
+        "false_negatives": 2,
+        "precision": 0.8485,
+        "recall": 0.9333,
+        "f1": 0.8889,
+        "entity_leakage_rate": 0.0667,
+        "negative_document_count": 120,
+        "negative_documents_with_fp": 2,
+        "negative_document_fp_rate": 0.0167,
+        "total_fp_in_negative_docs": 2,
+        "offset_failures": 0,
+        "adapter_error_count": 0,
+        "exception_type_counts": {},
+        "quality_gate_passed": true
+      },
+      "dataset_c": {
+        "dataset_name": "Dataset C (Clinical)",
+        "document_count": 120,
+        "total_gold": 255,
+        "total_predicted": 255,
+        "true_positives": 255,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "entity_leakage_rate": 0.0,
+        "negative_document_count": 0,
+        "negative_documents_with_fp": 0,
+        "negative_document_fp_rate": null,
+        "total_fp_in_negative_docs": 0,
+        "offset_failures": 0,
+        "adapter_error_count": 0,
+        "exception_type_counts": {},
+        "quality_gate_passed": true
+      },
+      "determinism": {
+        "sample_document_count": 24,
+        "subset_b_count": 12,
+        "subset_c_count": 12,
+        "runs_per_document": 3,
+        "is_deterministic": true
+      },
+      "long_document_validation": {
+        "document_count": 3,
+        "all_passed": true,
+        "total_offset_failures": 0,
+        "total_adapter_errors": 0,
+        "document_details": [
+          {
+            "doc_id": "VAL_LONG_256",
+            "whitespace_word_count": 207,
+            "full_token_count": 254,
+            "configured_max_length": 512,
+            "requires_sliding_window": false,
+            "inference_call_count": 1,
+            "max_model_input_tokens": 254,
+            "deterministic": true,
+            "planted_gold_count": 4,
+            "planted_detected_count": 4,
+            "total_predicted_person": 4,
+            "offset_failures": 0,
+            "error_type": null,
+            "passed": true
+          },
+          {
+            "doc_id": "VAL_LONG_512",
+            "whitespace_word_count": 478,
+            "full_token_count": 595,
+            "configured_max_length": 512,
+            "requires_sliding_window": true,
+            "inference_call_count": 2,
+            "max_model_input_tokens": 512,
+            "deterministic": true,
+            "planted_gold_count": 5,
+            "planted_detected_count": 5,
+            "total_predicted_person": 5,
+            "offset_failures": 0,
+            "error_type": null,
+            "passed": true
+          },
+          {
+            "doc_id": "VAL_LONG_1000",
+            "whitespace_word_count": 895,
+            "full_token_count": 1072,
+            "configured_max_length": 512,
+            "requires_sliding_window": true,
+            "inference_call_count": 4,
+            "max_model_input_tokens": 512,
+            "deterministic": true,
+            "planted_gold_count": 7,
+            "planted_detected_count": 7,
+            "total_predicted_person": 7,
+            "offset_failures": 0,
+            "error_type": null,
+            "passed": true
+          }
+        ]
+      },
+      "targeted_normalization": {
+        "cases_count": 4,
+        "cases_passed": 4,
+        "all_passed": true,
+        "total_offset_failures": 0
+      },
+      "total_offset_failures": 0,
+      "total_adapter_errors": 0
+    }
+  },
+  "gate_summary": {
+    "peyma_quality_gate_dataset_b": true,
+    "peyma_quality_gate_dataset_c": true,
+    "onnx_quality_gate_dataset_b": true,
+    "onnx_quality_gate_dataset_c": true,
+    "offset_integrity_zero_failures": true,
+    "runtime_integrity_zero_errors": true,
+    "determinism_gate_passed": true,
+    "long_document_gate_passed": true,
+    "total_offset_failures": 0,
+    "total_adapter_errors": 0,
+    "overall_decision": "PASS"
+  },
+  "recommendation": "Both production backends meet all locked quality and integrity gates. PersianNERDetector (PEYMA) remains the validated reference PERSON backend. ONNXPersianNERDetector (TookaBERT ONNX candidate) is a validated optional alternative. Final runtime and performance recommendations are deferred to Phase 33 performance profiling."
+}

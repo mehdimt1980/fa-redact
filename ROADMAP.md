@@ -164,27 +164,47 @@ Upgraded the existing strictly opt-in `PersianNERDetector` to safely and determi
 
 ---
 
-## Active Phase
-
 ### Phase 31 — Optional ONNX Persian PERSON Backend
-*Status: `ACTIVE / IN PROGRESS`*
+*Status: `COMPLETED`*
 
-Add a strictly optional, local-only ONNX-based Persian `PERSON` detector (`ONNXPersianNERDetector`) suitable for locally supplied token-classification models:
-- Implement `ONNXPersianNERDetector(model_path, *, max_length=512)` in `fa_redact.detectors` using `onnxruntime`.
-- Add minimal optional dependency extra `fa-redact[onnx]` (`onnxruntime>=1.16.0`, `transformers>=4.49.0,<5`).
-- Enforce strictly local-only model loading with zero network access and `trust_remote_code=False`.
-- Support standard `PERSON`/`PER` BIO labels and fine-grained name components (`GIVENNAME`, `SURNAME`).
-- Merge contiguous compatible name components (e.g., GIVENNAME + SURNAME) across whitespace/ZWNJ into single `PERSON` spans while strictly excluding `TITLE` and preserving separate evidence for distinct `B-PER` entities.
-- Preserve exact source character offsets and normalization invariants across single-window and long-document sliding-window inference.
-- Maintain base runtime dependencies as `dependencies = []`, defaults unchanged (`_DEFAULT_DETECTORS` unchanged), and package version `0.3.0`.
+Added a strictly optional, local-only ONNX-based Persian `PERSON` detector (`ONNXPersianNERDetector`) suitable for locally supplied token-classification models:
+- Implemented `ONNXPersianNERDetector(model_path, *, max_length=512)` in `fa_redact.detectors` using `onnxruntime`.
+- Added minimal optional dependency extra `fa-redact[onnx]` (`onnxruntime>=1.16.0`, `transformers>=4.49.0,<5`).
+- Enforced strictly local-only model loading with zero network access and `trust_remote_code=False`.
+- Supported standard `PERSON`/`PER` BIO labels and fine-grained name components (`GIVENNAME`, `SURNAME`).
+- Merged contiguous compatible name components (e.g., GIVENNAME + SURNAME) across whitespace/ZWNJ into single `PERSON` spans while strictly excluding `TITLE` and preserving separate evidence for distinct `B-PER` entities.
+- Preserved exact source character offsets and normalization invariants across single-window and long-document sliding-window inference.
+- Maintained base runtime dependencies as `dependencies = []`, defaults unchanged (`_DEFAULT_DETECTORS` unchanged), and package version `0.3.0`.
 
 ---
 
-## Later Candidates
+## Active Phase & Release Horizon
 
-The following topics represent potential future directions after the core planned phases:
+The agreed development horizon toward the planned `v0.4.0` release is strictly defined as follows:
 
-- **Performance Profiling & Optimization:** Micro-benchmarking regex execution and normalization throughput on large corpora.
+### Phase 32 — Persian NER Backend Validation & Production Readiness Gate
+*Status: `ACTIVE / IN PROGRESS`*
+
+Independently validate the two production `PERSON` backends (`PersianNERDetector` and `ONNXPersianNERDetector`) against locked quality and integrity gates prior to v0.4.0:
+- Validate PEYMA reference model and TookaBERT ONNX candidate against synthetic Challenge Sets B and C.
+- Enforce mandatory 8-dimension gate: locked quality thresholds, 0 offset failures, 0 runtime errors, determinism across runs, and sliding-window long-document validation (~256, ~512, ~1000 tokens).
+- Conduct negative-document false positive and over-redaction analysis.
+- Maintain strict research boundary: zero changes to `src/fa_redact/**`, zero new base dependencies (`dependencies = []`), and zero network calls.
+
+### Phase 33 — Performance Profiling & Optimization
+*Status: `PLANNED`*
+
+Profile CPU/memory throughput, single-document and batch latency, sliding-window overhead, and scaling characteristics for both production backends to formulate final deployment recommendations.
+
+### Phase 34 — v0.4.0 Release
+*Status: `PLANNED`*
+
+Consolidate documentation, release notes, packaging validation, and publish `v0.4.0`.
+
+### Feature Freeze & Feedback Period
+*Status: `PLANNED`*
+
+Following `v0.4.0`, development intentionally enters a feature freeze period to collect real-world feedback on production Persian NER and direct identifier workflows before defining future milestones.
 
 ---
 
