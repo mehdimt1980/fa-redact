@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.3.0`
 - **Current source version:** `0.3.0`
-- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 30 Robust Long-Document Persian NER completed; Phase 31 Optional ONNX Persian PERSON Backend in progress)
-- **Last closed phase:** Phase 30 — Robust Long-Document Persian NER
-- **Current active phase:** Phase 31 — Optional ONNX Persian PERSON Backend (In Progress)
+- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 31 Optional ONNX Persian PERSON Backend completed; Phase 32 Persian NER Backend Validation Gate active)
+- **Last closed phase:** Phase 31 — Optional ONNX Persian PERSON Backend
+- **Current active phase:** Phase 32 — Persian NER Backend Validation & Production Readiness Gate (Active)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
