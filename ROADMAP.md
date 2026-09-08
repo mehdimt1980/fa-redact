@@ -151,18 +151,32 @@ Conducted an independent, empirical audit and benchmark of the Persian / Iranian
 
 ---
 
+### Phase 30 — Robust Long-Document Persian NER
+*Status: `COMPLETED`*
+
+Upgraded the existing strictly opt-in `PersianNERDetector` to safely and deterministically process Persian documents longer than its configured model sequence length:
+- Implemented deterministic overlapping sliding-window inference with stride `max(1, (max_length - 2) // 2)` for inputs exceeding `max_length`.
+- Retained single-pass execution for inputs fitting within `max_length` (100% backward compatible, zero overhead).
+- Reconstructed PERSON spans using absolute source character offsets directly from tokenizer offset mappings.
+- Deduplicated identical and subsumed detections produced in overlapping windows.
+- Conservatively merged split entity fragments across window boundaries only when subsequent tokens carry `I-PER` continuation labels across whitespace/ZWNJ gaps.
+- Maintained all core invariants: zero new runtime dependencies (`dependencies = []`), local-only offline inference (`local_files_only=True`, `trust_remote_code=False`), strictly opt-in detector (`detect()` defaults unchanged), and package version `0.3.0`.
+
+---
+
 ## Active Phase
 
-### Phase 30 — Robust Long-Document Persian NER
+### Phase 31 — Optional ONNX Persian PERSON Backend
 *Status: `ACTIVE / IN PROGRESS`*
 
-Upgrade the existing strictly opt-in `PersianNERDetector` to safely and deterministically process Persian documents longer than its configured model sequence length:
-- Implement deterministic overlapping sliding-window inference with stride `max(1, (max_length - 2) // 2)` for inputs exceeding `max_length`.
-- Retain single-pass execution for inputs fitting within `max_length` (100% backward compatible, zero overhead).
-- Reconstruct PERSON spans using absolute source character offsets directly from tokenizer offset mappings.
-- Deduplicate identical and subsumed detections produced in overlapping windows.
-- Conservatively merge split entity fragments across window boundaries only when subsequent tokens carry `I-PER` continuation labels across whitespace/ZWNJ gaps.
-- Maintain all core invariants: zero new runtime dependencies (`dependencies = []`), local-only offline inference (`local_files_only=True`, `trust_remote_code=False`), strictly opt-in detector (`detect()` defaults unchanged), and package version `0.3.0`.
+Add a strictly optional, local-only ONNX-based Persian `PERSON` detector (`ONNXPersianNERDetector`) suitable for locally supplied token-classification models:
+- Implement `ONNXPersianNERDetector(model_path, *, max_length=512)` in `fa_redact.detectors` using `onnxruntime`.
+- Add minimal optional dependency extra `fa-redact[onnx]` (`onnxruntime>=1.16.0`, `transformers>=4.49.0,<5`).
+- Enforce strictly local-only model loading with zero network access and `trust_remote_code=False`.
+- Support standard `PERSON`/`PER` BIO labels and fine-grained name components (`GIVENNAME`, `SURNAME`).
+- Merge contiguous compatible name components (e.g., GIVENNAME + SURNAME) across whitespace/ZWNJ into single `PERSON` spans while strictly excluding `TITLE` and preserving separate evidence for distinct `B-PER` entities.
+- Preserve exact source character offsets and normalization invariants across single-window and long-document sliding-window inference.
+- Maintain base runtime dependencies as `dependencies = []`, defaults unchanged (`_DEFAULT_DETECTORS` unchanged), and package version `0.3.0`.
 
 ---
 

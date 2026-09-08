@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.3.0`
 - **Current source version:** `0.3.0`
-- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 29 Persian PII Ecosystem Audit & Independent Benchmark completed; Phase 30 Robust Long-Document Persian NER in progress)
-- **Last closed phase:** Phase 29 — Persian PII Ecosystem Audit & Independent Benchmark
-- **Current active phase:** Phase 30 — Robust Long-Document Persian NER (In Progress)
+- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 30 Robust Long-Document Persian NER completed; Phase 31 Optional ONNX Persian PERSON Backend in progress)
+- **Last closed phase:** Phase 30 — Robust Long-Document Persian NER
+- **Current active phase:** Phase 31 — Optional ONNX Persian PERSON Backend (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -32,7 +32,8 @@ The following built-in detectors remain strictly **opt-in**:
 - `EmailDetector` (`EMAIL`)
 - `BankCardDetector` (`BANK_CARD`)
 - `PatternDetector` (user-configured entity types via `PatternRule`)
-- `PersianNERDetector` (`PERSON`, opt-in experimental detector using local ML models)
+- `PersianNERDetector` (`PERSON`, opt-in experimental detector using local PyTorch models via `fa-redact[ner]`)
+- `ONNXPersianNERDetector` (`PERSON`, opt-in detector using local ONNX models via `fa-redact[onnx]`)
 
 ### Detector Selection Rules
 
@@ -238,15 +239,16 @@ A development phase transitions through three discrete states:
   - Phase 27 merge commit: `9c50721db0bc70dbfc925326979e70136533cc23` (PR #29)
   - Phase 28 merge commit: `8af5a960398ef718db32e46f82c9636ce5ccebcf` (PR #30, Branch HEAD `00e098b28715011fa0f6334985b05fa8b972ae22`, Verified push CI `34119170946`, Baseline 1073 tests)
   - Phase 29 merge commit: `bd00e0e5a9e22b34a35be72cff062eca28bce4f7` (PR #31, Branch HEAD `e2fee6f3669ca1e222ecb851d3a4547dce036f4a`, Baseline 1085 tests)
+  - Phase 30 merge commit: `d17f7960d20d936784938de0e24a6e082a12ac95` (PR #32, Branch HEAD `8e2cc74040878a539b86f2c2d5585b729d45e0f4`, Baseline 1103 tests)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
 ## Active Phase
 
-- **Phase:** Phase 30 — Robust Long-Document Persian NER
+- **Phase:** Phase 31 — Optional ONNX Persian PERSON Backend
 - **Status:** `IN PROGRESS`
-- **Scope:** Upgrade the existing strictly opt-in `PersianNERDetector` to safely and deterministically process Persian documents longer than its configured model sequence length (`max_length`). Add deterministic overlapping sliding-window inference while preserving exact source character offsets, deduplicating overlapping detections, and conservatively merging split entity fragments across window boundaries. Zero new runtime dependencies, local-only inference, strictly opt-in detector, and package version `0.3.0`.
+- **Scope:** Add a strictly optional, local-only ONNX-based Persian `PERSON` detector (`ONNXPersianNERDetector`) suitable for locally supplied token-classification models. Support standard BIO and fine-grained name component labels (GIVENNAME + SURNAME), conservative whitespace-only name reconstruction, strict TITLE exclusion, exact source character offsets, position-preserving normalization invariants, and sliding-window long document processing. Zero base runtime dependencies (`dependencies = []`), opt-in extra `fa-redact[onnx]`, defaults unchanged, and package version `0.3.0`.
 
 ---
 

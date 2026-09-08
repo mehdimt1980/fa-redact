@@ -54,6 +54,10 @@ ner = [
     "torch>=2.7.0,<3",
     "transformers>=4.49.0,<5",
 ]
+onnx = [
+    "onnxruntime>=1.16.0",
+    "transformers>=4.49.0,<5",
+]
 
 [project.urls]
 Homepage = "https://github.com/mehdimt1980/fa-redact"
