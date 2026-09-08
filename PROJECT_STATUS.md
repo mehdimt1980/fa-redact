@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.3.0`
 - **Current source version:** `0.3.0`
-- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 28 Opt-in Iranian Legal Entity National ID Implementation completed; Phase 29 Persian PII Ecosystem Audit & Independent Benchmark in progress)
-- **Last closed phase:** Phase 28 — Opt-in Iranian Legal Entity National ID Implementation
-- **Current active phase:** Phase 29 — Persian PII Ecosystem Audit & Independent Benchmark (In Progress)
+- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 29 Persian PII Ecosystem Audit & Independent Benchmark completed; Phase 30 Robust Long-Document Persian NER in progress)
+- **Last closed phase:** Phase 29 — Persian PII Ecosystem Audit & Independent Benchmark
+- **Current active phase:** Phase 30 — Robust Long-Document Persian NER (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -237,15 +237,16 @@ A development phase transitions through three discrete states:
   - Phase 26 merge commit: `17a02bc7cf56f92067cf0214b07027a49cdea23f` (PR #28)
   - Phase 27 merge commit: `9c50721db0bc70dbfc925326979e70136533cc23` (PR #29)
   - Phase 28 merge commit: `8af5a960398ef718db32e46f82c9636ce5ccebcf` (PR #30, Branch HEAD `00e098b28715011fa0f6334985b05fa8b972ae22`, Verified push CI `34119170946`, Baseline 1073 tests)
+  - Phase 29 merge commit: `bd00e0e5a9e22b34a35be72cff062eca28bce4f7` (PR #31, Branch HEAD `e2fee6f3669ca1e222ecb851d3a4547dce036f4a`, Baseline 1085 tests)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
 ## Active Phase
 
-- **Phase:** Phase 29 — Persian PII Ecosystem Audit & Independent Benchmark
+- **Phase:** Phase 30 — Robust Long-Document Persian NER
 - **Status:** `IN PROGRESS`
-- **Scope:** Conduct a comprehensive, empirical, and reproducible audit and independent benchmark of the Persian / Iranian PII ecosystem. Determine what external capabilities already exist (e.g. OpenMed Persian / Reza2kn models and datasets, ParsiKit, py-persian-tools, Persian-tools TS prior art), whether they install, run, and reproduce claimed metrics, what fa-redact duplicates vs. uniquely contributes, whether the current `PersianNERDetector` should be kept, replaced, complemented, or deprecated, and what the optimal future hybrid architecture should be. Strictly research-only: zero production source changes, zero new runtime dependencies, package version remains `0.3.0`.
+- **Scope:** Upgrade the existing strictly opt-in `PersianNERDetector` to safely and deterministically process Persian documents longer than its configured model sequence length (`max_length`). Add deterministic overlapping sliding-window inference while preserving exact source character offsets, deduplicating overlapping detections, and conservatively merging split entity fragments across window boundaries. Zero new runtime dependencies, local-only inference, strictly opt-in detector, and package version `0.3.0`.
 
 ---
 

@@ -126,7 +126,7 @@ class DummyModel:
     def __init__(
         self,
         config: DummyConfig | None = None,
-        pred_indices: list[int] | None = None,
+        pred_indices: list[int] | list[list[int]] | None = None,
     ) -> None:
         self.config = config or DummyConfig()
         self.pred_indices = pred_indices or []
@@ -144,18 +144,50 @@ class DummyModel:
             "offset_mapping must not be passed to model"
         )
 
-        # Create dummy logits that argmax to pred_indices
+        call_idx = len(self.call_kwargs) - 1
+        input_ids = kwargs.get("input_ids")
+        seq_len = 1
+        if isinstance(input_ids, FakeTensor):
+            if isinstance(input_ids._data, list) and input_ids._data:
+                seq_len = (
+                    len(input_ids._data[0])
+                    if isinstance(input_ids._data[0], list)
+                    else len(input_ids._data)
+                )
+        elif input_ids is not None and hasattr(input_ids, "shape"):
+            seq_len = int(input_ids.shape[-1])
+        elif isinstance(input_ids, list) and input_ids:
+            seq_len = (
+                len(input_ids[0]) if isinstance(input_ids[0], list) else len(input_ids)
+            )
+
+        curr_preds: list[int] = []
         if self.pred_indices:
-            num_classes = max(len(self.config.id2label), max(self.pred_indices) + 1)
-            batch_logits = []
-            for idx in self.pred_indices:
-                row = [-100.0] * num_classes
-                row[idx] = 100.0
-                batch_logits.append(row)
-            logits_tensor = FakeTensor([batch_logits])
-        else:
-            # Default single O
-            logits_tensor = FakeTensor([[[0.0] * len(self.config.id2label)]])
+            preds_any: Any = self.pred_indices
+            if isinstance(preds_any[0], list):
+                # Per-call predictions
+                if call_idx < len(preds_any):
+                    curr_preds = [int(x) for x in preds_any[call_idx]]
+            else:
+                curr_preds = [int(x) for x in preds_any]
+
+        if not curr_preds:
+            curr_preds = [0] * seq_len
+        elif len(curr_preds) < seq_len:
+            curr_preds = curr_preds + [0] * (seq_len - len(curr_preds))
+        elif len(curr_preds) > seq_len:
+            curr_preds = curr_preds[:seq_len]
+
+        num_classes = max(
+            len(self.config.id2label),
+            (max(curr_preds) + 1) if curr_preds else 1,
+        )
+        batch_logits = []
+        for idx in curr_preds:
+            row = [-100.0] * num_classes
+            row[idx] = 100.0
+            batch_logits.append(row)
+        logits_tensor = FakeTensor([batch_logits])
 
         return DummyOutput(logits=logits_tensor)
 
@@ -168,10 +200,14 @@ class DummyFastTokenizer:
         token_offsets: list[tuple[int, int]] | None = None,
         is_fast: bool = True,
         model_max_length: int = 512,
+        cls_token_id: int | None = None,
+        sep_token_id: int | None = None,
     ) -> None:
         self.token_offsets = token_offsets
         self.is_fast = is_fast
         self.model_max_length = model_max_length
+        self.cls_token_id = cls_token_id
+        self.sep_token_id = sep_token_id
 
     def __call__(
         self,
@@ -729,25 +765,520 @@ def test_deterministic_detection_ordering() -> None:
 
 
 # =========================================================================
-# 29-30. Long Text Fail-Loud Policy Tests
+# 29-30. Long-Document Sliding-Window PERSON NER Tests (Phase 30)
 # =========================================================================
 
 
-def test_overlength_input_rejected_without_truncation() -> None:
-    """Verify input exceeding max_length fails loudly without truncation."""
-    text = "علی " * 300
-    # Over 300 tokens, with max_length=128
+def test_long_document_sliding_window_processes_without_error() -> None:
+    """Verify input exceeding max_length processes successfully."""
+    text = "کلمه " * 100
+    # Over 100 tokens, with max_length=16
     tokenizer = DummyFastTokenizer()
     model = DummyModel()
-    detector = create_test_detector(tokenizer, model, max_length=128)
+    detector = create_test_detector(tokenizer, model, max_length=16)
 
-    with pytest.raises(ValueError) as exc_info:
-        detector.detect(text, text)
+    detections = detector.detect(text, text)
+    assert detections == []
+    # Verify sliding window partitioned into multiple model forward calls
+    assert len(model.call_kwargs) > 1
 
-    err_msg = str(exc_info.value)
-    assert "exceeds PersianNERDetector max_length" in err_msg
-    # Ensure privacy-safe error: no source text leaked in error message
-    assert "علی" not in err_msg
+
+def test_short_input_remains_single_window_pass() -> None:
+    """Verify input within max_length runs single forward pass."""
+    text = "علی رضایی آمد"
+    offsets = [(0, 0), (0, 3), (4, 9), (10, 13), (0, 0)]
+    pred_indices = [0, 1, 2, 0, 0]
+
+    tokenizer = DummyFastTokenizer(token_offsets=offsets)
+    model = DummyModel(pred_indices=pred_indices)
+    detector = create_test_detector(tokenizer, model, max_length=16)
+
+    detections = detector.detect(text, text)
+    assert len(detections) == 1
+    assert detections[0].value == "علی رضایی"
+    # Exactly one forward call
+    assert len(model.call_kwargs) == 1
+
+
+def test_long_document_person_in_later_window() -> None:
+    """Verify PERSON entity deep in a later window is detected with exact offsets."""
+    # Build a 20-word text with max_length=8 (capacity=6, stride=3)
+    # Words 0..11 are non-entity, 12..13 are PERSON, 14..19 are non-entity
+    words = (
+        [f"کلمه{i}" for i in range(12)]
+        + ["سهراب", "سپهری"]
+        + [f"کلمه{i}" for i in range(14, 20)]
+    )
+    text = " ".join(words)
+
+    # Compute exact offsets
+    offsets: list[tuple[int, int]] = [(0, 0)]  # [CLS]
+    pos = 0
+    sohrab_start = 0
+    sohrab_end = 0
+    for w in words:
+        start = text.find(w, pos)
+        end = start + len(w)
+        offsets.append((start, end))
+        if w == "سهراب":
+            sohrab_start = start
+        elif w == "سپهری":
+            sohrab_end = end
+        pos = end
+    offsets.append((0, 0))  # [SEP]
+
+    # Model returns 0 everywhere except for "سهراب" (B_PER=1) and "سپهری" (I_PER=2)
+    # The tokens in full sequence:
+    # 0:[CLS], 1..12:words, 13:"سهراب", 14:"سپهری", 15..20:words, 21:[SEP]
+    # For windows, we can pass a mock model that checks token offsets or content IDs:
+    class DynamicLookupModel:
+        def __init__(self) -> None:
+            self.config = DummyConfig()
+            self.call_kwargs: list[dict[str, Any]] = []
+
+        def eval(self) -> DynamicLookupModel:
+            return self
+
+        def __call__(self, **kwargs: Any) -> DummyOutput:
+            self.call_kwargs.append(kwargs)
+            input_ids = kwargs["input_ids"]._data[0]
+            preds = []
+            for tid in input_ids:
+                # tid 1012 is "سهراب" (index 12 content token -> 1000 + 12 = 1012)
+                # tid 1013 is "سپهری" (index 13 content token -> 1000 + 13 = 1013)
+                if tid == 1012:
+                    preds.append(1)  # B_PER
+                elif tid == 1013:
+                    preds.append(2)  # I_PER
+                else:
+                    preds.append(0)  # O
+            batch_logits = []
+            for p in preds:
+                row = [-100.0] * 5
+                row[p] = 100.0
+                batch_logits.append(row)
+            return DummyOutput(logits=FakeTensor([batch_logits]))
+
+    tokenizer = DummyFastTokenizer(token_offsets=offsets)
+    model = DynamicLookupModel()
+    detector = create_test_detector(tokenizer, model, max_length=8)
+
+    detections = detector.detect(text, text)
+    assert len(detections) == 1
+    d = detections[0]
+    assert d.type == "PERSON"
+    assert d.value == "سهراب سپهری"
+    assert d.start == sohrab_start
+    assert d.end == sohrab_end
+    assert len(model.call_kwargs) > 1
+
+
+def test_long_document_person_in_overlap_region_deduplicated() -> None:
+    """Verify PERSON entity in overlapping window region is emitted once."""
+    # 12 words with max_length=8 (capacity=6, stride=3)
+    # Window 0: content tokens 0..6
+    # Window 1: content tokens 3..9 (overlap is 3..6)
+    # Let "فروغ فرخزاد" be at content tokens 4..5
+    words = (
+        [f"کلمه{i}" for i in range(4)]
+        + ["فروغ", "فرخزاد"]
+        + [f"کلمه{i}" for i in range(6, 12)]
+    )
+    text = " ".join(words)
+
+    offsets: list[tuple[int, int]] = [(0, 0)]
+    pos = 0
+    for w in words:
+        start = text.find(w, pos)
+        end = start + len(w)
+        offsets.append((start, end))
+        pos = end
+    offsets.append((0, 0))
+
+    class OverlapModel:
+        def __init__(self) -> None:
+            self.config = DummyConfig()
+            self.call_kwargs: list[dict[str, Any]] = []
+
+        def eval(self) -> OverlapModel:
+            return self
+
+        def __call__(self, **kwargs: Any) -> DummyOutput:
+            self.call_kwargs.append(kwargs)
+            input_ids = kwargs["input_ids"]._data[0]
+            preds = []
+            for tid in input_ids:
+                if tid == 1004:  # "فروغ" (content token 4)
+                    preds.append(1)  # B_PER
+                elif tid == 1005:  # "فرخزاد" (content token 5)
+                    preds.append(2)  # I_PER
+                else:
+                    preds.append(0)
+            batch_logits = []
+            for p in preds:
+                row = [-100.0] * 5
+                row[p] = 100.0
+                batch_logits.append(row)
+            return DummyOutput(logits=FakeTensor([batch_logits]))
+
+    tokenizer = DummyFastTokenizer(token_offsets=offsets)
+    model = OverlapModel()
+    detector = create_test_detector(tokenizer, model, max_length=8)
+
+    detections = detector.detect(text, text)
+    # Must be deduplicated into exactly 1 detection
+    assert len(detections) == 1
+    d = detections[0]
+    assert d.value == "فروغ فرخزاد"
+    assert d.type == "PERSON"
+    # Ensure both Window 0 and Window 1 actually executed
+    assert len(model.call_kwargs) >= 2
+
+
+def test_long_document_person_crossing_window_boundary_merged() -> None:
+    """Verify PERSON entity split across window boundaries is merged."""
+    # max_length=6 (capacity=4, stride=2)
+    # Window 0: content tokens 0..4
+    # Window 1: content tokens 2..6
+    # Let content token 3 be "سید" (end of first half), content token 4 be "علی"
+    # Window 0 sees token 3 as B_PER (1)
+    # Window 1 sees token 3 as B_PER (1) or token 4 as I_PER (2)
+    words = ["الف", "ب", "ج", "سید", "علی", "د", "ه", "و"]
+    text = " ".join(words)
+
+    offsets: list[tuple[int, int]] = [(0, 0)]
+    pos = 0
+    for w in words:
+        start = text.find(w, pos)
+        end = start + len(w)
+        offsets.append((start, end))
+        pos = end
+    offsets.append((0, 0))
+
+    class SplitModel:
+        def __init__(self) -> None:
+            self.config = DummyConfig()
+            self.call_kwargs: list[dict[str, Any]] = []
+
+        def eval(self) -> SplitModel:
+            return self
+
+        def __call__(self, **kwargs: Any) -> DummyOutput:
+            self.call_kwargs.append(kwargs)
+            input_ids = kwargs["input_ids"]._data[0]
+            preds = []
+            for tid in input_ids:
+                if tid == 1003:  # "سید" (content token 3)
+                    preds.append(1)  # B_PER
+                elif tid == 1004:  # "علی" (content token 4)
+                    preds.append(2)  # I_PER
+                else:
+                    preds.append(0)
+            batch_logits = []
+            for p in preds:
+                row = [-100.0] * 5
+                row[p] = 100.0
+                batch_logits.append(row)
+            return DummyOutput(logits=FakeTensor([batch_logits]))
+
+    tokenizer = DummyFastTokenizer(token_offsets=offsets)
+    model = SplitModel()
+    detector = create_test_detector(tokenizer, model, max_length=6)
+
+    detections = detector.detect(text, text)
+    assert len(detections) == 1
+    d = detections[0]
+    assert d.value == "سید علی"
+    assert d.type == "PERSON"
+
+
+def test_long_document_distinct_adjacent_persons_across_boundary_not_merged() -> None:
+    """Verify two distinct B-PER entities across window boundaries remain separate."""
+    # content token 3 is "سارا" (B_PER), content token 4 is "مریم" (B_PER)
+    words = ["الف", "ب", "ج", "سارا", "مریم", "د", "ه", "و"]
+    text = " ".join(words)
+
+    offsets: list[tuple[int, int]] = [(0, 0)]
+    pos = 0
+    for w in words:
+        start = text.find(w, pos)
+        end = start + len(w)
+        offsets.append((start, end))
+        pos = end
+    offsets.append((0, 0))
+
+    class DistinctModel:
+        def __init__(self) -> None:
+            self.config = DummyConfig()
+            self.call_kwargs: list[dict[str, Any]] = []
+
+        def eval(self) -> DistinctModel:
+            return self
+
+        def __call__(self, **kwargs: Any) -> DummyOutput:
+            self.call_kwargs.append(kwargs)
+            input_ids = kwargs["input_ids"]._data[0]
+            preds = []
+            for tid in input_ids:
+                if tid in (1003, 1004):  # Both are B_PER (distinct individuals)
+                    preds.append(1)
+                else:
+                    preds.append(0)
+            batch_logits = []
+            for p in preds:
+                row = [-100.0] * 5
+                row[p] = 100.0
+                batch_logits.append(row)
+            return DummyOutput(logits=FakeTensor([batch_logits]))
+
+    tokenizer = DummyFastTokenizer(token_offsets=offsets)
+    model = DistinctModel()
+    detector = create_test_detector(tokenizer, model, max_length=6)
+
+    detections = detector.detect(text, text)
+    assert len(detections) == 2
+    assert detections[0].value == "سارا"
+    assert detections[1].value == "مریم"
+
+
+def test_long_document_conjunction_separated_persons_across_boundary_not_merged() -> (
+    None
+):
+    """Verify PERSON entities separated by conjunction words are not merged."""
+    words = ["الف", "ب", "سارا", "و", "مریم", "د", "ه", "و"]
+    text = " ".join(words)
+
+    offsets: list[tuple[int, int]] = [(0, 0)]
+    pos = 0
+    for w in words:
+        start = text.find(w, pos)
+        end = start + len(w)
+        offsets.append((start, end))
+        pos = end
+    offsets.append((0, 0))
+
+    class ConjunctionModel:
+        def __init__(self) -> None:
+            self.config = DummyConfig()
+            self.call_kwargs: list[dict[str, Any]] = []
+
+        def eval(self) -> ConjunctionModel:
+            return self
+
+        def __call__(self, **kwargs: Any) -> DummyOutput:
+            self.call_kwargs.append(kwargs)
+            input_ids = kwargs["input_ids"]._data[0]
+            preds = []
+            for tid in input_ids:
+                if tid == 1002:  # "سارا"
+                    preds.append(1)  # B_PER
+                elif tid == 1004:  # "مریم"
+                    preds.append(2)  # Even if noisy I_PER, gap has "و"
+                else:
+                    preds.append(0)
+            batch_logits = []
+            for p in preds:
+                row = [-100.0] * 5
+                row[p] = 100.0
+                batch_logits.append(row)
+            return DummyOutput(logits=FakeTensor([batch_logits]))
+
+    tokenizer = DummyFastTokenizer(token_offsets=offsets)
+    model = ConjunctionModel()
+    detector = create_test_detector(tokenizer, model, max_length=6)
+
+    detections = detector.detect(text, text)
+    assert len(detections) == 2
+    assert detections[0].value == "سارا"
+    assert detections[1].value == "مریم"
+
+
+def test_long_document_multiple_persons_across_several_windows() -> None:
+    """Verify multiple PERSON entities across 4+ windows are collected and sorted."""
+    words = (
+        ["الف", "علی", "رضایی", "ب", "ج"]  # Window 0 area
+        + ["د", "ه", "و", "ز", "ح"]
+        + ["ط", "سارا", "حسینی", "ی", "ک"]  # Window 2 area
+        + ["ل", "م", "ن", "س", "ع"]
+        + ["ف", "محمد", "کاظمی", "ق", "ر"]  # Window 4 area
+    )
+    text = " ".join(words)
+
+    offsets: list[tuple[int, int]] = [(0, 0)]
+    pos = 0
+    for w in words:
+        start = text.find(w, pos)
+        end = start + len(w)
+        offsets.append((start, end))
+        pos = end
+    offsets.append((0, 0))
+
+    class MultiPersonModel:
+        def __init__(self) -> None:
+            self.config = DummyConfig()
+            self.call_kwargs: list[dict[str, Any]] = []
+
+        def eval(self) -> MultiPersonModel:
+            return self
+
+        def __call__(self, **kwargs: Any) -> DummyOutput:
+            self.call_kwargs.append(kwargs)
+            input_ids = kwargs["input_ids"]._data[0]
+            preds = []
+            for tid in input_ids:
+                if tid in (1001, 1011, 1021):  # Ali, Sara, Mohammad
+                    preds.append(1)  # B_PER
+                elif tid in (1002, 1012, 1022):  # Rezaei, Hosseini, Kazemi
+                    preds.append(2)  # I_PER
+                else:
+                    preds.append(0)
+            batch_logits = []
+            for p in preds:
+                row = [-100.0] * 5
+                row[p] = 100.0
+                batch_logits.append(row)
+            return DummyOutput(logits=FakeTensor([batch_logits]))
+
+    tokenizer = DummyFastTokenizer(token_offsets=offsets)
+    model = MultiPersonModel()
+    detector = create_test_detector(tokenizer, model, max_length=8)
+
+    detections = detector.detect(text, text)
+    assert len(detections) == 3
+    assert [d.value for d in detections] == ["علی رضایی", "سارا حسینی", "محمد کاظمی"]
+    assert detections[0].start < detections[1].start < detections[2].start
+
+
+def test_long_document_arabic_persian_normalization_exact_offsets() -> None:
+    """Verify Arabic kaf/yeh and Persian digits preserve original offsets."""
+    # Original text with Arabic kaf '\u0643' and Arabic yeh '\u064a'
+    orig_name = "\u0643\u0627\u0638\u0645\u064a"
+    norm_name = "\u06a9\u0627\u0638\u0645\u06cc"
+
+    words_orig = (
+        [f"کلمه{i}" for i in range(12)]
+        + [orig_name]
+        + [f"کلمه{i}" for i in range(13, 20)]
+    )
+    words_norm = (
+        [f"کلمه{i}" for i in range(12)]
+        + [norm_name]
+        + [f"کلمه{i}" for i in range(13, 20)]
+    )
+    orig_text = " ".join(words_orig)
+    norm_text = " ".join(words_norm)
+
+    offsets: list[tuple[int, int]] = [(0, 0)]
+    pos = 0
+    for w in words_norm:
+        start = norm_text.find(w, pos)
+        end = start + len(w)
+        offsets.append((start, end))
+        pos = end
+    offsets.append((0, 0))
+
+    class NormalizationModel:
+        def __init__(self) -> None:
+            self.config = DummyConfig()
+            self.call_kwargs: list[dict[str, Any]] = []
+
+        def eval(self) -> NormalizationModel:
+            return self
+
+        def __call__(self, **kwargs: Any) -> DummyOutput:
+            self.call_kwargs.append(kwargs)
+            input_ids = kwargs["input_ids"]._data[0]
+            preds = [1 if tid == 1012 else 0 for tid in input_ids]
+            batch_logits = []
+            for p in preds:
+                row = [-100.0] * 5
+                row[p] = 100.0
+                batch_logits.append(row)
+            return DummyOutput(logits=FakeTensor([batch_logits]))
+
+    tokenizer = DummyFastTokenizer(token_offsets=offsets)
+    model = NormalizationModel()
+    detector = create_test_detector(tokenizer, model, max_length=8)
+
+    detections = detector.detect(orig_text, norm_text)
+    assert len(detections) == 1
+    d = detections[0]
+    assert d.value == orig_name
+    assert d.normalized_value == norm_name
+    assert orig_text[d.start : d.end] == orig_name
+    assert norm_text[d.start : d.end] == norm_name
+
+
+def test_long_document_deterministic_repeated_calls() -> None:
+    """Verify repeated calls on long documents produce identical results."""
+    words = (
+        [f"کلمه{i}" for i in range(8)]
+        + ["سارا", "رضایی"]
+        + [f"کلمه{i}" for i in range(10, 20)]
+    )
+    text = " ".join(words)
+
+    offsets: list[tuple[int, int]] = [(0, 0)]
+    pos = 0
+    for w in words:
+        start = text.find(w, pos)
+        end = start + len(w)
+        offsets.append((start, end))
+        pos = end
+    offsets.append((0, 0))
+
+    class DeterministicModel:
+        def __init__(self) -> None:
+            self.config = DummyConfig()
+            self.call_kwargs: list[dict[str, Any]] = []
+
+        def eval(self) -> DeterministicModel:
+            return self
+
+        def __call__(self, **kwargs: Any) -> DummyOutput:
+            self.call_kwargs.append(kwargs)
+            input_ids = kwargs["input_ids"]._data[0]
+            preds = [
+                1 if tid == 1008 else (2 if tid == 1009 else 0) for tid in input_ids
+            ]
+            batch_logits = []
+            for p in preds:
+                row = [-100.0] * 5
+                row[p] = 100.0
+                batch_logits.append(row)
+            return DummyOutput(logits=FakeTensor([batch_logits]))
+
+    tokenizer = DummyFastTokenizer(token_offsets=offsets)
+    model = DeterministicModel()
+    detector = create_test_detector(tokenizer, model, max_length=8)
+
+    res1 = detector.detect(text, text)
+    res2 = detector.detect(text, text)
+    res3 = detector.detect(text, text)
+
+    assert len(res1) == 1
+    assert res1 == res2 == res3
+    assert res1[0].value == "سارا رضایی"
+
+
+def test_long_document_structural_invalid_offsets_fail_loudly() -> None:
+    """Verify structurally invalid tokenizer offsets on long documents fail loudly."""
+    text = "کلمه " * 50
+    # Out of bounds offset
+    bad_offsets_oob = [(0, 0)] + [(0, 500)] + [(0, 0)]
+    tokenizer_oob = DummyFastTokenizer(token_offsets=bad_offsets_oob)
+    detector_oob = create_test_detector(tokenizer_oob, DummyModel(), max_length=16)
+
+    with pytest.raises(ValueError, match="out-of-bounds"):
+        detector_oob.detect(text, text)
+
+    # Non-monotonic offset
+    bad_offsets_nm = [(0, 0), (10, 20), (5, 15), (0, 0)]
+    tokenizer_nm = DummyFastTokenizer(token_offsets=bad_offsets_nm)
+    detector_nm = create_test_detector(tokenizer_nm, DummyModel(), max_length=16)
+
+    with pytest.raises(ValueError, match="non-monotonic"):
+        detector_nm.detect(text, text)
 
 
 # =========================================================================
@@ -891,3 +1422,226 @@ def test_offline_mock_detector_when_torch_uninstalled() -> None:
     assert len(detections) == 1
     assert detections[0].type == "PERSON"
     assert detections[0].value == "علی رضایی"
+
+
+# =========================================================================
+# 37. Conservative Overlap & Sliding-Window Safety Regression Tests
+# =========================================================================
+
+
+def test_partially_overlapping_candidates_not_unioned() -> None:
+    """Verify partially overlapping conflicting PERSON candidates are not unioned."""
+    from fa_redact.detectors.persian_ner import _SpanCandidate
+
+    text = "علی رضا محمدی"
+    offsets = [(0, 0), (0, 3), (4, 7), (8, 13), (0, 0)]
+    cand1 = _SpanCandidate(
+        start=0,
+        end=7,
+        is_leading_continuation=False,
+        is_trailing_boundary=False,
+        window_idx=0,
+    )
+    cand2 = _SpanCandidate(
+        start=4,
+        end=13,
+        is_leading_continuation=False,
+        is_trailing_boundary=False,
+        window_idx=1,
+    )
+    tokenizer = DummyFastTokenizer(token_offsets=offsets)
+    model = DummyModel()
+    detector = create_test_detector(tokenizer, model)
+
+    merged = detector._merge_and_deduplicate_candidates([cand1, cand2], text)
+    assert merged == [(0, 7), (4, 13)]
+
+
+def test_zero_gap_adjacent_b_per_entities_remain_separate() -> None:
+    """Verify zero-gap adjacent B-PER entities remain separate."""
+    from fa_redact.detectors.persian_ner import _SpanCandidate
+
+    text = "علیرضا"
+    cand1 = _SpanCandidate(
+        start=0,
+        end=3,
+        is_leading_continuation=False,
+        is_trailing_boundary=True,
+        window_idx=0,
+    )
+    cand2 = _SpanCandidate(
+        start=3,
+        end=6,
+        is_leading_continuation=False,
+        is_trailing_boundary=False,
+        window_idx=1,
+    )
+    tokenizer = DummyFastTokenizer()
+    model = DummyModel()
+    detector = create_test_detector(tokenizer, model)
+
+    merged = detector._merge_and_deduplicate_candidates([cand1, cand2], text)
+    assert merged == [(0, 3), (3, 6)]
+
+
+def test_leading_i_per_from_non_adjacent_window_not_merged() -> None:
+    """Verify leading I-PER from non-adjacent window does not merge."""
+    from fa_redact.detectors.persian_ner import _SpanCandidate
+
+    text = "علی رضایی"
+    cand1 = _SpanCandidate(
+        start=0,
+        end=3,
+        is_leading_continuation=False,
+        is_trailing_boundary=True,
+        window_idx=0,
+    )
+    cand2 = _SpanCandidate(
+        start=4,
+        end=9,
+        is_leading_continuation=True,
+        is_trailing_boundary=False,
+        window_idx=2,
+    )
+    tokenizer = DummyFastTokenizer()
+    model = DummyModel()
+    detector = create_test_detector(tokenizer, model)
+
+    merged = detector._merge_and_deduplicate_candidates([cand1, cand2], text)
+    assert merged == [(0, 3), (4, 9)]
+
+
+def test_leading_i_per_not_merged_when_previous_span_not_trailing_boundary() -> None:
+    """Verify leading I-PER does not merge if previous span is not at boundary."""
+    from fa_redact.detectors.persian_ner import _SpanCandidate
+
+    text = "علی رضایی"
+    cand1 = _SpanCandidate(
+        start=0,
+        end=3,
+        is_leading_continuation=False,
+        is_trailing_boundary=False,
+        window_idx=0,
+    )
+    cand2 = _SpanCandidate(
+        start=4,
+        end=9,
+        is_leading_continuation=True,
+        is_trailing_boundary=False,
+        window_idx=1,
+    )
+    tokenizer = DummyFastTokenizer()
+    model = DummyModel()
+    detector = create_test_detector(tokenizer, model)
+
+    merged = detector._merge_and_deduplicate_candidates([cand1, cand2], text)
+    assert merged == [(0, 3), (4, 9)]
+
+
+def test_too_small_max_length_fails_loudly_on_long_input() -> None:
+    """Verify max_length < 3 on long input fails loudly before model call."""
+    text = "کلمه " * 10
+    tokenizer = DummyFastTokenizer()
+    model = DummyModel()
+    detector = create_test_detector(tokenizer, model, max_length=2)
+
+    with pytest.raises(ValueError) as exc_info:
+        detector.detect(text, text)
+
+    err_msg = str(exc_info.value)
+    assert "too small for sliding-window inference" in err_msg
+    assert "کلمه" not in err_msg
+    assert len(model.call_kwargs) == 0
+
+
+def test_missing_unidentifiable_special_tokens_fails_loudly() -> None:
+    """Verify missing/unidentifiable special token IDs fail loudly."""
+    text = "کلمه " * 10
+    content_offsets = [(0, 4), (5, 9), (10, 14), (15, 19), (20, 24)]
+    tokenizer = DummyFastTokenizer(token_offsets=content_offsets)
+    tokenizer.cls_token_id = None
+    tokenizer.sep_token_id = None
+    model = DummyModel()
+    detector = create_test_detector(tokenizer, model, max_length=4)
+
+    with pytest.raises(ValueError) as exc_info:
+        detector.detect(text, text)
+
+    assert "Tokenizer missing required special token configuration" in str(
+        exc_info.value
+    )
+
+
+def test_subsumed_candidate_preserves_boundary_provenance_3_windows() -> None:
+    """Verify subsumed boundary candidate preserves provenance for 3-window split."""
+    from fa_redact.detectors.persian_ner import _SpanCandidate
+
+    text = "علی رضا محمدی"
+    # Window 0: retained outer span (0, 7) ending at 7, trailing boundary
+    cand0 = _SpanCandidate(
+        start=0,
+        end=7,
+        is_leading_continuation=False,
+        is_trailing_boundary=True,
+        window_idx=0,
+    )
+    # Window 1: subsumed duplicate span (4, 7) also ending at 7, trailing boundary
+    cand1 = _SpanCandidate(
+        start=4,
+        end=7,
+        is_leading_continuation=False,
+        is_trailing_boundary=True,
+        window_idx=1,
+    )
+    # Window 2: leading I-PER continuation (8, 13)
+    cand2 = _SpanCandidate(
+        start=8,
+        end=13,
+        is_leading_continuation=True,
+        is_trailing_boundary=False,
+        window_idx=2,
+    )
+    tokenizer = DummyFastTokenizer()
+    model = DummyModel()
+    detector = create_test_detector(tokenizer, model)
+
+    merged = detector._merge_and_deduplicate_candidates([cand0, cand1, cand2], text)
+    assert merged == [(0, 13)]
+
+
+def test_subsumed_candidate_interior_end_does_not_advance_provenance() -> None:
+    """Verify subsumed candidate ending inside retained span doesn't advance window."""
+    from fa_redact.detectors.persian_ner import _SpanCandidate
+
+    text = "علی رضا محمدی رحیمی"
+    # Window 0: retained outer span (0, 10), trailing boundary
+    cand0 = _SpanCandidate(
+        start=0,
+        end=10,
+        is_leading_continuation=False,
+        is_trailing_boundary=True,
+        window_idx=0,
+    )
+    # Window 1: subsumed span (4, 7) ending at 7 (< 10), trailing boundary
+    cand1 = _SpanCandidate(
+        start=4,
+        end=7,
+        is_leading_continuation=False,
+        is_trailing_boundary=True,
+        window_idx=1,
+    )
+    # Window 2: leading I-PER continuation (11, 16)
+    cand2 = _SpanCandidate(
+        start=11,
+        end=16,
+        is_leading_continuation=True,
+        is_trailing_boundary=False,
+        window_idx=2,
+    )
+    tokenizer = DummyFastTokenizer()
+    model = DummyModel()
+    detector = create_test_detector(tokenizer, model)
+
+    merged = detector._merge_and_deduplicate_candidates([cand0, cand1, cand2], text)
+    # Window 2 must NOT merge with Window 0 because window_idx was not updated
+    assert merged == [(0, 10), (11, 16)]

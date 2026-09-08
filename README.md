@@ -872,7 +872,7 @@ print(redacted)
 > - **Strictly Opt-in & Offline**: `PersianNERDetector` is not included in default detectors (`_DEFAULT_DETECTORS`). It requires an explicitly supplied local directory path (`local_files_only=True`, `trust_remote_code=False`) and never downloads models automatically.
 > - **Model Trust Boundary**: Local model checkpoints are executable/deserialization-adjacent assets. Only load models from trusted sources.
 > - **PERSON Entity Type**: The detector emits `PERSON` entities and makes no assumptions regarding clinical roles (patient, physician, relative, or other individual).
-> - **Fail-Loud Long-Text Policy**: Documents exceeding the model's configured sequence length (`max_length`) fail loudly with a privacy-safe `ValueError` without silent truncation.
+> - **Deterministic Long-Document Sliding Window**: Documents exceeding the model's configured sequence length (`max_length`) are safely processed using overlapping token windows with exact source character offset preservation, deduplication, and conservative boundary-split entity merging.
 > - **No Universal Accuracy or Clinical Guarantee**: PEYMA benchmark results (99.19% exact-span F1 on news domain) do not guarantee universal accuracy or clinical de-identification.
 
 ---
@@ -2180,7 +2180,7 @@ print(redacted)
 > - **صرفاً اختیاری و محلی**: تشخیص‌دهندهٔ `PersianNERDetector` در پیش‌فرض‌ها قرار ندارد و هیچ مدلی را به صورت خودکار از اینترنت دانلود نمی‌کند؛ کاربر باید پوشهٔ محلی مدل معتبر را ارائه دهد.
 > - **مرز اعتماد مدل**: فایل‌های مدل محلی کدهای اجرایی/محاسباتی هستند؛ فقط مدل‌های منابع کاملاً معتبر را بارگذاری کنید.
 > - **برچسب عمومی PERSON**: این مدل نوع موجودیت `PERSON` را برمی‌گرداند و نقشی (بیمار، پزشک، همراه و...) استنتاج نمی‌کند.
-> - **سیاست عدم کوتاه کردن متن‌های طولانی (Fail-Loud)**: در متون طولانی‌تر از ظرفیت مدل، خطا صادر می‌شود و متن به صورت خاموش کوتاه (Truncate) نمی‌شود.
+> - **پشتیبانی قطعی از متون طولانی با پنجرهٔ لغزان**: متون طولانی‌تر از طول توالی مدل (`max_length`) با استفاده از پنجره‌های لغزان هم‌پوشان به همراه بازسازی دقیق موقعیت کاراکترها، حذف تکرارها و ادغام محافظه‌کارانهٔ موجودیت‌های شکسته در مرز پنجره پردازش می‌شوند.
 > - **عدم تضمین بالینی یا دقت جهانی**: نتایج بنچ‌مارک خبری PEYMA (F1 معادل ۹۹.۱۹٪) به معنی تضمین دقت در اسناد بالینی یا دی‌ایدنتیفیکیشن قطعی نیست.
 
 ---
