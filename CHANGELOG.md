@@ -8,7 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Persian NER Backend Validation & Production Readiness Gate (Phase 32):**
+- **Performance Profiling & Evidence-Based Optimization (Phase 33):**
+  - Comprehensive empirical profiling deliverable (`research/phase33_performance.md`) and aggregate benchmark artifact (`research/results/phase33_performance.json`) measuring CPU latency, throughput, long-document sliding-window scaling, model initialization, and process resident memory (RSS) across lifecycle.
+  - Evaluated zero-dependency deterministic core (`fa_redact.detect` with default detectors `IR_NATIONAL_ID`, `IR_MOBILE`, `IR_IBAN`): achieves 0.0321 ms median latency (26,171 docs/sec) on ~100-char documents, 0.1830 ms (5,291 docs/sec) on ~1,000-char documents, and 1.6441 ms (534 docs/sec) on ~10,000-char documents with 0 runtime dependencies, achieving approximately 2.8 million characters/sec on the measured synthetic workload.
+  - Steady-state NER inference on Dataset B (150 documents): PEYMA PyTorch backend achieved 69.56 ms median latency (12.50 docs/sec, 215.88 tokens/sec); TookaBERT ONNX backend achieved 91.22 ms median latency (9.61 docs/sec, 222.82 tokens/sec; ~31.1% higher median latency / ~1.31x PEYMA latency).
+  - Steady-state NER inference on Dataset C (120 clinical documents): PEYMA PyTorch backend achieved 124.08 ms median latency (7.43 docs/sec, 497.03 tokens/sec); TookaBERT ONNX backend achieved 370.60 ms median latency (2.64 docs/sec, 247.56 tokens/sec; ~198.7% higher median latency / ~2.99x PEYMA latency).
+  - Documented tokenizer token-throughput limitation: PEYMA and TookaBERT use different tokenizers and produce different token counts for the same documents, so cross-backend `tokens/sec` is not a direct apples-to-apples speed comparison.
+  - Long-document sliding-window scaling: verified linear scaling with sequence length across ~250, ~550, and ~1000 token documents (~2,125 ms for ~1000 tokens in PEYMA vs ~7,592 ms in TookaBERT ONNX).
+  - Model initialization and memory footprints across lifecycle: PEYMA constructor requires ~6.4s cold start, 348.0 MiB post-load RSS, 714.8 MiB post-inference RSS, and 714.8 MiB peak RSS; TookaBERT ONNX constructor requires ~7.8s cold start, 728.9 MiB post-load RSS, 885.0 MiB post-inference RSS, and 887.9 MiB peak RSS.
+  - Streaming batch processing helper: confirmed `fa_redact.detect_many()` demonstrates no material orchestration penalty on synthetic benchmarks across 6 counterbalanced repetitions (-8.59% observed difference vs explicit loop).
+  - Recommendation rubric decision: `NO UNIVERSAL CPU PERFORMANCE WINNER` (on the measured Windows CPU environment and synthetic workloads, PEYMA had lower document latency and lower measured process memory than TookaBERT ONNX; ONNX retained as optional alternative for non-PyTorch environments; PEYMA recommended for reference PERSON quality and CPU speed).
+  - Optimization gate decision: `NO PRODUCTION OPTIMIZATION JUSTIFIED` (no fa-redact-owned bottleneck was independently demonstrated, so the Phase 33 optimization eligibility gate was not satisfied).
+  - Preserved all core invariants: zero modifications to `src/fa_redact/**`, zero new base runtime dependencies (`dependencies = []`), and package version remaining `0.3.0`.
   - Independent validation gate deliverable (`research/phase32_ner_validation.md`) evaluating both production `PERSON` backends: `PersianNERDetector` (PEYMA reference) and `ONNXPersianNERDetector` (TookaBERT ONNX candidate).
   - Executed reproducible benchmarks against synthetic Challenge Sets B (150 documents, 30 gold PERSON) and C (120 documents, 255 gold PERSON) using exact character-span matching.
   - PEYMA backend validated at 1.0000 Precision, 1.0000 Recall, and 1.0000 F1 on both Dataset B and Dataset C with zero false positives.

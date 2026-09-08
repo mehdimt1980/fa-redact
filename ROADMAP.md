@@ -183,7 +183,7 @@ Added a strictly optional, local-only ONNX-based Persian `PERSON` detector (`ONN
 The agreed development horizon toward the planned `v0.4.0` release is strictly defined as follows:
 
 ### Phase 32 — Persian NER Backend Validation & Production Readiness Gate
-*Status: `ACTIVE / IN PROGRESS`*
+*Status: `COMPLETED`*
 
 Independently validate the two production `PERSON` backends (`PersianNERDetector` and `ONNXPersianNERDetector`) against locked quality and integrity gates prior to v0.4.0:
 - Validate PEYMA reference model and TookaBERT ONNX candidate against synthetic Challenge Sets B and C.
@@ -191,10 +191,17 @@ Independently validate the two production `PERSON` backends (`PersianNERDetector
 - Conduct negative-document false positive and over-redaction analysis.
 - Maintain strict research boundary: zero changes to `src/fa_redact/**`, zero new base dependencies (`dependencies = []`), and zero network calls.
 
-### Phase 33 — Performance Profiling & Optimization
-*Status: `PLANNED`*
+### Phase 33 — Performance Profiling & Evidence-Based Optimization
+*Status: `ACTIVE / IN PROGRESS`*
 
-Profile CPU/memory throughput, single-document and batch latency, sliding-window overhead, and scaling characteristics for both production backends to formulate final deployment recommendations.
+Profile CPU/memory throughput, single-document and batch latency, sliding-window overhead, model initialization, and scaling characteristics for both production backends to formulate final deployment recommendations:
+- Measure deterministic standard-library core throughput and latency across short, medium, and long tiers.
+- Profile PEYMA PyTorch detector and TookaBERT ONNX detector steady-state latency and throughput on Datasets B and C.
+- Evaluate sliding-window long-document inference scaling on ~250, ~550, and ~1000 token fixtures.
+- Measure cold model constructor times and process working set / peak RSS footprints.
+- Measure streaming batch helper (`detect_many`) orchestration overhead.
+- Enforce strict evidence-based optimization gate: zero production code modifications unless a verified Python bottleneck yields $\ge 10\%$ gain with $\le 5\%$ collateral regression and 100% exact output equality.
+- Maintain base dependencies as `dependencies = []` and package version `0.3.0`.
 
 ### Phase 34 — v0.4.0 Release
 *Status: `PLANNED`*
