@@ -51,6 +51,7 @@ def test_package_all_export() -> None:
         "IranianLegalEntityIDDetector",
         "IranianMobileNumberDetector",
         "IranianNationalIDDetector",
+        "ONNXPersianNERDetector",
         "PatternDetector",
         "PatternRule",
         "PersianNERDetector",
@@ -209,6 +210,9 @@ def test_subpackage_imports() -> None:
         IranianNationalIDDetector as SubNidDetector,
     )
     from fa_redact.detectors import (
+        ONNXPersianNERDetector as SubONNXPersianNERDetector,
+    )
+    from fa_redact.detectors import (
         PatternDetector as SubPatternDetector,
     )
     from fa_redact.detectors import (
@@ -248,6 +252,7 @@ def test_subpackage_imports() -> None:
     assert SubLegalEntityDetector is not None
     assert SubMobileDetector is not None
     assert SubNidDetector is not None
+    assert SubONNXPersianNERDetector is not None
     assert SubPatternDetector is not None
     assert SubPatternRule is not None
     assert SubPersianNERDetector is not None
@@ -272,7 +277,7 @@ def test_cli_import_and_scripts() -> None:
 
 
 def test_pyproject_dependencies_and_extras() -> None:
-    """Verify base package has zero mandatory dependencies and optional ner extra."""
+    """Verify base package has zero mandatory dependencies and optional extras."""
     import re
     from pathlib import Path
 
@@ -283,8 +288,10 @@ def test_pyproject_dependencies_and_extras() -> None:
         dep_match = re.search(r"(?m)^dependencies\s*=\s*\[\s*\]", content)
         assert dep_match is not None, "Core dependencies must be empty list []"
 
-        # Check optional-dependencies contain ner
+        # Check optional-dependencies contain ner and onnx
         assert "[project.optional-dependencies]" in content
         assert "ner = [" in content
         assert "torch" in content
         assert "transformers" in content
+        assert "onnx = [" in content
+        assert "onnxruntime" in content

@@ -808,17 +808,23 @@ print(reports["note"].counts)
 > [!NOTE]
 > **Introduced in v0.3.0**: Experimental opt-in Persian personal name NER (`PersianNERDetector`) and the optional `fa-redact[ner]` extra are introduced in `fa-redact` v0.3.0.
 
-`fa-redact` provides an experimental, strictly opt-in detector `PersianNERDetector` for local Persian personal name (`PERSON`) named-entity recognition using offline Hugging Face-compatible token-classification model checkpoints.
+`fa-redact` provides experimental, strictly opt-in detectors for local Persian personal name (`PERSON`) named-entity recognition using offline models:
+- `PersianNERDetector`: PyTorch backend using Hugging Face token-classification checkpoints (`fa-redact[ner]`).
+- `ONNXPersianNERDetector`: ONNX Runtime backend for fast offline CPU inference on exported ONNX graphs (`fa-redact[onnx]`).
 
-##### Installation Extra
+##### Installation Extras
 
 To enable the optional ML backend dependencies without inflating base package size:
 
 ```bash
+# For PyTorch backend
 pip install "fa-redact[ner]"
+
+# For ONNX Runtime backend
+pip install "fa-redact[onnx]"
 ```
 
-##### Usage Concept
+##### 1. PyTorch Backend (`PersianNERDetector`)
 
 ```python
 from fa_redact import PersianNERDetector, detect, redact
@@ -836,8 +842,25 @@ detections = detect(text, detectors=[ner])
 # Redaction with standard typed placeholder:
 redacted = redact(text, detectors=[ner])
 print(redacted)
-# Illustrative output (with a compatible tested model):
-# "بیمار [PERSON_1] به درمانگاه مراجعه کرد."
+# Output: "بیمار [PERSON_1] به درمانگاه مراجعه کرد."
+```
+
+##### 2. ONNX Runtime Backend (`ONNXPersianNERDetector`)
+
+```python
+from fa_redact import ONNXPersianNERDetector, detect, redact
+
+# Point strictly to a trusted local ONNX model directory (offline only)
+onnx_ner = ONNXPersianNERDetector("/path/to/trusted/local/onnx_model")
+
+text = "دکتر سارا احمدی بیمار را ویزیت نمود."
+
+detections = detect(text, detectors=[onnx_ner])
+# Type: PERSON | Value: سارا احمدی | Span: [5:15] (TITLE 'دکتر' is excluded!)
+
+redacted = redact(text, detectors=[onnx_ner])
+print(redacted)
+# Output: "دکتر [PERSON_1] بیمار را ویزیت نمود."
 ```
 
 ##### Combining NER with Built-in Direct Identifiers
@@ -849,11 +872,11 @@ from fa_redact import (
     IranianIBANDetector,
     IranianMobileNumberDetector,
     IranianNationalIDDetector,
-    PersianNERDetector,
+    ONNXPersianNERDetector,
     redact,
 )
 
-ner = PersianNERDetector("/path/to/trusted/local/model")
+ner = ONNXPersianNERDetector("/path/to/trusted/local/onnx_model")
 all_detectors = [
     IranianNationalIDDetector(),
     IranianMobileNumberDetector(),
@@ -864,16 +887,16 @@ all_detectors = [
 text = "بیمار علی رضایی با کد ملی 0012345679 مراجعه کرد."
 redacted = redact(text, detectors=all_detectors)
 print(redacted)
-# Illustrative output (with a compatible tested model):
-# "بیمار [PERSON_1] با کد ملی [IR_NATIONAL_ID_1] مراجعه کرد."
+# Output: "بیمار [PERSON_1] با کد ملی [IR_NATIONAL_ID_1] مراجعه کرد."
 ```
 
 > [!WARNING]
-> - **Strictly Opt-in & Offline**: `PersianNERDetector` is not included in default detectors (`_DEFAULT_DETECTORS`). It requires an explicitly supplied local directory path (`local_files_only=True`, `trust_remote_code=False`) and never downloads models automatically.
-> - **Model Trust Boundary**: Local model checkpoints are executable/deserialization-adjacent assets. Only load models from trusted sources.
-> - **PERSON Entity Type**: The detector emits `PERSON` entities and makes no assumptions regarding clinical roles (patient, physician, relative, or other individual).
+> - **Strictly Opt-in & Offline**: Neither `PersianNERDetector` nor `ONNXPersianNERDetector` is included in default detectors (`_DEFAULT_DETECTORS`). They require explicitly supplied local directory paths (`local_files_only=True`, `trust_remote_code=False`) and never download models automatically.
+> - **Model Trust Boundary**: Local model checkpoints are executable/computation assets. Only load models from trusted sources.
+> - **PERSON Entity Type**: Detectors emit `PERSON` entities and make no assumptions regarding clinical roles (patient, physician, relative, or other individual).
+> - **Name Component Reconstruction**: `ONNXPersianNERDetector` supports standard `PERSON`/`PER` BIO labels and fine-grained name components (`GIVENNAME` + `SURNAME`), merging compatible components across whitespace/ZWNJ into single `PERSON` spans while strictly excluding `TITLE`.
 > - **Deterministic Long-Document Sliding Window**: Documents exceeding the model's configured sequence length (`max_length`) are safely processed using overlapping token windows with exact source character offset preservation, deduplication, and conservative boundary-split entity merging.
-> - **No Universal Accuracy or Clinical Guarantee**: PEYMA benchmark results (99.19% exact-span F1 on news domain) do not guarantee universal accuracy or clinical de-identification.
+> - **No Universal Accuracy or Clinical Guarantee**: Experimental NER models do not guarantee universal accuracy or complete clinical de-identification.
 
 ---
 
@@ -2116,17 +2139,23 @@ print(reports["note"].counts)
 > [!NOTE]
 > **معرفی‌شده در نسخهٔ v0.3.0**: تشخیص‌دهندهٔ اختیاری نام اشخاص فارسی (`PersianNERDetector`) و اکسترای `fa-redact[ner]` در نسخهٔ v0.3.0 به صورت آزمایشی ارائه شده است.
 
-کتابخانهٔ `fa-redact` تشخیص‌دهندهٔ آزمایشی و کاملاً اختیاری `PersianNERDetector` را برای تشخیص موجودیت‌های نام اشخاص (`PERSON`) با استفاده از مدل‌های آفلاین سازگار با Hugging Face فراهم می‌کند.
+کتابخانهٔ `fa-redact` دو تشخیص‌دهندهٔ آزمایشی و کاملاً اختیاری برای شناسایی نام اشخاص (`PERSON`) با استفاده از مدل‌های محلی و آفلاین فراهم می‌کند:
+- `PersianNERDetector`: بک‌اند PyTorch با استفاده از مدل‌های توکن‌بندی Hugging Face (اکسترای `fa-redact[ner]`).
+- `ONNXPersianNERDetector`: بک‌اند ONNX Runtime برای استنتاج سریع و بهینه روی CPU (اکسترای `fa-redact[onnx]`).
 
 ##### نصب وابستگی‌های اختیاری
 
-برای فعال‌سازی بک‌اند هوش مصنوعی بدون سنگین کردن بستهٔ پایه:
+برای فعال‌سازی بک‌اندهای هوش مصنوعی بدون سنگین کردن بستهٔ پایه:
 
 ```bash
+# برای بک‌اند PyTorch
 pip install "fa-redact[ner]"
+
+# برای بک‌اند ONNX Runtime
+pip install "fa-redact[onnx]"
 ```
 
-##### نمونه استفاده
+##### ۱. بک‌اند PyTorch (`PersianNERDetector`)
 
 ```python
 from fa_redact import PersianNERDetector, detect, redact
@@ -2138,14 +2167,31 @@ text = "بیمار علی رضایی به درمانگاه مراجعه کرد."
 
 # پاس دادن صریح تشخیص‌دهنده (جایگزین پیش‌فرض‌ها می‌شود):
 detections = detect(text, detectors=[ner])
-# خروجی نمونه (با یک مدل سازگارِ آزموده‌شده):
+# خروجی نمونه:
 # نوع: PERSON | مقدار: علی رضایی | موقعیت: [6:15]
 
 # پنهان‌سازی با جانگهدار استاندارد:
 redacted = redact(text, detectors=[ner])
 print(redacted)
-# خروجی نمونه (با یک مدل سازگارِ آزموده‌شده):
-# "بیمار [PERSON_1] به درمانگاه مراجعه کرد."
+# خروجی: "بیمار [PERSON_1] به درمانگاه مراجعه کرد."
+```
+
+##### ۲. بک‌اند ONNX Runtime (`ONNXPersianNERDetector`)
+
+```python
+from fa_redact import ONNXPersianNERDetector, detect, redact
+
+# مشخص کردن مسیر پوشهٔ محلی مدل ONNX (صرفاً آفلاین و محلی)
+onnx_ner = ONNXPersianNERDetector("/path/to/trusted/local/onnx_model")
+
+text = "دکتر سارا احمدی بیمار را ویزیت نمود."
+
+detections = detect(text, detectors=[onnx_ner])
+# نوع: PERSON | مقدار: سارا احمدی | موقعیت: [5:15] (عنوان 'دکتر' حذف می‌شود!)
+
+redacted = redact(text, detectors=[onnx_ner])
+print(redacted)
+# خروجی: "دکتر [PERSON_1] بیمار را ویزیت نمود."
 ```
 
 ##### ترکیب NER با شناسه‌های مستقیم پیش‌فرض
@@ -2157,11 +2203,11 @@ from fa_redact import (
     IranianIBANDetector,
     IranianMobileNumberDetector,
     IranianNationalIDDetector,
-    PersianNERDetector,
+    ONNXPersianNERDetector,
     redact,
 )
 
-ner = PersianNERDetector("/path/to/trusted/local/model")
+ner = ONNXPersianNERDetector("/path/to/trusted/local/onnx_model")
 all_detectors = [
     IranianNationalIDDetector(),
     IranianMobileNumberDetector(),
@@ -2172,16 +2218,16 @@ all_detectors = [
 text = "بیمار علی رضایی با کد ملی 0012345679 مراجعه کرد."
 redacted = redact(text, detectors=all_detectors)
 print(redacted)
-# خروجی نمونه (با یک مدل سازگارِ آزموده‌شده):
-# "بیمار [PERSON_1] با کد ملی [IR_NATIONAL_ID_1] مراجعه کرد."
+# خروجی: "بیمار [PERSON_1] با کد ملی [IR_NATIONAL_ID_1] مراجعه کرد."
 ```
 
 > [!WARNING]
-> - **صرفاً اختیاری و محلی**: تشخیص‌دهندهٔ `PersianNERDetector` در پیش‌فرض‌ها قرار ندارد و هیچ مدلی را به صورت خودکار از اینترنت دانلود نمی‌کند؛ کاربر باید پوشهٔ محلی مدل معتبر را ارائه دهد.
-> - **مرز اعتماد مدل**: فایل‌های مدل محلی کدهای اجرایی/محاسباتی هستند؛ فقط مدل‌های منابع کاملاً معتبر را بارگذاری کنید.
-> - **برچسب عمومی PERSON**: این مدل نوع موجودیت `PERSON` را برمی‌گرداند و نقشی (بیمار، پزشک، همراه و...) استنتاج نمی‌کند.
+> - **صرفاً اختیاری و محلی**: هیچ‌یک از تشخیص‌دهنده‌های `PersianNERDetector` یا `ONNXPersianNERDetector` در پیش‌فرض‌ها قرار ندارند و هیچ فایلی از اینترنت دانلود نمی‌شود؛ کاربر باید پوشهٔ محلی مدل معتبر را ارائه دهد.
+> - **مرز اعتماد مدل**: فایل‌های مدل محلی منابع محاسباتی هستند؛ فقط مدل‌های منابع کاملاً معتبر را بارگذاری کنید.
+> - **برچسب عمومی PERSON**: این مدل‌ها نوع موجودیت `PERSON` را برمی‌گردانند و نقشی (بیمار، پزشک، همراه و...) استنتاج نمی‌کنند.
+> - **بازسازی اجزای نام**: تشخیص‌دهندهٔ `ONNXPersianNERDetector` علاوه بر برچسب‌های استاندارد `PERSON`/`PER`، از برچسب‌های ریزدانه (`GIVENNAME` و `SURNAME`) پشتیبانی کرده و اجزای متوالی را در قالب یک نام واحد ادغام می‌کند، در حالی که عنوان‌ها (`TITLE`) را کاملاً خارج از نام نگه می‌دارد.
 > - **پشتیبانی قطعی از متون طولانی با پنجرهٔ لغزان**: متون طولانی‌تر از طول توالی مدل (`max_length`) با استفاده از پنجره‌های لغزان هم‌پوشان به همراه بازسازی دقیق موقعیت کاراکترها، حذف تکرارها و ادغام محافظه‌کارانهٔ موجودیت‌های شکسته در مرز پنجره پردازش می‌شوند.
-> - **عدم تضمین بالینی یا دقت جهانی**: نتایج بنچ‌مارک خبری PEYMA (F1 معادل ۹۹.۱۹٪) به معنی تضمین دقت در اسناد بالینی یا دی‌ایدنتیفیکیشن قطعی نیست.
+> - **عدم تضمین بالینی یا دقت جهانی**: مدل‌های آزمایشی تضمینی بر دی‌ایدنتیفیکیشن قطعی یا انطباق قانونی خودکار ارائه نمی‌دهند.
 
 ---
 

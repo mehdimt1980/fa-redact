@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Optional ONNX Persian PERSON Backend (Phase 31):**
+  - Added public detector `ONNXPersianNERDetector(model_path, *, max_length=512)` under `fa_redact.detectors` (and exported from top-level `fa_redact`) for local-only Persian `PERSON` named-entity recognition using ONNX Runtime.
+  - Added strictly optional dependency extra `fa-redact[onnx]` (`onnxruntime>=1.16.0`, `transformers>=4.49.0,<5`) while keeping core package base dependencies empty (`dependencies = []`).
+  - Strict local-only artifact resolution (`local_files_only=True`, `trust_remote_code=False`), rejecting network downloads or automatic Hugging Face Hub resolution.
+  - Supported standard `PERSON`/`PER` BIO labels and fine-grained name components (`B-GIVENNAME`, `I-GIVENNAME`, `B-SURNAME`, `I-SURNAME`, `B-FIRSTNAME`, `B-LASTNAME`).
+  - Conservative name reconstruction: merges adjacent compatible name components (`GIVENNAME` + `SURNAME`) separated only by whitespace/ZWNJ into single `PERSON` spans.
+  - Excluded `TITLE` (e.g. `دکتر`, `مهندس`) strictly from `PERSON` detections.
+  - Preserved separate evidence for distinct `B-PER` entities or names separated by punctuation, conjunctions, or context words.
+  - Derived exact source character offsets directly from fast tokenizer offset mappings without document re-scanning.
+  - Reused sliding-window principles for long documents exceeding `max_length` via internal shared helper `_ner_utils.py`, with bounded overlapping windows and deterministic candidate deduplication.
+  - Maintained all core invariants: zero new base runtime dependencies (`dependencies = []`), default detectors unchanged (`_DEFAULT_DETECTORS` unchanged), clinical defaults unchanged, and package version remaining `0.3.0`.
+
 - **Robust Long-Document Persian NER (Phase 30):**
   - Upgraded strictly opt-in `PersianNERDetector` to safely and deterministically process long Persian documents exceeding the configured sequence length (`max_length`).
   - Deterministic overlapping sliding-window inference with stride `max(1, (max_length - 2) // 2)` for inputs exceeding `max_length`.
