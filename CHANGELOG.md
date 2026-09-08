@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Persian PII Ecosystem Audit & Independent Benchmark (Phase 29):**
+  - Comprehensive empirical research audit (`research/phase29_persian_pii_ecosystem.md`) evaluating the Persian PII de-identification and NLP landscape across the OpenMed Persian / Reza2kn ecosystem (TookaBERT-Large ONNX INT4, Google mBERT ONNX INT4, 848k OpenPII dataset), ParsiKit 3.3.0 (MIT), py-persian-tools 0.0.11 (MIT), and `fa-redact` internal baselines.
+  - Recorded supply-chain / maintenance risk observation regarding suspicious credential-collecting workflow on current GitHub master of `persian-tools/py-persian-tools` (commit `18aa49e`), distinct from audited PyPI 0.0.11 package.
+  - Reproducible multi-dataset benchmark evaluating publisher-compatible reproduction vs. canonical exact-span metrics on OpenMed test split (Dataset A, 100 rows), an independent out-of-distribution challenge set (Dataset B, 150 documents), an Iranian clinical-style challenge set (Dataset C, 120 documents), long-document scaling (3 documents), and reproducibility.
+  - Symmetrically mapped gold and prediction taxonomies with canonical TITLE/PERSON separation and deterministic address component policies.
+  - Dedicated PERSON-only comparison showing current opt-in `PersianNERDetector` (PEYMA model) achieves 1.0000 Precision, 1.0000 Recall, and 1.0000 F1 on both Dataset B (30 entities) and Dataset C (255 entities) with zero false positives.
+  - Empirical verification that `fa-redact` uniquely provides guaranteed 0 offset failures, pure Python zero-dependency execution, stateful reversible pseudonymization sessions, deterministic typed placeholders with cross-turn stable mappings, and clinical de-identification profiles.
+  - Hard research boundary strictly maintained: 100% research-only deliverables, zero changes to production `src/fa_redact/`, zero new runtime dependencies (`dependencies = []`), no model bundled, no new detector enabled, and package version remaining `0.3.0`.
+
 - **Opt-in Iranian Legal Entity National ID Implementation (Phase 28):**
   - Public validator `is_valid_iranian_legal_entity_id(value: str) -> bool` in `fa_redact.validators` and exported from top-level `fa_redact`.
   - Public detector `IranianLegalEntityIDDetector` with canonical entity type `IR_LEGAL_ENTITY_ID` in `fa_redact.detectors` and exported from top-level `fa_redact`.

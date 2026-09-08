@@ -1,0 +1,5355 @@
+{
+  "benchmark_name": "Phase 29 Persian PII Ecosystem Audit & Benchmark",
+  "timestamp": "2026-09-07T16:48:27Z",
+  "datasets": {
+    "dataset_a_reproduction": {
+      "dataset_id": "Reza2kn/persian-pii-masking-openpii-690k-clean",
+      "split": "test",
+      "sample_rows": 100,
+      "selection": "first_100_deterministic"
+    },
+    "dataset_b_independent": {
+      "name": "Independent Persian Synthetic Challenge Set",
+      "documents_count": 150,
+      "gold_entities_count": 211
+    },
+    "dataset_c_clinical": {
+      "name": "Iranian Clinical-Style Synthetic Challenge Set",
+      "documents_count": 120,
+      "gold_entities_count": 825
+    }
+  },
+  "evaluations": {
+    "dataset_a_publisher_reproduction": {
+      "openmed_tookabert_wrapper": {
+        "display_name": "TookaBERT Large (Wrapper) [Raw 19-Label Exact-Span]",
+        "metrics": {
+          "true_positives": 122,
+          "false_positives": 804,
+          "false_negatives": 792,
+          "precision": 0.1317,
+          "recall": 0.1335,
+          "f1": 0.1326,
+          "total_gold": 914,
+          "total_predicted": 926,
+          "relaxed_precision": 0.9676,
+          "relaxed_recall": 0.9803,
+          "relaxed_f1": 0.9739,
+          "entity_leakage_rate": 0.8665,
+          "document_leakage_rate": 0.99,
+          "documents_with_fp": 99,
+          "doc_fp_rate": 0.99,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "AGE": {
+              "tp": 4,
+              "fp": 44,
+              "fn": 42,
+              "gold": 46,
+              "predicted": 48,
+              "precision": 0.0833,
+              "recall": 0.087,
+              "f1": 0.0851
+            },
+            "BUILDINGNUM": {
+              "tp": 2,
+              "fp": 43,
+              "fn": 42,
+              "gold": 44,
+              "predicted": 45,
+              "precision": 0.0444,
+              "recall": 0.0455,
+              "f1": 0.0449
+            },
+            "CITY": {
+              "tp": 2,
+              "fp": 62,
+              "fn": 62,
+              "gold": 64,
+              "predicted": 64,
+              "precision": 0.0312,
+              "recall": 0.0312,
+              "f1": 0.0312
+            },
+            "CREDITCARDNUMBER": {
+              "tp": 5,
+              "fp": 20,
+              "fn": 20,
+              "gold": 25,
+              "predicted": 25,
+              "precision": 0.2,
+              "recall": 0.2,
+              "f1": 0.2
+            },
+            "DATE": {
+              "tp": 6,
+              "fp": 99,
+              "fn": 99,
+              "gold": 105,
+              "predicted": 105,
+              "precision": 0.0571,
+              "recall": 0.0571,
+              "f1": 0.0571
+            },
+            "DRIVERLICENSENUM": {
+              "tp": 1,
+              "fp": 19,
+              "fn": 18,
+              "gold": 19,
+              "predicted": 20,
+              "precision": 0.05,
+              "recall": 0.0526,
+              "f1": 0.0513
+            },
+            "EMAIL": {
+              "tp": 7,
+              "fp": 63,
+              "fn": 61,
+              "gold": 68,
+              "predicted": 70,
+              "precision": 0.1,
+              "recall": 0.1029,
+              "f1": 0.1014
+            },
+            "GENDER": {
+              "tp": 3,
+              "fp": 36,
+              "fn": 31,
+              "gold": 34,
+              "predicted": 39,
+              "precision": 0.0769,
+              "recall": 0.0882,
+              "f1": 0.0822
+            },
+            "GIVENNAME": {
+              "tp": 21,
+              "fp": 88,
+              "fn": 88,
+              "gold": 109,
+              "predicted": 109,
+              "precision": 0.1927,
+              "recall": 0.1927,
+              "f1": 0.1927
+            },
+            "IDCARDNUM": {
+              "tp": 4,
+              "fp": 29,
+              "fn": 24,
+              "gold": 28,
+              "predicted": 33,
+              "precision": 0.1212,
+              "recall": 0.1429,
+              "f1": 0.1311
+            },
+            "PASSPORTNUM": {
+              "tp": 5,
+              "fp": 16,
+              "fn": 16,
+              "gold": 21,
+              "predicted": 21,
+              "precision": 0.2381,
+              "recall": 0.2381,
+              "f1": 0.2381
+            },
+            "SEX": {
+              "tp": 1,
+              "fp": 17,
+              "fn": 22,
+              "gold": 23,
+              "predicted": 18,
+              "precision": 0.0556,
+              "recall": 0.0435,
+              "f1": 0.0488
+            },
+            "SOCIALNUM": {
+              "tp": 1,
+              "fp": 16,
+              "fn": 14,
+              "gold": 15,
+              "predicted": 17,
+              "precision": 0.0588,
+              "recall": 0.0667,
+              "f1": 0.0625
+            },
+            "STREET": {
+              "tp": 2,
+              "fp": 46,
+              "fn": 46,
+              "gold": 48,
+              "predicted": 48,
+              "precision": 0.0417,
+              "recall": 0.0417,
+              "f1": 0.0417
+            },
+            "SURNAME": {
+              "tp": 1,
+              "fp": 86,
+              "fn": 86,
+              "gold": 87,
+              "predicted": 87,
+              "precision": 0.0115,
+              "recall": 0.0115,
+              "f1": 0.0115
+            },
+            "TAXNUM": {
+              "tp": 3,
+              "fp": 21,
+              "fn": 21,
+              "gold": 24,
+              "predicted": 24,
+              "precision": 0.125,
+              "recall": 0.125,
+              "f1": 0.125
+            },
+            "TELEPHONENUM": {
+              "tp": 25,
+              "fp": 27,
+              "fn": 27,
+              "gold": 52,
+              "predicted": 52,
+              "precision": 0.4808,
+              "recall": 0.4808,
+              "f1": 0.4808
+            },
+            "TITLE": {
+              "tp": 27,
+              "fp": 35,
+              "fn": 35,
+              "gold": 62,
+              "predicted": 62,
+              "precision": 0.4355,
+              "recall": 0.4355,
+              "f1": 0.4355
+            },
+            "ZIPCODE": {
+              "tp": 2,
+              "fp": 37,
+              "fn": 38,
+              "gold": 40,
+              "predicted": 39,
+              "precision": 0.0513,
+              "recall": 0.05,
+              "f1": 0.0506
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 1175.13,
+          "p95_latency_ms": 2203.37,
+          "total_time_s": 131.5,
+          "docs_per_second": 0.76
+        },
+        "reproducibility_status": "Evaluated as exact character-span on raw publisher labels without private subword alignment script. Publisher model card reported token-level macro F1 (~0.98 TookaBERT / ~0.97 mBERT) is NOT EXACTLY REPRODUCIBLE at raw character level without publisher internal token-classification evaluation pipeline."
+      },
+      "openmed_mbert_wrapper": {
+        "display_name": "Google mBERT (Wrapper) [Raw 19-Label Exact-Span]",
+        "metrics": {
+          "true_positives": 884,
+          "false_positives": 43,
+          "false_negatives": 30,
+          "precision": 0.9536,
+          "recall": 0.9672,
+          "f1": 0.9603,
+          "total_gold": 914,
+          "total_predicted": 927,
+          "relaxed_precision": 0.9579,
+          "relaxed_recall": 0.9716,
+          "relaxed_f1": 0.9647,
+          "entity_leakage_rate": 0.0328,
+          "document_leakage_rate": 0.23,
+          "documents_with_fp": 28,
+          "doc_fp_rate": 0.28,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "AGE": {
+              "tp": 43,
+              "fp": 4,
+              "fn": 3,
+              "gold": 46,
+              "predicted": 47,
+              "precision": 0.9149,
+              "recall": 0.9348,
+              "f1": 0.9247
+            },
+            "BUILDINGNUM": {
+              "tp": 44,
+              "fp": 1,
+              "fn": 0,
+              "gold": 44,
+              "predicted": 45,
+              "precision": 0.9778,
+              "recall": 1.0,
+              "f1": 0.9888
+            },
+            "CITY": {
+              "tp": 64,
+              "fp": 0,
+              "fn": 0,
+              "gold": 64,
+              "predicted": 64,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "CREDITCARDNUMBER": {
+              "tp": 24,
+              "fp": 2,
+              "fn": 1,
+              "gold": 25,
+              "predicted": 26,
+              "precision": 0.9231,
+              "recall": 0.96,
+              "f1": 0.9412
+            },
+            "DATE": {
+              "tp": 105,
+              "fp": 1,
+              "fn": 0,
+              "gold": 105,
+              "predicted": 106,
+              "precision": 0.9906,
+              "recall": 1.0,
+              "f1": 0.9953
+            },
+            "DRIVERLICENSENUM": {
+              "tp": 16,
+              "fp": 5,
+              "fn": 3,
+              "gold": 19,
+              "predicted": 21,
+              "precision": 0.7619,
+              "recall": 0.8421,
+              "f1": 0.8
+            },
+            "EMAIL": {
+              "tp": 68,
+              "fp": 1,
+              "fn": 0,
+              "gold": 68,
+              "predicted": 69,
+              "precision": 0.9855,
+              "recall": 1.0,
+              "f1": 0.9927
+            },
+            "GENDER": {
+              "tp": 28,
+              "fp": 8,
+              "fn": 6,
+              "gold": 34,
+              "predicted": 36,
+              "precision": 0.7778,
+              "recall": 0.8235,
+              "f1": 0.8
+            },
+            "GIVENNAME": {
+              "tp": 109,
+              "fp": 0,
+              "fn": 0,
+              "gold": 109,
+              "predicted": 109,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IDCARDNUM": {
+              "tp": 21,
+              "fp": 6,
+              "fn": 7,
+              "gold": 28,
+              "predicted": 27,
+              "precision": 0.7778,
+              "recall": 0.75,
+              "f1": 0.7636
+            },
+            "PASSPORTNUM": {
+              "tp": 21,
+              "fp": 0,
+              "fn": 0,
+              "gold": 21,
+              "predicted": 21,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "SEX": {
+              "tp": 16,
+              "fp": 6,
+              "fn": 7,
+              "gold": 23,
+              "predicted": 22,
+              "precision": 0.7273,
+              "recall": 0.6957,
+              "f1": 0.7111
+            },
+            "SOCIALNUM": {
+              "tp": 12,
+              "fp": 8,
+              "fn": 3,
+              "gold": 15,
+              "predicted": 20,
+              "precision": 0.6,
+              "recall": 0.8,
+              "f1": 0.6857
+            },
+            "STREET": {
+              "tp": 48,
+              "fp": 0,
+              "fn": 0,
+              "gold": 48,
+              "predicted": 48,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "SURNAME": {
+              "tp": 87,
+              "fp": 0,
+              "fn": 0,
+              "gold": 87,
+              "predicted": 87,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "TAXNUM": {
+              "tp": 24,
+              "fp": 1,
+              "fn": 0,
+              "gold": 24,
+              "predicted": 25,
+              "precision": 0.96,
+              "recall": 1.0,
+              "f1": 0.9796
+            },
+            "TELEPHONENUM": {
+              "tp": 52,
+              "fp": 0,
+              "fn": 0,
+              "gold": 52,
+              "predicted": 52,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "TITLE": {
+              "tp": 62,
+              "fp": 0,
+              "fn": 0,
+              "gold": 62,
+              "predicted": 62,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "ZIPCODE": {
+              "tp": 40,
+              "fp": 0,
+              "fn": 0,
+              "gold": 40,
+              "predicted": 40,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 364.62,
+          "p95_latency_ms": 986.81,
+          "total_time_s": 43.82,
+          "docs_per_second": 2.28
+        },
+        "reproducibility_status": "Evaluated as exact character-span on raw publisher labels without private subword alignment script. Publisher model card reported token-level macro F1 (~0.98 TookaBERT / ~0.97 mBERT) is NOT EXACTLY REPRODUCIBLE at raw character level without publisher internal token-classification evaluation pipeline."
+      }
+    },
+    "dataset_a_canonical_exact_span": {
+      "fa_redact_deterministic": {
+        "display_name": "fa-redact Deterministic Core",
+        "metrics": {
+          "true_positives": 134,
+          "false_positives": 6,
+          "false_negatives": 677,
+          "precision": 0.9571,
+          "recall": 0.1652,
+          "f1": 0.2818,
+          "total_gold": 811,
+          "total_predicted": 140,
+          "relaxed_precision": 0.9571,
+          "relaxed_recall": 0.1652,
+          "relaxed_f1": 0.2818,
+          "entity_leakage_rate": 0.8348,
+          "document_leakage_rate": 0.99,
+          "documents_with_fp": 6,
+          "doc_fp_rate": 0.06,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 112,
+              "gold": 112,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "AGE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 46,
+              "gold": 46,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 10,
+              "fp": 0,
+              "fn": 15,
+              "gold": 25,
+              "predicted": 10,
+              "precision": 1.0,
+              "recall": 0.4,
+              "f1": 0.5714
+            },
+            "DATE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 105,
+              "gold": 105,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 68,
+              "fp": 0,
+              "fn": 0,
+              "gold": 68,
+              "predicted": 68,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "GENDER": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 57,
+              "gold": 57,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 4,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 4,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 28,
+              "fp": 0,
+              "fn": 24,
+              "gold": 52,
+              "predicted": 28,
+              "precision": 1.0,
+              "recall": 0.5385,
+              "f1": 0.7
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 28,
+              "fp": 2,
+              "fn": 0,
+              "gold": 28,
+              "predicted": 30,
+              "precision": 0.9333,
+              "recall": 1.0,
+              "f1": 0.9655
+            },
+            "LOCATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 64,
+              "gold": 64,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "OTHER_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 79,
+              "gold": 79,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 113,
+              "gold": 113,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 62,
+              "gold": 62,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 0.16,
+          "p95_latency_ms": 0.52,
+          "total_time_s": 0.02,
+          "docs_per_second": 5011.6
+        }
+      },
+      "fa_redact_current_ner": {
+        "display_name": "fa-redact PersianNERDetector (PEYMA)",
+        "metrics": {
+          "true_positives": 109,
+          "false_positives": 3,
+          "false_negatives": 702,
+          "precision": 0.9732,
+          "recall": 0.1344,
+          "f1": 0.2362,
+          "total_gold": 811,
+          "total_predicted": 112,
+          "relaxed_precision": 0.9821,
+          "relaxed_recall": 0.1356,
+          "relaxed_f1": 0.2384,
+          "entity_leakage_rate": 0.8656,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 3,
+          "doc_fp_rate": 0.03,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 1,
+          "affected_document_count": 1,
+          "exception_type_counts": {
+            "ValueError": 1
+          },
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 112,
+              "gold": 112,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "AGE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 46,
+              "gold": 46,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 25,
+              "gold": 25,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "DATE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 105,
+              "gold": 105,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 68,
+              "gold": 68,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "GENDER": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 57,
+              "gold": 57,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 52,
+              "gold": 52,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 28,
+              "gold": 28,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "LOCATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 64,
+              "gold": 64,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "OTHER_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 79,
+              "gold": 79,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 109,
+              "fp": 3,
+              "fn": 4,
+              "gold": 113,
+              "predicted": 112,
+              "precision": 0.9732,
+              "recall": 0.9646,
+              "f1": 0.9689
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 62,
+              "gold": 62,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 154.65,
+          "p95_latency_ms": 323.27,
+          "total_time_s": 17.03,
+          "docs_per_second": 5.87
+        }
+      },
+      "fa_redact_current_hybrid": {
+        "display_name": "fa-redact Current Hybrid (Deterministic + PEYMA NER)",
+        "metrics": {
+          "true_positives": 243,
+          "false_positives": 9,
+          "false_negatives": 568,
+          "precision": 0.9643,
+          "recall": 0.2996,
+          "f1": 0.4572,
+          "total_gold": 811,
+          "total_predicted": 252,
+          "relaxed_precision": 0.9683,
+          "relaxed_recall": 0.3009,
+          "relaxed_f1": 0.4591,
+          "entity_leakage_rate": 0.7004,
+          "document_leakage_rate": 0.99,
+          "documents_with_fp": 9,
+          "doc_fp_rate": 0.09,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 112,
+              "gold": 112,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "AGE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 46,
+              "gold": 46,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 10,
+              "fp": 0,
+              "fn": 15,
+              "gold": 25,
+              "predicted": 10,
+              "precision": 1.0,
+              "recall": 0.4,
+              "f1": 0.5714
+            },
+            "DATE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 105,
+              "gold": 105,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 68,
+              "fp": 0,
+              "fn": 0,
+              "gold": 68,
+              "predicted": 68,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "GENDER": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 57,
+              "gold": 57,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 4,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 4,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 28,
+              "fp": 0,
+              "fn": 24,
+              "gold": 52,
+              "predicted": 28,
+              "precision": 1.0,
+              "recall": 0.5385,
+              "f1": 0.7
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 28,
+              "fp": 2,
+              "fn": 0,
+              "gold": 28,
+              "predicted": 30,
+              "precision": 0.9333,
+              "recall": 1.0,
+              "f1": 0.9655
+            },
+            "LOCATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 64,
+              "gold": 64,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "OTHER_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 79,
+              "gold": 79,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 109,
+              "fp": 3,
+              "fn": 4,
+              "gold": 113,
+              "predicted": 112,
+              "precision": 0.9732,
+              "recall": 0.9646,
+              "f1": 0.9689
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 62,
+              "gold": 62,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 166.84,
+          "p95_latency_ms": 354.12,
+          "total_time_s": 18.33,
+          "docs_per_second": 5.46
+        }
+      },
+      "openmed_tookabert_wrapper": {
+        "display_name": "TookaBERT Large (Wrapper)",
+        "metrics": {
+          "true_positives": 800,
+          "false_positives": 17,
+          "false_negatives": 11,
+          "precision": 0.9792,
+          "recall": 0.9864,
+          "f1": 0.9828,
+          "total_gold": 811,
+          "total_predicted": 817,
+          "relaxed_precision": 0.9816,
+          "relaxed_recall": 0.9889,
+          "relaxed_f1": 0.9853,
+          "entity_leakage_rate": 0.0136,
+          "document_leakage_rate": 0.08,
+          "documents_with_fp": 9,
+          "doc_fp_rate": 0.09,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 111,
+              "fp": 1,
+              "fn": 1,
+              "gold": 112,
+              "predicted": 112,
+              "precision": 0.9911,
+              "recall": 0.9911,
+              "f1": 0.9911
+            },
+            "AGE": {
+              "tp": 44,
+              "fp": 4,
+              "fn": 2,
+              "gold": 46,
+              "predicted": 48,
+              "precision": 0.9167,
+              "recall": 0.9565,
+              "f1": 0.9362
+            },
+            "BANK_CARD": {
+              "tp": 25,
+              "fp": 0,
+              "fn": 0,
+              "gold": 25,
+              "predicted": 25,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "DATE": {
+              "tp": 105,
+              "fp": 0,
+              "fn": 0,
+              "gold": 105,
+              "predicted": 105,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "EMAIL": {
+              "tp": 68,
+              "fp": 0,
+              "fn": 0,
+              "gold": 68,
+              "predicted": 68,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "GENDER": {
+              "tp": 57,
+              "fp": 0,
+              "fn": 0,
+              "gold": 57,
+              "predicted": 57,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_MOBILE": {
+              "tp": 52,
+              "fp": 0,
+              "fn": 0,
+              "gold": 52,
+              "predicted": 52,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 24,
+              "fp": 6,
+              "fn": 4,
+              "gold": 28,
+              "predicted": 30,
+              "precision": 0.8,
+              "recall": 0.8571,
+              "f1": 0.8276
+            },
+            "LOCATION": {
+              "tp": 63,
+              "fp": 1,
+              "fn": 1,
+              "gold": 64,
+              "predicted": 64,
+              "precision": 0.9844,
+              "recall": 0.9844,
+              "f1": 0.9844
+            },
+            "OTHER_ID": {
+              "tp": 76,
+              "fp": 5,
+              "fn": 3,
+              "gold": 79,
+              "predicted": 81,
+              "precision": 0.9383,
+              "recall": 0.962,
+              "f1": 0.95
+            },
+            "PERSON": {
+              "tp": 113,
+              "fp": 0,
+              "fn": 0,
+              "gold": 113,
+              "predicted": 113,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "TITLE": {
+              "tp": 62,
+              "fp": 0,
+              "fn": 0,
+              "gold": 62,
+              "predicted": 62,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 1141.34,
+          "p95_latency_ms": 2216.3,
+          "total_time_s": 127.12,
+          "docs_per_second": 0.79
+        }
+      },
+      "openmed_mbert_wrapper": {
+        "display_name": "Google mBERT (Wrapper)",
+        "metrics": {
+          "true_positives": 794,
+          "false_positives": 19,
+          "false_negatives": 17,
+          "precision": 0.9766,
+          "recall": 0.979,
+          "f1": 0.9778,
+          "total_gold": 811,
+          "total_predicted": 813,
+          "relaxed_precision": 0.9803,
+          "relaxed_recall": 0.9827,
+          "relaxed_f1": 0.9815,
+          "entity_leakage_rate": 0.021,
+          "document_leakage_rate": 0.12,
+          "documents_with_fp": 12,
+          "doc_fp_rate": 0.12,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 112,
+              "fp": 1,
+              "fn": 0,
+              "gold": 112,
+              "predicted": 113,
+              "precision": 0.9912,
+              "recall": 1.0,
+              "f1": 0.9956
+            },
+            "AGE": {
+              "tp": 43,
+              "fp": 4,
+              "fn": 3,
+              "gold": 46,
+              "predicted": 47,
+              "precision": 0.9149,
+              "recall": 0.9348,
+              "f1": 0.9247
+            },
+            "BANK_CARD": {
+              "tp": 23,
+              "fp": 1,
+              "fn": 2,
+              "gold": 25,
+              "predicted": 24,
+              "precision": 0.9583,
+              "recall": 0.92,
+              "f1": 0.9388
+            },
+            "DATE": {
+              "tp": 105,
+              "fp": 0,
+              "fn": 0,
+              "gold": 105,
+              "predicted": 105,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "EMAIL": {
+              "tp": 68,
+              "fp": 0,
+              "fn": 0,
+              "gold": 68,
+              "predicted": 68,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "GENDER": {
+              "tp": 56,
+              "fp": 0,
+              "fn": 1,
+              "gold": 57,
+              "predicted": 56,
+              "precision": 1.0,
+              "recall": 0.9825,
+              "f1": 0.9912
+            },
+            "IR_MOBILE": {
+              "tp": 52,
+              "fp": 0,
+              "fn": 0,
+              "gold": 52,
+              "predicted": 52,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 21,
+              "fp": 5,
+              "fn": 7,
+              "gold": 28,
+              "predicted": 26,
+              "precision": 0.8077,
+              "recall": 0.75,
+              "f1": 0.7778
+            },
+            "LOCATION": {
+              "tp": 64,
+              "fp": 0,
+              "fn": 0,
+              "gold": 64,
+              "predicted": 64,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "OTHER_ID": {
+              "tp": 75,
+              "fp": 8,
+              "fn": 4,
+              "gold": 79,
+              "predicted": 83,
+              "precision": 0.9036,
+              "recall": 0.9494,
+              "f1": 0.9259
+            },
+            "PERSON": {
+              "tp": 113,
+              "fp": 0,
+              "fn": 0,
+              "gold": 113,
+              "predicted": 113,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "TITLE": {
+              "tp": 62,
+              "fp": 0,
+              "fn": 0,
+              "gold": 62,
+              "predicted": 62,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 323.43,
+          "p95_latency_ms": 691.15,
+          "total_time_s": 39.06,
+          "docs_per_second": 2.56
+        }
+      },
+      "parsikit_reconstructed": {
+        "display_name": "ParsiKit (v3.3.0) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 35,
+          "false_positives": 2,
+          "false_negatives": 776,
+          "precision": 0.9459,
+          "recall": 0.0432,
+          "f1": 0.0825,
+          "total_gold": 811,
+          "total_predicted": 37,
+          "relaxed_precision": 0.9459,
+          "relaxed_recall": 0.0432,
+          "relaxed_f1": 0.0825,
+          "entity_leakage_rate": 0.9568,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 2,
+          "doc_fp_rate": 0.02,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 1,
+          "affected_document_count": 1,
+          "exception_type_counts": {
+            "SyntaxError": 1
+          },
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 112,
+              "gold": 112,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "AGE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 46,
+              "gold": 46,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 25,
+              "gold": 25,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "DATE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 105,
+              "gold": 105,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 68,
+              "gold": 68,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "GENDER": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 57,
+              "gold": 57,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 11,
+              "fp": 0,
+              "fn": 41,
+              "gold": 52,
+              "predicted": 11,
+              "precision": 1.0,
+              "recall": 0.2115,
+              "f1": 0.3492
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 24,
+              "fp": 2,
+              "fn": 4,
+              "gold": 28,
+              "predicted": 26,
+              "precision": 0.9231,
+              "recall": 0.8571,
+              "f1": 0.8889
+            },
+            "LOCATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 64,
+              "gold": 64,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "OTHER_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 79,
+              "gold": 79,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 113,
+              "gold": 113,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 62,
+              "gold": 62,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 0.13,
+          "p95_latency_ms": 0.33,
+          "total_time_s": 0.04,
+          "docs_per_second": 2630.6
+        }
+      },
+      "persian_tools_reconstructed": {
+        "display_name": "py-persian-tools (v0.0.11) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 24,
+          "false_positives": 1,
+          "false_negatives": 787,
+          "precision": 0.96,
+          "recall": 0.0296,
+          "f1": 0.0574,
+          "total_gold": 811,
+          "total_predicted": 25,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 0.0308,
+          "relaxed_f1": 0.0598,
+          "entity_leakage_rate": 0.9704,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 1,
+          "doc_fp_rate": 0.01,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 112,
+              "gold": 112,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "AGE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 46,
+              "gold": 46,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 24,
+              "fp": 1,
+              "fn": 1,
+              "gold": 25,
+              "predicted": 25,
+              "precision": 0.96,
+              "recall": 0.96,
+              "f1": 0.96
+            },
+            "DATE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 105,
+              "gold": 105,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 68,
+              "gold": 68,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "GENDER": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 57,
+              "gold": 57,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 52,
+              "gold": 52,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 28,
+              "gold": 28,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "LOCATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 64,
+              "gold": 64,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "OTHER_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 79,
+              "gold": 79,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 113,
+              "gold": 113,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 62,
+              "gold": 62,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 0.02,
+          "p95_latency_ms": 0.12,
+          "total_time_s": 0.0,
+          "docs_per_second": 25647.61
+        }
+      }
+    },
+    "dataset_b_all_entities": {
+      "fa_redact_deterministic": {
+        "display_name": "fa-redact Deterministic Core",
+        "metrics": {
+          "true_positives": 145,
+          "false_positives": 3,
+          "false_negatives": 66,
+          "precision": 0.9797,
+          "recall": 0.6872,
+          "f1": 0.8078,
+          "total_gold": 211,
+          "total_predicted": 148,
+          "relaxed_precision": 0.9797,
+          "relaxed_recall": 0.6872,
+          "relaxed_f1": 0.8078,
+          "entity_leakage_rate": 0.3128,
+          "document_leakage_rate": 0.3704,
+          "documents_with_fp": 3,
+          "doc_fp_rate": 0.02,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 10,
+              "gold": 10,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 25,
+              "fp": 0,
+              "fn": 5,
+              "gold": 30,
+              "predicted": 25,
+              "precision": 1.0,
+              "recall": 0.8333,
+              "f1": 0.9091
+            },
+            "EMAIL": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_IBAN": {
+              "tp": 15,
+              "fp": 0,
+              "fn": 0,
+              "gold": 15,
+              "predicted": 15,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 15,
+              "fp": 3,
+              "fn": 0,
+              "gold": 15,
+              "predicted": 18,
+              "precision": 0.8333,
+              "recall": 1.0,
+              "f1": 0.9091
+            },
+            "IR_MOBILE": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "LOCATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 5,
+              "gold": 5,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 16,
+              "gold": 16,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 0.05,
+          "p95_latency_ms": 0.18,
+          "total_time_s": 0.01,
+          "docs_per_second": 17435.17
+        }
+      },
+      "fa_redact_current_ner": {
+        "display_name": "fa-redact PersianNERDetector (PEYMA)",
+        "metrics": {
+          "true_positives": 30,
+          "false_positives": 0,
+          "false_negatives": 181,
+          "precision": 1.0,
+          "recall": 0.1422,
+          "f1": 0.249,
+          "total_gold": 211,
+          "total_predicted": 30,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 0.1422,
+          "relaxed_f1": 0.249,
+          "entity_leakage_rate": 0.8578,
+          "document_leakage_rate": 0.9481,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 10,
+              "gold": 10,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_IBAN": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "LOCATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 5,
+              "gold": 5,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 16,
+              "gold": 16,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 74.53,
+          "p95_latency_ms": 109.25,
+          "total_time_s": 11.05,
+          "docs_per_second": 13.57
+        }
+      },
+      "fa_redact_current_hybrid": {
+        "display_name": "fa-redact Current Hybrid (Deterministic + PEYMA NER)",
+        "metrics": {
+          "true_positives": 175,
+          "false_positives": 3,
+          "false_negatives": 36,
+          "precision": 0.9831,
+          "recall": 0.8294,
+          "f1": 0.8997,
+          "total_gold": 211,
+          "total_predicted": 178,
+          "relaxed_precision": 0.9831,
+          "relaxed_recall": 0.8294,
+          "relaxed_f1": 0.8997,
+          "entity_leakage_rate": 0.1706,
+          "document_leakage_rate": 0.2667,
+          "documents_with_fp": 3,
+          "doc_fp_rate": 0.02,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 10,
+              "gold": 10,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 25,
+              "fp": 0,
+              "fn": 5,
+              "gold": 30,
+              "predicted": 25,
+              "precision": 1.0,
+              "recall": 0.8333,
+              "f1": 0.9091
+            },
+            "EMAIL": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_IBAN": {
+              "tp": 15,
+              "fp": 0,
+              "fn": 0,
+              "gold": 15,
+              "predicted": 15,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 15,
+              "fp": 3,
+              "fn": 0,
+              "gold": 15,
+              "predicted": 18,
+              "precision": 0.8333,
+              "recall": 1.0,
+              "f1": 0.9091
+            },
+            "IR_MOBILE": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "LOCATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 5,
+              "gold": 5,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 16,
+              "gold": 16,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 57.9,
+          "p95_latency_ms": 101.64,
+          "total_time_s": 10.28,
+          "docs_per_second": 14.59
+        }
+      },
+      "openmed_tookabert_wrapper": {
+        "display_name": "TookaBERT Large (Wrapper)",
+        "metrics": {
+          "true_positives": 132,
+          "false_positives": 117,
+          "false_negatives": 79,
+          "precision": 0.5301,
+          "recall": 0.6256,
+          "f1": 0.5739,
+          "total_gold": 211,
+          "total_predicted": 249,
+          "relaxed_precision": 0.5944,
+          "relaxed_recall": 0.7014,
+          "relaxed_f1": 0.6435,
+          "entity_leakage_rate": 0.3744,
+          "document_leakage_rate": 0.5407,
+          "documents_with_fp": 66,
+          "doc_fp_rate": 0.44,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 30,
+              "fn": 10,
+              "gold": 10,
+              "predicted": 30,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "AGE": {
+              "tp": 0,
+              "fp": 4,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 4,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 30,
+              "fp": 17,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 47,
+              "precision": 0.6383,
+              "recall": 1.0,
+              "f1": 0.7792
+            },
+            "DATE": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 16,
+              "fp": 7,
+              "fn": 14,
+              "gold": 30,
+              "predicted": 23,
+              "precision": 0.6957,
+              "recall": 0.5333,
+              "f1": 0.6038
+            },
+            "IR_IBAN": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 20,
+              "fp": 15,
+              "fn": 10,
+              "gold": 30,
+              "predicted": 35,
+              "precision": 0.5714,
+              "recall": 0.6667,
+              "f1": 0.6154
+            },
+            "LOCATION": {
+              "tp": 5,
+              "fp": 13,
+              "fn": 0,
+              "gold": 5,
+              "predicted": 18,
+              "precision": 0.2778,
+              "recall": 1.0,
+              "f1": 0.4348
+            },
+            "OTHER_ID": {
+              "tp": 0,
+              "fp": 25,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 25,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 27,
+              "fp": 5,
+              "fn": 3,
+              "gold": 30,
+              "predicted": 32,
+              "precision": 0.8438,
+              "recall": 0.9,
+              "f1": 0.871
+            },
+            "TITLE": {
+              "tp": 4,
+              "fp": 0,
+              "fn": 12,
+              "gold": 16,
+              "predicted": 4,
+              "precision": 1.0,
+              "recall": 0.25,
+              "f1": 0.4
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 1221.84,
+          "p95_latency_ms": 1680.12,
+          "total_time_s": 191.37,
+          "docs_per_second": 0.78
+        }
+      },
+      "openmed_mbert_wrapper": {
+        "display_name": "Google mBERT (Wrapper)",
+        "metrics": {
+          "true_positives": 125,
+          "false_positives": 92,
+          "false_negatives": 86,
+          "precision": 0.576,
+          "recall": 0.5924,
+          "f1": 0.5841,
+          "total_gold": 211,
+          "total_predicted": 217,
+          "relaxed_precision": 0.6682,
+          "relaxed_recall": 0.6872,
+          "relaxed_f1": 0.6776,
+          "entity_leakage_rate": 0.4076,
+          "document_leakage_rate": 0.5778,
+          "documents_with_fp": 60,
+          "doc_fp_rate": 0.4,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 25,
+              "fn": 10,
+              "gold": 10,
+              "predicted": 25,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "AGE": {
+              "tp": 0,
+              "fp": 5,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 5,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 30,
+              "fp": 16,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 46,
+              "precision": 0.6522,
+              "recall": 1.0,
+              "f1": 0.7895
+            },
+            "DATE": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 8,
+              "fp": 11,
+              "fn": 22,
+              "gold": 30,
+              "predicted": 19,
+              "precision": 0.4211,
+              "recall": 0.2667,
+              "f1": 0.3265
+            },
+            "IR_IBAN": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 30,
+              "fp": 1,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 31,
+              "precision": 0.9677,
+              "recall": 1.0,
+              "f1": 0.9836
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 19,
+              "fp": 1,
+              "fn": 11,
+              "gold": 30,
+              "predicted": 20,
+              "precision": 0.95,
+              "recall": 0.6333,
+              "f1": 0.76
+            },
+            "LOCATION": {
+              "tp": 5,
+              "fp": 12,
+              "fn": 0,
+              "gold": 5,
+              "predicted": 17,
+              "precision": 0.2941,
+              "recall": 1.0,
+              "f1": 0.4545
+            },
+            "OTHER_ID": {
+              "tp": 0,
+              "fp": 16,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 16,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 29,
+              "fp": 4,
+              "fn": 1,
+              "gold": 30,
+              "predicted": 33,
+              "precision": 0.8788,
+              "recall": 0.9667,
+              "f1": 0.9206
+            },
+            "TITLE": {
+              "tp": 4,
+              "fp": 0,
+              "fn": 12,
+              "gold": 16,
+              "predicted": 4,
+              "precision": 1.0,
+              "recall": 0.25,
+              "f1": 0.4
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 375.15,
+          "p95_latency_ms": 498.61,
+          "total_time_s": 58.81,
+          "docs_per_second": 2.55
+        }
+      },
+      "parsikit_reconstructed": {
+        "display_name": "ParsiKit (v3.3.0) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 40,
+          "false_positives": 0,
+          "false_negatives": 171,
+          "precision": 1.0,
+          "recall": 0.1896,
+          "f1": 0.3187,
+          "total_gold": 211,
+          "total_predicted": 40,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 0.1896,
+          "relaxed_f1": 0.3187,
+          "entity_leakage_rate": 0.8104,
+          "document_leakage_rate": 0.9259,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 10,
+              "gold": 10,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_IBAN": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 20,
+              "fp": 0,
+              "fn": 10,
+              "gold": 30,
+              "predicted": 20,
+              "precision": 1.0,
+              "recall": 0.6667,
+              "f1": 0.8
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 20,
+              "fp": 0,
+              "fn": 10,
+              "gold": 30,
+              "predicted": 20,
+              "precision": 1.0,
+              "recall": 0.6667,
+              "f1": 0.8
+            },
+            "LOCATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 5,
+              "gold": 5,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 16,
+              "gold": 16,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 0.05,
+          "p95_latency_ms": 0.31,
+          "total_time_s": 0.01,
+          "docs_per_second": 10902.67
+        }
+      },
+      "persian_tools_reconstructed": {
+        "display_name": "py-persian-tools (v0.0.11) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 30,
+          "false_positives": 0,
+          "false_negatives": 181,
+          "precision": 1.0,
+          "recall": 0.1422,
+          "f1": 0.249,
+          "total_gold": 211,
+          "total_predicted": 30,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 0.1422,
+          "relaxed_f1": 0.249,
+          "entity_leakage_rate": 0.8578,
+          "document_leakage_rate": 0.8889,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 10,
+              "gold": 10,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_IBAN": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "LOCATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 5,
+              "gold": 5,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 16,
+              "gold": 16,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 0.01,
+          "p95_latency_ms": 0.13,
+          "total_time_s": 0.0,
+          "docs_per_second": 32314.35
+        }
+      }
+    },
+    "dataset_b_common_capabilities": {
+      "fa_redact_deterministic": {
+        "display_name": "fa-redact Deterministic Core",
+        "metrics": {
+          "true_positives": 145,
+          "false_positives": 3,
+          "false_negatives": 5,
+          "precision": 0.9797,
+          "recall": 0.9667,
+          "f1": 0.9732,
+          "total_gold": 150,
+          "total_predicted": 148,
+          "relaxed_precision": 0.9797,
+          "relaxed_recall": 0.9667,
+          "relaxed_f1": 0.9732,
+          "entity_leakage_rate": 0.0333,
+          "document_leakage_rate": 0.0476,
+          "documents_with_fp": 3,
+          "doc_fp_rate": 0.02,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 25,
+              "fp": 0,
+              "fn": 5,
+              "gold": 30,
+              "predicted": 25,
+              "precision": 1.0,
+              "recall": 0.8333,
+              "f1": 0.9091
+            },
+            "EMAIL": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_IBAN": {
+              "tp": 15,
+              "fp": 0,
+              "fn": 0,
+              "gold": 15,
+              "predicted": 15,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 15,
+              "fp": 3,
+              "fn": 0,
+              "gold": 15,
+              "predicted": 18,
+              "precision": 0.8333,
+              "recall": 1.0,
+              "f1": 0.9091
+            },
+            "IR_MOBILE": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        }
+      },
+      "fa_redact_current_ner": {
+        "display_name": "fa-redact PersianNERDetector (PEYMA)",
+        "metrics": {
+          "true_positives": 0,
+          "false_positives": 0,
+          "false_negatives": 150,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "total_gold": 150,
+          "total_predicted": 0,
+          "relaxed_precision": 0.0,
+          "relaxed_recall": 0.0,
+          "relaxed_f1": 0.0,
+          "entity_leakage_rate": 1.0,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_IBAN": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        }
+      },
+      "fa_redact_current_hybrid": {
+        "display_name": "fa-redact Current Hybrid (Deterministic + PEYMA NER)",
+        "metrics": {
+          "true_positives": 145,
+          "false_positives": 3,
+          "false_negatives": 5,
+          "precision": 0.9797,
+          "recall": 0.9667,
+          "f1": 0.9732,
+          "total_gold": 150,
+          "total_predicted": 148,
+          "relaxed_precision": 0.9797,
+          "relaxed_recall": 0.9667,
+          "relaxed_f1": 0.9732,
+          "entity_leakage_rate": 0.0333,
+          "document_leakage_rate": 0.0476,
+          "documents_with_fp": 3,
+          "doc_fp_rate": 0.02,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 25,
+              "fp": 0,
+              "fn": 5,
+              "gold": 30,
+              "predicted": 25,
+              "precision": 1.0,
+              "recall": 0.8333,
+              "f1": 0.9091
+            },
+            "EMAIL": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_IBAN": {
+              "tp": 15,
+              "fp": 0,
+              "fn": 0,
+              "gold": 15,
+              "predicted": 15,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 15,
+              "fp": 3,
+              "fn": 0,
+              "gold": 15,
+              "predicted": 18,
+              "precision": 0.8333,
+              "recall": 1.0,
+              "f1": 0.9091
+            },
+            "IR_MOBILE": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        }
+      },
+      "openmed_tookabert_wrapper": {
+        "display_name": "TookaBERT Large (Wrapper)",
+        "metrics": {
+          "true_positives": 96,
+          "false_positives": 39,
+          "false_negatives": 54,
+          "precision": 0.7111,
+          "recall": 0.64,
+          "f1": 0.6737,
+          "total_gold": 150,
+          "total_predicted": 135,
+          "relaxed_precision": 0.7333,
+          "relaxed_recall": 0.66,
+          "relaxed_f1": 0.6947,
+          "entity_leakage_rate": 0.36,
+          "document_leakage_rate": 0.5143,
+          "documents_with_fp": 35,
+          "doc_fp_rate": 0.2333,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 30,
+              "fp": 17,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 47,
+              "precision": 0.6383,
+              "recall": 1.0,
+              "f1": 0.7792
+            },
+            "EMAIL": {
+              "tp": 16,
+              "fp": 7,
+              "fn": 14,
+              "gold": 30,
+              "predicted": 23,
+              "precision": 0.6957,
+              "recall": 0.5333,
+              "f1": 0.6038
+            },
+            "IR_IBAN": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 20,
+              "fp": 15,
+              "fn": 10,
+              "gold": 30,
+              "predicted": 35,
+              "precision": 0.5714,
+              "recall": 0.6667,
+              "f1": 0.6154
+            }
+          }
+        }
+      },
+      "openmed_mbert_wrapper": {
+        "display_name": "Google mBERT (Wrapper)",
+        "metrics": {
+          "true_positives": 87,
+          "false_positives": 29,
+          "false_negatives": 63,
+          "precision": 0.75,
+          "recall": 0.58,
+          "f1": 0.6541,
+          "total_gold": 150,
+          "total_predicted": 116,
+          "relaxed_precision": 0.8276,
+          "relaxed_recall": 0.64,
+          "relaxed_f1": 0.7218,
+          "entity_leakage_rate": 0.42,
+          "document_leakage_rate": 0.5905,
+          "documents_with_fp": 27,
+          "doc_fp_rate": 0.18,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 30,
+              "fp": 16,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 46,
+              "precision": 0.6522,
+              "recall": 1.0,
+              "f1": 0.7895
+            },
+            "EMAIL": {
+              "tp": 8,
+              "fp": 11,
+              "fn": 22,
+              "gold": 30,
+              "predicted": 19,
+              "precision": 0.4211,
+              "recall": 0.2667,
+              "f1": 0.3265
+            },
+            "IR_IBAN": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 30,
+              "fp": 1,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 31,
+              "precision": 0.9677,
+              "recall": 1.0,
+              "f1": 0.9836
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 19,
+              "fp": 1,
+              "fn": 11,
+              "gold": 30,
+              "predicted": 20,
+              "precision": 0.95,
+              "recall": 0.6333,
+              "f1": 0.76
+            }
+          }
+        }
+      },
+      "parsikit_reconstructed": {
+        "display_name": "ParsiKit (v3.3.0) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 40,
+          "false_positives": 0,
+          "false_negatives": 110,
+          "precision": 1.0,
+          "recall": 0.2667,
+          "f1": 0.4211,
+          "total_gold": 150,
+          "total_predicted": 40,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 0.2667,
+          "relaxed_f1": 0.4211,
+          "entity_leakage_rate": 0.7333,
+          "document_leakage_rate": 0.9048,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_IBAN": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 20,
+              "fp": 0,
+              "fn": 10,
+              "gold": 30,
+              "predicted": 20,
+              "precision": 1.0,
+              "recall": 0.6667,
+              "f1": 0.8
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 20,
+              "fp": 0,
+              "fn": 10,
+              "gold": 30,
+              "predicted": 20,
+              "precision": 1.0,
+              "recall": 0.6667,
+              "f1": 0.8
+            }
+          }
+        }
+      },
+      "persian_tools_reconstructed": {
+        "display_name": "py-persian-tools (v0.0.11) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 30,
+          "false_positives": 0,
+          "false_negatives": 120,
+          "precision": 1.0,
+          "recall": 0.2,
+          "f1": 0.3333,
+          "total_gold": 150,
+          "total_predicted": 30,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 0.2,
+          "relaxed_f1": 0.3333,
+          "entity_leakage_rate": 0.8,
+          "document_leakage_rate": 0.8571,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_IBAN": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        }
+      }
+    },
+    "dataset_b_person_only": {
+      "fa_redact_deterministic": {
+        "display_name": "fa-redact Deterministic Core",
+        "metrics": {
+          "true_positives": 0,
+          "false_positives": 0,
+          "false_negatives": 30,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "total_gold": 30,
+          "total_predicted": 0,
+          "relaxed_precision": 0.0,
+          "relaxed_recall": 0.0,
+          "relaxed_f1": 0.0,
+          "entity_leakage_rate": 1.0,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        }
+      },
+      "fa_redact_current_ner": {
+        "display_name": "fa-redact PersianNERDetector (PEYMA)",
+        "metrics": {
+          "true_positives": 30,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "total_gold": 30,
+          "total_predicted": 30,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 1.0,
+          "relaxed_f1": 1.0,
+          "entity_leakage_rate": 0.0,
+          "document_leakage_rate": 0.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        }
+      },
+      "fa_redact_current_hybrid": {
+        "display_name": "fa-redact Current Hybrid (Deterministic + PEYMA NER)",
+        "metrics": {
+          "true_positives": 30,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "total_gold": 30,
+          "total_predicted": 30,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 1.0,
+          "relaxed_f1": 1.0,
+          "entity_leakage_rate": 0.0,
+          "document_leakage_rate": 0.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        }
+      },
+      "openmed_tookabert_wrapper": {
+        "display_name": "TookaBERT Large (Wrapper)",
+        "metrics": {
+          "true_positives": 27,
+          "false_positives": 5,
+          "false_negatives": 3,
+          "precision": 0.8438,
+          "recall": 0.9,
+          "f1": 0.871,
+          "total_gold": 30,
+          "total_predicted": 32,
+          "relaxed_precision": 0.9375,
+          "relaxed_recall": 1.0,
+          "relaxed_f1": 0.9677,
+          "entity_leakage_rate": 0.1,
+          "document_leakage_rate": 0.1,
+          "documents_with_fp": 5,
+          "doc_fp_rate": 0.0333,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 27,
+              "fp": 5,
+              "fn": 3,
+              "gold": 30,
+              "predicted": 32,
+              "precision": 0.8438,
+              "recall": 0.9,
+              "f1": 0.871
+            }
+          }
+        }
+      },
+      "openmed_mbert_wrapper": {
+        "display_name": "Google mBERT (Wrapper)",
+        "metrics": {
+          "true_positives": 29,
+          "false_positives": 4,
+          "false_negatives": 1,
+          "precision": 0.8788,
+          "recall": 0.9667,
+          "f1": 0.9206,
+          "total_gold": 30,
+          "total_predicted": 33,
+          "relaxed_precision": 0.9091,
+          "relaxed_recall": 1.0,
+          "relaxed_f1": 0.9524,
+          "entity_leakage_rate": 0.0333,
+          "document_leakage_rate": 0.0333,
+          "documents_with_fp": 4,
+          "doc_fp_rate": 0.0267,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 29,
+              "fp": 4,
+              "fn": 1,
+              "gold": 30,
+              "predicted": 33,
+              "precision": 0.8788,
+              "recall": 0.9667,
+              "f1": 0.9206
+            }
+          }
+        }
+      },
+      "parsikit_reconstructed": {
+        "display_name": "ParsiKit (v3.3.0) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 0,
+          "false_positives": 0,
+          "false_negatives": 30,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "total_gold": 30,
+          "total_predicted": 0,
+          "relaxed_precision": 0.0,
+          "relaxed_recall": 0.0,
+          "relaxed_f1": 0.0,
+          "entity_leakage_rate": 1.0,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        }
+      },
+      "persian_tools_reconstructed": {
+        "display_name": "py-persian-tools (v0.0.11) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 0,
+          "false_positives": 0,
+          "false_negatives": 30,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "total_gold": 30,
+          "total_predicted": 0,
+          "relaxed_precision": 0.0,
+          "relaxed_recall": 0.0,
+          "relaxed_f1": 0.0,
+          "entity_leakage_rate": 1.0,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        }
+      }
+    },
+    "dataset_c_all_entities": {
+      "fa_redact_deterministic": {
+        "display_name": "fa-redact Deterministic Core",
+        "metrics": {
+          "true_positives": 330,
+          "false_positives": 14,
+          "false_negatives": 495,
+          "precision": 0.9593,
+          "recall": 0.4,
+          "f1": 0.5646,
+          "total_gold": 825,
+          "total_predicted": 344,
+          "relaxed_precision": 0.9593,
+          "relaxed_recall": 0.4,
+          "relaxed_f1": 0.5646,
+          "entity_leakage_rate": 0.6,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 14,
+          "doc_fp_rate": 0.1167,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 60,
+              "fp": 0,
+              "fn": 0,
+              "gold": 60,
+              "predicted": 60,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "EMAIL": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 14,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 14,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "ORGANIZATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 105,
+              "gold": 105,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 255,
+              "gold": 255,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 0.17,
+          "p95_latency_ms": 0.29,
+          "total_time_s": 0.02,
+          "docs_per_second": 5256.59
+        }
+      },
+      "fa_redact_current_ner": {
+        "display_name": "fa-redact PersianNERDetector (PEYMA)",
+        "metrics": {
+          "true_positives": 255,
+          "false_positives": 0,
+          "false_negatives": 570,
+          "precision": 1.0,
+          "recall": 0.3091,
+          "f1": 0.4722,
+          "total_gold": 825,
+          "total_predicted": 255,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 0.3091,
+          "relaxed_f1": 0.4722,
+          "entity_leakage_rate": 0.6909,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 60,
+              "gold": 60,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "ORGANIZATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 105,
+              "gold": 105,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 255,
+              "fp": 0,
+              "fn": 0,
+              "gold": 255,
+              "predicted": 255,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 147.95,
+          "p95_latency_ms": 263.19,
+          "total_time_s": 19.43,
+          "docs_per_second": 6.18
+        }
+      },
+      "fa_redact_current_hybrid": {
+        "display_name": "fa-redact Current Hybrid (Deterministic + PEYMA NER)",
+        "metrics": {
+          "true_positives": 585,
+          "false_positives": 14,
+          "false_negatives": 240,
+          "precision": 0.9766,
+          "recall": 0.7091,
+          "f1": 0.8216,
+          "total_gold": 825,
+          "total_predicted": 599,
+          "relaxed_precision": 0.9766,
+          "relaxed_recall": 0.7091,
+          "relaxed_f1": 0.8216,
+          "entity_leakage_rate": 0.2909,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 14,
+          "doc_fp_rate": 0.1167,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 60,
+              "fp": 0,
+              "fn": 0,
+              "gold": 60,
+              "predicted": 60,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "EMAIL": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 14,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 14,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "ORGANIZATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 105,
+              "gold": 105,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 255,
+              "fp": 0,
+              "fn": 0,
+              "gold": 255,
+              "predicted": 255,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 158.61,
+          "p95_latency_ms": 223.9,
+          "total_time_s": 19.77,
+          "docs_per_second": 6.07
+        }
+      },
+      "openmed_tookabert_wrapper": {
+        "display_name": "TookaBERT Large (Wrapper)",
+        "metrics": {
+          "true_positives": 574,
+          "false_positives": 142,
+          "false_negatives": 251,
+          "precision": 0.8017,
+          "recall": 0.6958,
+          "f1": 0.745,
+          "total_gold": 825,
+          "total_predicted": 716,
+          "relaxed_precision": 0.838,
+          "relaxed_recall": 0.7273,
+          "relaxed_f1": 0.7787,
+          "entity_leakage_rate": 0.3042,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 84,
+          "doc_fp_rate": 0.7,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 55,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 55,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "AGE": {
+              "tp": 0,
+              "fp": 15,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 15,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 60,
+              "fp": 0,
+              "fn": 0,
+              "gold": 60,
+              "predicted": 60,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "EMAIL": {
+              "tp": 20,
+              "fp": 19,
+              "fn": 10,
+              "gold": 30,
+              "predicted": 39,
+              "precision": 0.5128,
+              "recall": 0.6667,
+              "f1": 0.5797
+            },
+            "IR_MOBILE": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 119,
+              "fp": 2,
+              "fn": 1,
+              "gold": 120,
+              "predicted": 121,
+              "precision": 0.9835,
+              "recall": 0.9917,
+              "f1": 0.9876
+            },
+            "LOCATION": {
+              "tp": 0,
+              "fp": 50,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 50,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "ORGANIZATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 105,
+              "gold": 105,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "OTHER_ID": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 255,
+              "fp": 0,
+              "fn": 0,
+              "gold": 255,
+              "predicted": 255,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 1183.03,
+          "p95_latency_ms": 1434.01,
+          "total_time_s": 146.12,
+          "docs_per_second": 0.82
+        }
+      },
+      "openmed_mbert_wrapper": {
+        "display_name": "Google mBERT (Wrapper)",
+        "metrics": {
+          "true_positives": 499,
+          "false_positives": 350,
+          "false_negatives": 326,
+          "precision": 0.5878,
+          "recall": 0.6048,
+          "f1": 0.5962,
+          "total_gold": 825,
+          "total_predicted": 849,
+          "relaxed_precision": 0.6372,
+          "relaxed_recall": 0.6558,
+          "relaxed_f1": 0.6464,
+          "entity_leakage_rate": 0.3952,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 115,
+          "doc_fp_rate": 0.9583,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 49,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 49,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "AGE": {
+              "tp": 0,
+              "fp": 148,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 148,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 60,
+              "fp": 0,
+              "fn": 0,
+              "gold": 60,
+              "predicted": 60,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 64,
+              "fp": 35,
+              "fn": 56,
+              "gold": 120,
+              "predicted": 99,
+              "precision": 0.6465,
+              "recall": 0.5333,
+              "f1": 0.5845
+            },
+            "LOCATION": {
+              "tp": 0,
+              "fp": 31,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 31,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "ORGANIZATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 105,
+              "gold": 105,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "OTHER_ID": {
+              "tp": 0,
+              "fp": 57,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 57,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 255,
+              "fp": 30,
+              "fn": 0,
+              "gold": 255,
+              "predicted": 285,
+              "precision": 0.8947,
+              "recall": 1.0,
+              "f1": 0.9444
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 369.47,
+          "p95_latency_ms": 501.69,
+          "total_time_s": 46.61,
+          "docs_per_second": 2.57
+        }
+      },
+      "parsikit_reconstructed": {
+        "display_name": "ParsiKit (v3.3.0) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 240,
+          "false_positives": 0,
+          "false_negatives": 585,
+          "precision": 1.0,
+          "recall": 0.2909,
+          "f1": 0.4507,
+          "total_gold": 825,
+          "total_predicted": 240,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 0.2909,
+          "relaxed_f1": 0.4507,
+          "entity_leakage_rate": 0.7091,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 60,
+              "gold": 60,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "ORGANIZATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 105,
+              "gold": 105,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 255,
+              "gold": 255,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 0.32,
+          "p95_latency_ms": 0.55,
+          "total_time_s": 0.04,
+          "docs_per_second": 2954.82
+        }
+      },
+      "persian_tools_reconstructed": {
+        "display_name": "py-persian-tools (v0.0.11) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 45,
+          "false_positives": 15,
+          "false_negatives": 780,
+          "precision": 0.75,
+          "recall": 0.0545,
+          "f1": 0.1017,
+          "total_gold": 825,
+          "total_predicted": 60,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 0.0727,
+          "relaxed_f1": 0.1356,
+          "entity_leakage_rate": 0.9455,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 15,
+          "doc_fp_rate": 0.125,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "ADDRESS": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "gold": 15,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "BANK_CARD": {
+              "tp": 45,
+              "fp": 15,
+              "fn": 15,
+              "gold": 60,
+              "predicted": 60,
+              "precision": 0.75,
+              "recall": 0.75,
+              "f1": 0.75
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "ORGANIZATION": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 105,
+              "gold": 105,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 255,
+              "gold": 255,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "TITLE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        },
+        "performance": {
+          "median_latency_ms": 0.09,
+          "p95_latency_ms": 0.15,
+          "total_time_s": 0.01,
+          "docs_per_second": 14419.61
+        }
+      }
+    },
+    "dataset_c_common_capabilities": {
+      "fa_redact_deterministic": {
+        "display_name": "fa-redact Deterministic Core",
+        "metrics": {
+          "true_positives": 330,
+          "false_positives": 14,
+          "false_negatives": 0,
+          "precision": 0.9593,
+          "recall": 1.0,
+          "f1": 0.9792,
+          "total_gold": 330,
+          "total_predicted": 344,
+          "relaxed_precision": 0.9593,
+          "relaxed_recall": 1.0,
+          "relaxed_f1": 0.9792,
+          "entity_leakage_rate": 0.0,
+          "document_leakage_rate": 0.0,
+          "documents_with_fp": 14,
+          "doc_fp_rate": 0.1167,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 60,
+              "fp": 0,
+              "fn": 0,
+              "gold": 60,
+              "predicted": 60,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "EMAIL": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 14,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 14,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        }
+      },
+      "fa_redact_current_ner": {
+        "display_name": "fa-redact PersianNERDetector (PEYMA)",
+        "metrics": {
+          "true_positives": 0,
+          "false_positives": 0,
+          "false_negatives": 330,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "total_gold": 330,
+          "total_predicted": 0,
+          "relaxed_precision": 0.0,
+          "relaxed_recall": 0.0,
+          "relaxed_f1": 0.0,
+          "entity_leakage_rate": 1.0,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 60,
+              "gold": 60,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        }
+      },
+      "fa_redact_current_hybrid": {
+        "display_name": "fa-redact Current Hybrid (Deterministic + PEYMA NER)",
+        "metrics": {
+          "true_positives": 330,
+          "false_positives": 14,
+          "false_negatives": 0,
+          "precision": 0.9593,
+          "recall": 1.0,
+          "f1": 0.9792,
+          "total_gold": 330,
+          "total_predicted": 344,
+          "relaxed_precision": 0.9593,
+          "relaxed_recall": 1.0,
+          "relaxed_f1": 0.9792,
+          "entity_leakage_rate": 0.0,
+          "document_leakage_rate": 0.0,
+          "documents_with_fp": 14,
+          "doc_fp_rate": 0.1167,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 60,
+              "fp": 0,
+              "fn": 0,
+              "gold": 60,
+              "predicted": 60,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "EMAIL": {
+              "tp": 30,
+              "fp": 0,
+              "fn": 0,
+              "gold": 30,
+              "predicted": 30,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_LEGAL_ENTITY_ID": {
+              "tp": 0,
+              "fp": 14,
+              "fn": 0,
+              "gold": 0,
+              "predicted": 14,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        }
+      },
+      "openmed_tookabert_wrapper": {
+        "display_name": "TookaBERT Large (Wrapper)",
+        "metrics": {
+          "true_positives": 319,
+          "false_positives": 21,
+          "false_negatives": 11,
+          "precision": 0.9382,
+          "recall": 0.9667,
+          "f1": 0.9522,
+          "total_gold": 330,
+          "total_predicted": 340,
+          "relaxed_precision": 0.9706,
+          "relaxed_recall": 1.0,
+          "relaxed_f1": 0.9851,
+          "entity_leakage_rate": 0.0333,
+          "document_leakage_rate": 0.0917,
+          "documents_with_fp": 11,
+          "doc_fp_rate": 0.0917,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 60,
+              "fp": 0,
+              "fn": 0,
+              "gold": 60,
+              "predicted": 60,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "EMAIL": {
+              "tp": 20,
+              "fp": 19,
+              "fn": 10,
+              "gold": 30,
+              "predicted": 39,
+              "precision": 0.5128,
+              "recall": 0.6667,
+              "f1": 0.5797
+            },
+            "IR_MOBILE": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 119,
+              "fp": 2,
+              "fn": 1,
+              "gold": 120,
+              "predicted": 121,
+              "precision": 0.9835,
+              "recall": 0.9917,
+              "f1": 0.9876
+            }
+          }
+        }
+      },
+      "openmed_mbert_wrapper": {
+        "display_name": "Google mBERT (Wrapper)",
+        "metrics": {
+          "true_positives": 244,
+          "false_positives": 35,
+          "false_negatives": 86,
+          "precision": 0.8746,
+          "recall": 0.7394,
+          "f1": 0.8013,
+          "total_gold": 330,
+          "total_predicted": 279,
+          "relaxed_precision": 0.9713,
+          "relaxed_recall": 0.8212,
+          "relaxed_f1": 0.89,
+          "entity_leakage_rate": 0.2606,
+          "document_leakage_rate": 0.5917,
+          "documents_with_fp": 27,
+          "doc_fp_rate": 0.225,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 60,
+              "fp": 0,
+              "fn": 0,
+              "gold": 60,
+              "predicted": 60,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 64,
+              "fp": 35,
+              "fn": 56,
+              "gold": 120,
+              "predicted": 99,
+              "precision": 0.6465,
+              "recall": 0.5333,
+              "f1": 0.5845
+            }
+          }
+        }
+      },
+      "parsikit_reconstructed": {
+        "display_name": "ParsiKit (v3.3.0) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 240,
+          "false_positives": 0,
+          "false_negatives": 90,
+          "precision": 1.0,
+          "recall": 0.7273,
+          "f1": 0.8421,
+          "total_gold": 330,
+          "total_predicted": 240,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 0.7273,
+          "relaxed_f1": 0.8421,
+          "entity_leakage_rate": 0.2727,
+          "document_leakage_rate": 0.625,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 60,
+              "gold": 60,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 120,
+              "fp": 0,
+              "fn": 0,
+              "gold": 120,
+              "predicted": 120,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        }
+      },
+      "persian_tools_reconstructed": {
+        "display_name": "py-persian-tools (v0.0.11) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 45,
+          "false_positives": 15,
+          "false_negatives": 285,
+          "precision": 0.75,
+          "recall": 0.1364,
+          "f1": 0.2308,
+          "total_gold": 330,
+          "total_predicted": 60,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 0.1818,
+          "relaxed_f1": 0.3077,
+          "entity_leakage_rate": 0.8636,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 15,
+          "doc_fp_rate": 0.125,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "BANK_CARD": {
+              "tp": 45,
+              "fp": 15,
+              "fn": 15,
+              "gold": 60,
+              "predicted": 60,
+              "precision": 0.75,
+              "recall": 0.75,
+              "f1": 0.75
+            },
+            "EMAIL": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "gold": 30,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_MOBILE": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "IR_NATIONAL_ID": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 120,
+              "gold": 120,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        }
+      }
+    },
+    "dataset_c_person_only": {
+      "fa_redact_deterministic": {
+        "display_name": "fa-redact Deterministic Core",
+        "metrics": {
+          "true_positives": 0,
+          "false_positives": 0,
+          "false_negatives": 255,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "total_gold": 255,
+          "total_predicted": 0,
+          "relaxed_precision": 0.0,
+          "relaxed_recall": 0.0,
+          "relaxed_f1": 0.0,
+          "entity_leakage_rate": 1.0,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 255,
+              "gold": 255,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        }
+      },
+      "fa_redact_current_ner": {
+        "display_name": "fa-redact PersianNERDetector (PEYMA)",
+        "metrics": {
+          "true_positives": 255,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "total_gold": 255,
+          "total_predicted": 255,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 1.0,
+          "relaxed_f1": 1.0,
+          "entity_leakage_rate": 0.0,
+          "document_leakage_rate": 0.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 255,
+              "fp": 0,
+              "fn": 0,
+              "gold": 255,
+              "predicted": 255,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        }
+      },
+      "fa_redact_current_hybrid": {
+        "display_name": "fa-redact Current Hybrid (Deterministic + PEYMA NER)",
+        "metrics": {
+          "true_positives": 255,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "total_gold": 255,
+          "total_predicted": 255,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 1.0,
+          "relaxed_f1": 1.0,
+          "entity_leakage_rate": 0.0,
+          "document_leakage_rate": 0.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 255,
+              "fp": 0,
+              "fn": 0,
+              "gold": 255,
+              "predicted": 255,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        }
+      },
+      "openmed_tookabert_wrapper": {
+        "display_name": "TookaBERT Large (Wrapper)",
+        "metrics": {
+          "true_positives": 255,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "total_gold": 255,
+          "total_predicted": 255,
+          "relaxed_precision": 1.0,
+          "relaxed_recall": 1.0,
+          "relaxed_f1": 1.0,
+          "entity_leakage_rate": 0.0,
+          "document_leakage_rate": 0.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 255,
+              "fp": 0,
+              "fn": 0,
+              "gold": 255,
+              "predicted": 255,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        }
+      },
+      "openmed_mbert_wrapper": {
+        "display_name": "Google mBERT (Wrapper)",
+        "metrics": {
+          "true_positives": 255,
+          "false_positives": 30,
+          "false_negatives": 0,
+          "precision": 0.8947,
+          "recall": 1.0,
+          "f1": 0.9444,
+          "total_gold": 255,
+          "total_predicted": 285,
+          "relaxed_precision": 0.8947,
+          "relaxed_recall": 1.0,
+          "relaxed_f1": 0.9444,
+          "entity_leakage_rate": 0.0,
+          "document_leakage_rate": 0.0,
+          "documents_with_fp": 30,
+          "doc_fp_rate": 0.25,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 255,
+              "fp": 30,
+              "fn": 0,
+              "gold": 255,
+              "predicted": 285,
+              "precision": 0.8947,
+              "recall": 1.0,
+              "f1": 0.9444
+            }
+          }
+        }
+      },
+      "parsikit_reconstructed": {
+        "display_name": "ParsiKit (v3.3.0) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 0,
+          "false_positives": 0,
+          "false_negatives": 255,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "total_gold": 255,
+          "total_predicted": 0,
+          "relaxed_precision": 0.0,
+          "relaxed_recall": 0.0,
+          "relaxed_f1": 0.0,
+          "entity_leakage_rate": 1.0,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 255,
+              "gold": 255,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        }
+      },
+      "persian_tools_reconstructed": {
+        "display_name": "py-persian-tools (v0.0.11) [Non-Native Reconstructed Offsets]",
+        "metrics": {
+          "true_positives": 0,
+          "false_positives": 0,
+          "false_negatives": 255,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "total_gold": 255,
+          "total_predicted": 0,
+          "relaxed_precision": 0.0,
+          "relaxed_recall": 0.0,
+          "relaxed_f1": 0.0,
+          "entity_leakage_rate": 1.0,
+          "document_leakage_rate": 1.0,
+          "documents_with_fp": 0,
+          "doc_fp_rate": 0.0,
+          "offset_failures": 0,
+          "offset_failure_rate": 0.0,
+          "adapter_error_count": 0,
+          "affected_document_count": 0,
+          "exception_type_counts": {},
+          "per_type": {
+            "PERSON": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 255,
+              "gold": 255,
+              "predicted": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          }
+        }
+      }
+    }
+  },
+  "long_document": {
+    "short_256": {
+      "char_length": 1072,
+      "systems": {
+        "fa_redact_deterministic": {
+          "detected_spans_count": 3,
+          "detected_types": [
+            "BANK_CARD",
+            "IR_MOBILE",
+            "IR_NATIONAL_ID"
+          ],
+          "latency_ms": 0.72,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "fa_redact_current_ner": {
+          "detected_spans_count": 1,
+          "detected_types": [
+            "PERSON"
+          ],
+          "latency_ms": 335.01,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "fa_redact_current_hybrid": {
+          "detected_spans_count": 4,
+          "detected_types": [
+            "BANK_CARD",
+            "IR_MOBILE",
+            "IR_NATIONAL_ID",
+            "PERSON"
+          ],
+          "latency_ms": 367.83,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "openmed_tookabert_wrapper": {
+          "detected_spans_count": 4,
+          "detected_types": [
+            "BANK_CARD",
+            "IR_MOBILE",
+            "IR_NATIONAL_ID",
+            "PERSON"
+          ],
+          "latency_ms": 1427.46,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "openmed_mbert_wrapper": {
+          "detected_spans_count": 6,
+          "detected_types": [
+            "BANK_CARD",
+            "IR_MOBILE",
+            "IR_NATIONAL_ID",
+            "OTHER_ID",
+            "PERSON"
+          ],
+          "latency_ms": 852.13,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "parsikit_reconstructed": {
+          "detected_spans_count": 2,
+          "detected_types": [
+            "IR_MOBILE",
+            "IR_NATIONAL_ID"
+          ],
+          "latency_ms": 0.71,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "persian_tools_reconstructed": {
+          "detected_spans_count": 1,
+          "detected_types": [
+            "BANK_CARD"
+          ],
+          "latency_ms": 0.17,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        }
+      }
+    },
+    "medium_512": {
+      "char_length": 2192,
+      "systems": {
+        "fa_redact_deterministic": {
+          "detected_spans_count": 3,
+          "detected_types": [
+            "BANK_CARD",
+            "IR_MOBILE",
+            "IR_NATIONAL_ID"
+          ],
+          "latency_ms": 1.01,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "fa_redact_current_ner": {
+          "detected_spans_count": 1,
+          "detected_types": [
+            "PERSON"
+          ],
+          "latency_ms": 775.6,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "fa_redact_current_hybrid": {
+          "detected_spans_count": 4,
+          "detected_types": [
+            "BANK_CARD",
+            "IR_MOBILE",
+            "IR_NATIONAL_ID",
+            "PERSON"
+          ],
+          "latency_ms": 638.8,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "openmed_tookabert_wrapper": {
+          "detected_spans_count": 4,
+          "detected_types": [
+            "BANK_CARD",
+            "IR_MOBILE",
+            "IR_NATIONAL_ID",
+            "PERSON"
+          ],
+          "latency_ms": 3988.39,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "openmed_mbert_wrapper": {
+          "detected_spans_count": 6,
+          "detected_types": [
+            "BANK_CARD",
+            "IR_MOBILE",
+            "IR_NATIONAL_ID",
+            "OTHER_ID",
+            "PERSON"
+          ],
+          "latency_ms": 1830.06,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "parsikit_reconstructed": {
+          "detected_spans_count": 2,
+          "detected_types": [
+            "IR_MOBILE",
+            "IR_NATIONAL_ID"
+          ],
+          "latency_ms": 1.12,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "persian_tools_reconstructed": {
+          "detected_spans_count": 1,
+          "detected_types": [
+            "BANK_CARD"
+          ],
+          "latency_ms": 0.17,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        }
+      }
+    },
+    "long_1000": {
+      "char_length": 4432,
+      "systems": {
+        "fa_redact_deterministic": {
+          "detected_spans_count": 3,
+          "detected_types": [
+            "BANK_CARD",
+            "IR_MOBILE",
+            "IR_NATIONAL_ID"
+          ],
+          "latency_ms": 2.47,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "fa_redact_current_ner": {
+          "detected_spans_count": 0,
+          "detected_types": [],
+          "latency_ms": 9.1,
+          "offset_valid": true,
+          "status": "FAILED: ValueError",
+          "error_note": "Exceeded input limit or engine error (ValueError)"
+        },
+        "fa_redact_current_hybrid": {
+          "detected_spans_count": 3,
+          "detected_types": [
+            "BANK_CARD",
+            "IR_MOBILE",
+            "IR_NATIONAL_ID"
+          ],
+          "latency_ms": 9.56,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "openmed_tookabert_wrapper": {
+          "detected_spans_count": 4,
+          "detected_types": [
+            "BANK_CARD",
+            "IR_MOBILE",
+            "IR_NATIONAL_ID",
+            "PERSON"
+          ],
+          "latency_ms": 7150.68,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "openmed_mbert_wrapper": {
+          "detected_spans_count": 6,
+          "detected_types": [
+            "BANK_CARD",
+            "IR_MOBILE",
+            "IR_NATIONAL_ID",
+            "OTHER_ID",
+            "PERSON"
+          ],
+          "latency_ms": 3854.49,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "parsikit_reconstructed": {
+          "detected_spans_count": 2,
+          "detected_types": [
+            "IR_MOBILE",
+            "IR_NATIONAL_ID"
+          ],
+          "latency_ms": 2.05,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        },
+        "persian_tools_reconstructed": {
+          "detected_spans_count": 1,
+          "detected_types": [
+            "BANK_CARD"
+          ],
+          "latency_ms": 0.22,
+          "offset_valid": true,
+          "status": "SUCCESS"
+        }
+      }
+    }
+  },
+  "reproducibility": {
+    "fa_redact_deterministic": {
+      "deterministic": true,
+      "span_count_run1": 4,
+      "span_count_run2": 4,
+      "span_count_run3": 4,
+      "status": "SUCCESS"
+    },
+    "fa_redact_current_ner": {
+      "deterministic": true,
+      "span_count_run1": 1,
+      "span_count_run2": 1,
+      "span_count_run3": 1,
+      "status": "SUCCESS"
+    },
+    "fa_redact_current_hybrid": {
+      "deterministic": true,
+      "span_count_run1": 5,
+      "span_count_run2": 5,
+      "span_count_run3": 5,
+      "status": "SUCCESS"
+    },
+    "openmed_tookabert_wrapper": {
+      "deterministic": true,
+      "span_count_run1": 6,
+      "span_count_run2": 6,
+      "span_count_run3": 6,
+      "status": "SUCCESS"
+    },
+    "openmed_mbert_wrapper": {
+      "deterministic": true,
+      "span_count_run1": 5,
+      "span_count_run2": 5,
+      "span_count_run3": 5,
+      "status": "SUCCESS"
+    },
+    "parsikit_reconstructed": {
+      "deterministic": true,
+      "span_count_run1": 2,
+      "span_count_run2": 2,
+      "span_count_run3": 2,
+      "status": "SUCCESS"
+    },
+    "persian_tools_reconstructed": {
+      "deterministic": true,
+      "span_count_run1": 1,
+      "span_count_run2": 1,
+      "span_count_run3": 1,
+      "status": "SUCCESS"
+    }
+  }
+}

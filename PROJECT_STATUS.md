@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.3.0`
 - **Current source version:** `0.3.0`
-- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 28 Opt-in Iranian Legal Entity National ID Implementation in progress)
-- **Last closed phase:** Phase 27 — Additional Iranian Identifier Research & Decision Gate
-- **Current active phase:** Phase 28 — Opt-in Iranian Legal Entity National ID Implementation (In Progress)
+- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 28 Opt-in Iranian Legal Entity National ID Implementation completed; Phase 29 Persian PII Ecosystem Audit & Independent Benchmark in progress)
+- **Last closed phase:** Phase 28 — Opt-in Iranian Legal Entity National ID Implementation
+- **Current active phase:** Phase 29 — Persian PII Ecosystem Audit & Independent Benchmark (In Progress)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -236,15 +236,16 @@ A development phase transitions through three discrete states:
   - Phase 25 merge commit: `0350280a6c0f276904f59dd57b313872e7d74cd0` (PR #27)
   - Phase 26 merge commit: `17a02bc7cf56f92067cf0214b07027a49cdea23f` (PR #28)
   - Phase 27 merge commit: `9c50721db0bc70dbfc925326979e70136533cc23` (PR #29)
+  - Phase 28 merge commit: `8af5a960398ef718db32e46f82c9636ce5ccebcf` (PR #30, Branch HEAD `00e098b28715011fa0f6334985b05fa8b972ae22`, Verified push CI `34119170946`, Baseline 1073 tests)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
 
 ---
 
 ## Active Phase
 
-- **Phase:** Phase 28 — Opt-in Iranian Legal Entity National ID Implementation
+- **Phase:** Phase 29 — Persian PII Ecosystem Audit & Independent Benchmark
 - **Status:** `IN PROGRESS`
-- **Scope:** Implement strictly opt-in Iranian Legal Entity National ID (*شناسه ملی اشخاص حقوقی*) validator (`is_valid_iranian_legal_entity_id`) and detector (`IranianLegalEntityIDDetector`) with canonical entity type `IR_LEGAL_ENTITY_ID`. Follow Phase 27 Variant A consensus formula (`[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]`, `d[9] + 2`, modulo 11, remainder 10 $\to$ 0). Maintain strictly opt-in integration (`_DEFAULT_DETECTORS` unchanged), position-preserving exact offsets, offline mathematical validation only (no network/registry lookups), zero new runtime dependencies (`dependencies = []`), 100% synthetic test fixtures, and package version `0.3.0`.
+- **Scope:** Conduct a comprehensive, empirical, and reproducible audit and independent benchmark of the Persian / Iranian PII ecosystem. Determine what external capabilities already exist (e.g. OpenMed Persian / Reza2kn models and datasets, ParsiKit, py-persian-tools, Persian-tools TS prior art), whether they install, run, and reproduce claimed metrics, what fa-redact duplicates vs. uniquely contributes, whether the current `PersianNERDetector` should be kept, replaced, complemented, or deprecated, and what the optimal future hybrid architecture should be. Strictly research-only: zero production source changes, zero new runtime dependencies, package version remains `0.3.0`.
 
 ---
 
