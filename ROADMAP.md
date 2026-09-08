@@ -138,18 +138,31 @@ Implemented strictly opt-in Iranian Legal Entity National ID (*شناسه ملی
 
 ---
 
+### Phase 29 — Persian PII Ecosystem Audit & Independent Benchmark
+*Status: `COMPLETED`*
+
+Conducted an independent, empirical audit and benchmark of the Persian / Iranian PII ecosystem:
+- Audited and reproduced primary external assets: OpenMed Persian / Reza2kn dataset (`persian-pii-masking-openpii-690k-clean`) and quantized models (TookaBERT-Large ONNX INT4, mBERT ONNX INT4).
+- Audited secondary ecosystem packages: ParsiKit (`parsikit`), py-persian-tools (`persian-tools`), and TypeScript prior art.
+- Evaluated exact-span metrics, character offset integrity, PII leakage, and over-redaction across three datasets (reproduction split, independent challenge set, and clinical-style synthetic challenge set).
+- Performed functional overlap analysis and strategic capability classification (commodity vs. necessary primitive vs. differentiated).
+- Formulated an evidence-based model strategy decision and future hybrid architecture recommendation.
+- Strictly research-only: zero production source modifications, zero new runtime dependencies, package version remains `0.3.0`.
+
+---
+
 ## Active Phase
 
-### Phase 29 — Persian PII Ecosystem Audit & Independent Benchmark
+### Phase 30 — Robust Long-Document Persian NER
 *Status: `ACTIVE / IN PROGRESS`*
 
-Conduct an independent, empirical audit and benchmark of the Persian / Iranian PII ecosystem:
-- Audit and reproduce primary external assets: OpenMed Persian / Reza2kn dataset (`persian-pii-masking-openpii-690k-clean`) and quantized models (TookaBERT-Large ONNX INT4, mBERT ONNX INT4).
-- Audit secondary ecosystem packages: ParsiKit (`parsikit`), py-persian-tools (`persian-tools`), and TypeScript prior art.
-- Evaluate exact-span metrics, character offset integrity, PII leakage, and over-redaction across three datasets (reproduction split, independent challenge set, and clinical-style synthetic challenge set).
-- Perform functional overlap analysis and strategic capability classification (commodity vs. necessary primitive vs. differentiated).
-- Formulate an evidence-based model strategy decision and future hybrid architecture recommendation.
-- Strictly research-only: zero production source modifications, zero new runtime dependencies, package version remains `0.3.0`.
+Upgrade the existing strictly opt-in `PersianNERDetector` to safely and deterministically process Persian documents longer than its configured model sequence length:
+- Implement deterministic overlapping sliding-window inference with stride `max(1, (max_length - 2) // 2)` for inputs exceeding `max_length`.
+- Retain single-pass execution for inputs fitting within `max_length` (100% backward compatible, zero overhead).
+- Reconstruct PERSON spans using absolute source character offsets directly from tokenizer offset mappings.
+- Deduplicate identical and subsumed detections produced in overlapping windows.
+- Conservatively merge split entity fragments across window boundaries only when subsequent tokens carry `I-PER` continuation labels across whitespace/ZWNJ gaps.
+- Maintain all core invariants: zero new runtime dependencies (`dependencies = []`), local-only offline inference (`local_files_only=True`, `trust_remote_code=False`), strictly opt-in detector (`detect()` defaults unchanged), and package version `0.3.0`.
 
 ---
 

@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Robust Long-Document Persian NER (Phase 30):**
+  - Upgraded strictly opt-in `PersianNERDetector` to safely and deterministically process long Persian documents exceeding the configured sequence length (`max_length`).
+  - Deterministic overlapping sliding-window inference with stride `max(1, (max_length - 2) // 2)` for inputs exceeding `max_length`.
+  - Preserved single-pass fast path for sequences within `max_length` (100% backward compatible, zero overhead).
+  - Exact source character offset reconstruction derived directly from fast tokenizer character offset mappings without document re-scanning or heuristic string searching.
+  - Deterministic deduplication of identical and subsumed PERSON detections across overlapping windows.
+  - Conservative boundary-split entity merging when fragments across window boundaries are separated by whitespace/ZWNJ and carry `I-PER` continuation labels or contiguous subwords.
+  - Preserved distinct adjacent `B-PER` detections without incorrect boundary merging.
+  - Zero mandatory runtime dependencies (`dependencies = []`), Python >=3.10 support, and package version remaining `0.3.0`.
+
 - **Persian PII Ecosystem Audit & Independent Benchmark (Phase 29):**
   - Comprehensive empirical research audit (`research/phase29_persian_pii_ecosystem.md`) evaluating the Persian PII de-identification and NLP landscape across the OpenMed Persian / Reza2kn ecosystem (TookaBERT-Large ONNX INT4, Google mBERT ONNX INT4, 848k OpenPII dataset), ParsiKit 3.3.0 (MIT), py-persian-tools 0.0.11 (MIT), and `fa-redact` internal baselines.
   - Recorded supply-chain / maintenance risk observation regarding suspicious credential-collecting workflow on current GitHub master of `persian-tools/py-persian-tools` (commit `18aa49e`), distinct from audited PyPI 0.0.11 package.
