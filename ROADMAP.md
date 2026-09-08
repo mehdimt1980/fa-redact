@@ -124,19 +124,32 @@ Researched candidate additional Iranian identifiers to determine suitability for
 
 ---
 
-## Active Phase
-
 ### Phase 28 — Opt-in Iranian Legal Entity National ID Implementation
-*Status: `ACTIVE / IN PROGRESS`*
+*Status: `COMPLETED`*
 
-Implement strictly opt-in Iranian Legal Entity National ID (*شناسه ملی اشخاص حقوقی*) validator (`is_valid_iranian_legal_entity_id`) and detector (`IranianLegalEntityIDDetector`) with canonical entity type `IR_LEGAL_ENTITY_ID`:
-- Implement Phase 27 Variant A consensus checksum formula (`[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]`, `d[9] + 2`, modulo 11, remainder 10 $\to$ 0).
-- Reject all-identical 11-digit pseudo-values and malformed candidates defensively.
-- Support ASCII, Persian, and Arabic-Indic digit scripts via position-preserving normalization.
-- Preserve exact source character offsets and surface representations (`Detection.value` vs. `Detection.normalized_value`).
-- Maintain strictly opt-in integration: do NOT add to `_DEFAULT_DETECTORS` or default clinical profiles.
+Implemented strictly opt-in Iranian Legal Entity National ID (*شناسه ملی اشخاص حقوقی*) validator (`is_valid_iranian_legal_entity_id`) and detector (`IranianLegalEntityIDDetector`) with canonical entity type `IR_LEGAL_ENTITY_ID`:
+- Implemented Phase 27 Variant A consensus checksum formula (`[29, 27, 23, 19, 17, 29, 27, 23, 19, 17]`, `d[9] + 2`, modulo 11, remainder 10 $\to$ 0).
+- Rejected all-identical 11-digit pseudo-values and malformed candidates defensively.
+- Supported ASCII, Persian, and Arabic-Indic digit scripts via position-preserving normalization.
+- Preserved exact source character offsets and surface representations (`Detection.value` vs. `Detection.normalized_value`).
+- Maintained strictly opt-in integration: default detector tuple unchanged (`_DEFAULT_DETECTORS` unchanged) and clinical profiles unchanged.
 - Zero network or registry lookups (offline mathematical validation only).
 - Zero new runtime dependencies (`dependencies = []`), Python >=3.10 support, and package version `0.3.0`.
+
+---
+
+## Active Phase
+
+### Phase 29 — Persian PII Ecosystem Audit & Independent Benchmark
+*Status: `ACTIVE / IN PROGRESS`*
+
+Conduct an independent, empirical audit and benchmark of the Persian / Iranian PII ecosystem:
+- Audit and reproduce primary external assets: OpenMed Persian / Reza2kn dataset (`persian-pii-masking-openpii-690k-clean`) and quantized models (TookaBERT-Large ONNX INT4, mBERT ONNX INT4).
+- Audit secondary ecosystem packages: ParsiKit (`parsikit`), py-persian-tools (`persian-tools`), and TypeScript prior art.
+- Evaluate exact-span metrics, character offset integrity, PII leakage, and over-redaction across three datasets (reproduction split, independent challenge set, and clinical-style synthetic challenge set).
+- Perform functional overlap analysis and strategic capability classification (commodity vs. necessary primitive vs. differentiated).
+- Formulate an evidence-based model strategy decision and future hybrid architecture recommendation.
+- Strictly research-only: zero production source modifications, zero new runtime dependencies, package version remains `0.3.0`.
 
 ---
 
