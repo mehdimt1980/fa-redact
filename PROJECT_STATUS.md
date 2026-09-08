@@ -9,9 +9,9 @@
 
 - **Latest published release:** `v0.3.0`
 - **Current source version:** `0.3.0`
-- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 31 Optional ONNX Persian PERSON Backend completed; Phase 32 Persian NER Backend Validation Gate active)
-- **Last closed phase:** Phase 31 — Optional ONNX Persian PERSON Backend
-- **Current active phase:** Phase 32 — Persian NER Backend Validation & Production Readiness Gate (Active)
+- **Development status:** `post-v0.3.0 development` (v0.3.0 published on PyPI and GitHub Releases; Phase 32 Persian NER Backend Validation Gate completed; Phase 33 Performance Profiling active)
+- **Last closed phase:** Phase 32 — Persian NER Backend Validation & Production Readiness Gate
+- **Current active phase:** Phase 33 — Performance Profiling & Evidence-Based Optimization (Active)
 - **Runtime dependencies:** zero (Python Standard Library only)
 - **Supported Python:** `>=3.10`
 - **Development Status classifier:** `Development Status :: 3 - Alpha`
@@ -95,6 +95,14 @@ The following built-in detectors remain strictly **opt-in**:
 - Caller-supplied configuration (`detectors`, `type_priority`) snapshotted immutably at generator creation time.
 - Independent per-document redaction semantics (`redact_many`): placeholder counters restart independently for each document with no cross-document session state.
 - One value-free `DetectionReport` yielded per document in `report_many()`.
+
+---
+
+## Active Phase
+
+- **Phase:** Phase 33 — Performance Profiling & Evidence-Based Optimization
+- **Status:** `IN PROGRESS`
+- **Scope:** Profile CPU/memory throughput, single-document and batch latency, sliding-window overhead, model initialization, and scaling characteristics for both production backends. Enforce strict evidence-based optimization gate: zero production code modifications unless a verified Python bottleneck yields >=10% gain with <=5% collateral regression and 100% exact output equality. Maintain base dependencies as `dependencies = []` and package version `0.3.0`.
 
 ---
 
@@ -240,15 +248,9 @@ A development phase transitions through three discrete states:
   - Phase 28 merge commit: `8af5a960398ef718db32e46f82c9636ce5ccebcf` (PR #30, Branch HEAD `00e098b28715011fa0f6334985b05fa8b972ae22`, Verified push CI `34119170946`, Baseline 1073 tests)
   - Phase 29 merge commit: `bd00e0e5a9e22b34a35be72cff062eca28bce4f7` (PR #31, Branch HEAD `e2fee6f3669ca1e222ecb851d3a4547dce036f4a`, Baseline 1085 tests)
   - Phase 30 merge commit: `d17f7960d20d936784938de0e24a6e082a12ac95` (PR #32, Branch HEAD `8e2cc74040878a539b86f2c2d5585b729d45e0f4`, Baseline 1103 tests)
+  - Phase 31 merge commit: `bebf8b1965e5e33d45c50ff3411516dbf8b0fae0` (PR #33, Branch HEAD `77a5eb40825f3c92ce945f8e5b4105a90184ca0b`, Baseline 1139 tests)
+  - Phase 32 merge commit: `23360b622ece0fb77568bbbf2b3c45e97094f1b9` (PR #34, Branch HEAD `bd48a268eef92723bb7190d7aa393f9c64673fe6`, Baseline 1164 tests)
 - *(Note: Run `git rev-parse HEAD` on `main` to inspect the active HEAD commit).*
-
----
-
-## Active Phase
-
-- **Phase:** Phase 31 — Optional ONNX Persian PERSON Backend
-- **Status:** `IN PROGRESS`
-- **Scope:** Add a strictly optional, local-only ONNX-based Persian `PERSON` detector (`ONNXPersianNERDetector`) suitable for locally supplied token-classification models. Support standard BIO and fine-grained name component labels (GIVENNAME + SURNAME), conservative whitespace-only name reconstruction, strict TITLE exclusion, exact source character offsets, position-preserving normalization invariants, and sliding-window long document processing. Zero base runtime dependencies (`dependencies = []`), opt-in extra `fa-redact[onnx]`, defaults unchanged, and package version `0.3.0`.
 
 ---
 
