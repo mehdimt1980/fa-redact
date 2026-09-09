@@ -159,7 +159,7 @@ from fa_redact import detect
 text = "تماس با ۰۹۱۲۳۴۵۶۷۸۹"
 
 for d in detect(text):
-    assert text[d.start:d.end] == d.value
+    assert text[d.start : d.end] == d.value
     print(d.type, d.start, d.end, d.normalized_value)
 ```
 
