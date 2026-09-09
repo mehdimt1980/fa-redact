@@ -28,6 +28,9 @@ It is designed for workflows where raw sensitive text should remain inside your 
 
 The deterministic core is pure Python and has **zero mandatory runtime dependencies**.
 
+> **Status: Alpha**  
+> Package version in this source tree: `v0.4.0`
+
 ```bash
 pip install fa-redact
 ```
@@ -38,7 +41,6 @@ pip install fa-redact
 from fa_redact import redact
 
 text = "بیمار با کد ملی ۱۲۳۴۵۶۷۸۹۱ و شماره ۰۹۱۲۳۴۵۶۷۸۹ مراجعه کرد."
-
 print(redact(text))
 ```
 
@@ -105,7 +107,6 @@ protected_prompt = session.pseudonymize(prompt)
 
 # Send only `protected_prompt` outside your trusted boundary.
 llm_response = "جهت هماهنگی با بیمار با [IR_MOBILE_1] تماس حاصل فرمایید."
-
 restored = session.restore(llm_response)
 ```
 
@@ -116,37 +117,37 @@ restored = session.restore(llm_response)
 
 ## Coverage
 
-### Included in the default detector set
+### Included by default
 
-| Type | Example capability | Validation style |
+| Type | Entity | Validation |
 |---|---|---|
-| Iranian National ID | `IR_NATIONAL_ID` | structural + checksum validation |
-| Iranian mobile number | `IR_MOBILE` | numbering-plan / prefix-aware validation |
-| Iranian IBAN / Sheba | `IR_IBAN` | MOD-97 validation |
+| Iranian National ID | `IR_NATIONAL_ID` | structural + checksum |
+| Iranian mobile number | `IR_MOBILE` | prefix / numbering-plan aware |
+| Iranian IBAN / Sheba | `IR_IBAN` | MOD-97 |
 
 ### Explicit opt-ins
 
 - Email addresses
 - 16-digit bank card / PAN values
 - Iranian Legal Entity National ID
-- Institution-specific identifiers such as MRN, Patient ID, Admission ID, Encounter ID
-- Explicit overlap/conflict resolution policies
+- Institution-specific identifiers such as MRN, Patient ID, Admission ID, and Encounter ID
+- Explicit overlap/conflict-resolution policies
 
 ### Optional Persian PERSON NER
 
-Install the PyTorch backend:
+PyTorch backend:
 
 ```bash
 pip install "fa-redact[ner]"
 ```
 
-Or the ONNX backend:
+ONNX backend:
 
 ```bash
 pip install "fa-redact[onnx]"
 ```
 
-NER remains opt-in. Model resolution is local-only and the package does not silently download models during ordinary core usage.
+NER remains opt-in. The base package does not force an ML stack on users who only need deterministic PII handling.
 
 ---
 
@@ -157,19 +158,16 @@ from fa_redact import detect
 
 text = "تماس با ۰۹۱۲۳۴۵۶۷۸۹"
 
-detections = detect(text)
-for d in detections:
+for d in detect(text):
     assert text[d.start:d.end] == d.value
     print(d.type, d.start, d.end, d.normalized_value)
 ```
 
-This matters when redaction must preserve the relationship between transformed text and the original source document.
+Position-preserving normalization keeps detected spans aligned with the original source text.
 
 ---
 
 ## CLI
-
-The package also includes a privacy-conscious command-line interface:
 
 ```bash
 echo "کد ملی بیمار ۱۲۳۴۵۶۷۸۹۱ است." | fa-redact redact
@@ -179,13 +177,13 @@ echo "کد ملی بیمار ۱۲۳۴۵۶۷۸۹۱ است." | fa-redact redact
 fa-redact report clinical_note.txt
 ```
 
-The report command is designed to expose aggregate detection metadata without returning raw detected PII values.
+The report path is designed to expose aggregate detection metadata without returning raw detected PII values.
 
 ---
 
 ## Structured data
 
-Explicitly target fields inside JSON-like mappings instead of recursively scanning everything:
+Explicitly target fields instead of recursively scanning an entire object:
 
 ```python
 from fa_redact import redact_fields
@@ -210,51 +208,34 @@ Unselected fields are not scanned or modified.
 | Position-preserving normalization | Keeps source offsets trustworthy |
 | Conservative defaults | Avoids silently expanding detection scope |
 | Explicit opt-in detectors | Applications choose their own privacy boundary |
-| Fail-loud conflict handling by default | Ambiguous overlapping detections are not silently guessed away |
+| Fail-loud conflict handling by default | Ambiguous overlaps are not silently guessed away |
 | Optional PyTorch / ONNX NER | ML is available without forcing an ML stack on every user |
-| Privacy-safe reporting | Operational metadata can be produced without echoing raw values |
-
----
-
-## Project status
-
-Current release: **v0.4.0**  
-Status: **Alpha**
-
-The project is actively evolving. The API is intended to be predictable, but alpha status means interfaces and detector behavior may still improve between releases.
-
-- [Release notes](CHANGELOG.md)
-- [Roadmap](ROADMAP.md)
-- [Project status](PROJECT_STATUS.md)
-- [Release process](RELEASING.md)
-- [Full technical reference](docs/REFERENCE.md)
+| Privacy-safe reporting | Operational metadata without echoing raw values |
 
 ---
 
 ## Documentation
 
-The README is intentionally optimized as a fast project introduction. The previous comprehensive README has been preserved as the **full technical reference**, including detailed detector semantics, validation rules, conflict policies, structured helpers, CLI behavior, NER notes, privacy/security model, and release guidance.
+The front README is intentionally concise. The previous comprehensive README has been preserved as the **full technical reference**, including detector semantics, validation rules, CLI behavior, conflict policies, structured helpers, NER, privacy/security notes, and release guidance.
 
-**→ [Read the full reference](docs/REFERENCE.md)**
+**→ [Read the full technical reference](docs/REFERENCE.md)**
+
+Also useful:
+
+- [Changelog](CHANGELOG.md)
+- [Roadmap](ROADMAP.md)
+- [Project status](PROJECT_STATUS.md)
+- [Release process](RELEASING.md)
 
 ---
 
 ## Contributing and feedback
 
-Real-world feedback is especially useful from people working with:
-
-- Persian NLP
-- Healthcare / clinical NLP
-- Privacy engineering
-- Local or on-premise AI
-- LLM safety and data-boundary design
-- Iranian structured identifiers
+Feedback is especially useful from people working with **Persian NLP, healthcare/clinical NLP, privacy engineering, local AI, LLM safety, and Iranian structured identifiers**.
 
 If you find a bug, false positive, false negative, missing detector, integration opportunity, or documentation gap, please [open an issue](https://github.com/mehdimt1980/fa-redact/issues).
 
-Pull requests are welcome.
-
-If the project is useful to you, a GitHub star helps other developers discover it.
+Pull requests are welcome. If the project is useful to you, a GitHub star helps other developers discover it.
 
 ---
 
@@ -262,7 +243,10 @@ If the project is useful to you, a GitHub star helps other developers discover i
 
 **fa-redact** یک ابزار متن‌باز پایتون برای **شناسایی، حذف و ناشناس‌سازی اطلاعات شخصی و حساس در متن فارسی** است؛ با تمرکز ویژه بر داده‌های ایرانی، سلامت، متن‌های بالینی و جریان‌های کاری هوش مصنوعی.
 
-هسته‌ی اصلی پروژه کاملاً محلی اجرا می‌شود و **هیچ وابستگی اجباری در زمان اجرا ندارد**.
+هسته‌ی اصلی پروژه به‌صورت محلی اجرا می‌شود و **هیچ وابستگی اجباری در زمان اجرا ندارد**.
+
+> **وضعیت: آلفا**  
+> نسخه بسته در این درخت منبع: `v0.4.0`
 
 ```bash
 pip install fa-redact
@@ -303,8 +287,6 @@ print(redact(text))
 
 ### الگوی استفاده در سلامت و هوش مصنوعی
 
-هدف این است که متن خام بیمار داخل محدوده‌ی امن شما باقی بماند:
-
 ```text
 متن خام بیمار
      ↓
@@ -318,13 +300,13 @@ LLM / API / سامانه‌ی بیرونی
 ```
 
 > [!IMPORTANT]
-> `fa-redact` یک ابزار فنی برای de-identification است و به‌تنهایی به معنی اخذ یا تضمین انطباق با GDPR، HIPAA یا الزامات حقوقی و سازمانی حوزه سلامت نیست.
+> `fa-redact` یک ابزار فنی برای de-identification است و به‌تنهایی به معنی تضمین انطباق با GDPR، HIPAA یا الزامات حقوقی و سازمانی حوزه سلامت نیست.
 
-برای جزئیات کامل درباره‌ی detectorها، اعتبارسنجی‌ها، CLI، NER، conflict resolution، structured data و مدل امنیت و حریم خصوصی:
+برای جزئیات کامل detectorها، اعتبارسنجی‌ها، CLI، NER، conflict resolution، structured data و مدل امنیت و حریم خصوصی:
 
 **→ [مستندات فنی کامل](docs/REFERENCE.md)**
 
-اگر پروژه برایتان مفید است، گزارش bug، پیشنهاد detector جدید، integration و Pull Request بسیار ارزشمند است.
+گزارش bug، پیشنهاد detector جدید، integration و Pull Request بسیار ارزشمند است.
 
 ---
 
